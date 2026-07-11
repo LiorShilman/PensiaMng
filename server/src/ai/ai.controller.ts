@@ -15,6 +15,7 @@ import type {
   AiProvider,
   AiSettingsView,
   AnalyzeResult,
+  LastAnalysis,
 } from './ai.service';
 
 @Controller('ai')
@@ -47,5 +48,11 @@ export class AiController {
     @Body() body: { context: unknown },
   ): Promise<AnalyzeResult> {
     return this.ai.analyze(req.user.sub, body.context);
+  }
+
+  /** הניתוח האחרון שנשמר לתיק — נטען עם הכניסה כדי לא לנתח מחדש כל פעם */
+  @Get('last')
+  last(@Req() req: AuthedRequest): Promise<LastAnalysis | null> {
+    return this.ai.getLastAnalysis(req.user.sub);
   }
 }

@@ -181,6 +181,11 @@ export interface AnalyzeResult {
   model: string;
 }
 
+export interface LastAnalysis extends AnalyzeResult {
+  /** ISO — מתי הניתוח הופק */
+  analyzedAt: string;
+}
+
 export function getAiSettings(): Promise<AiSettingsView | null> {
   return request<AiSettingsView | null>('GET', '/ai/settings');
 }
@@ -200,6 +205,11 @@ export function getAiModels(): Promise<AiModelInfo[]> {
 
 export function aiAnalyze(context: unknown): Promise<AnalyzeResult> {
   return request<AnalyzeResult>('POST', '/ai/analyze', { context });
+}
+
+/** הניתוח האחרון שנשמר — נטען עם הכניסה כדי לא לנתח מחדש כל פעם */
+export function getLastAiAnalysis(): Promise<LastAnalysis | null> {
+  return request<LastAnalysis | null>('GET', '/ai/last');
 }
 
 export interface PortfolioInput {
@@ -403,6 +413,57 @@ export interface ScenariosResult {
 
 export function calcScenarios(input: ScenariosInput): Promise<ScenariosResult> {
   return post<ScenariosResult>('/calc/scenarios', input);
+}
+
+// ---------- קיבוע זכויות (סעיף 9א / טופס 161ד) ----------
+
+export interface PastGrant {
+  /** שנת קבלת המענק הפטור */
+  year: number;
+  /** סכום המענק הפטור (צמוד למדד ליום הזכאות) */
+  amount: number;
+  employer?: string;
+}
+
+export interface RightsFixationInput {
+  eligibilityYear: number;
+  expectedMonthlyPension: number;
+  pastGrants?: PastGrant[];
+  desiredLumpSum?: number;
+  marginalTaxRatePct?: number;
+}
+
+export interface FixationScenario {
+  key: 'full_pension' | 'max_lump_sum' | 'custom';
+  label: string;
+  lumpSum: number;
+  monthlyExemption: number;
+  taxableMonthlyPension: number;
+  estMonthlyTaxSaved: number | null;
+  detail: string;
+}
+
+export interface RightsFixationResult {
+  params: {
+    annuityCeilingMonthly: number;
+    exemptionPct: number;
+    factor: number;
+    offsetMultiplier: number;
+    grantWindowYears: number;
+  };
+  exemptCapitalCeiling: number;
+  countedGrantsTotal: number;
+  grantOffset: number;
+  remainingExemptCapital: number;
+  scenarios: FixationScenario[];
+  warnings: string[];
+  trace: CalcTrace;
+}
+
+export function calcRightsFixation(
+  input: RightsFixationInput,
+): Promise<RightsFixationResult> {
+  return post<RightsFixationResult>('/calc/rights-fixation', input);
 }
 
 export function loadPortfolio(): Promise<SavedPortfolio> {

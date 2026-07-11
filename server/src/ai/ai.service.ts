@@ -29,6 +29,10 @@ export interface AnalyzeResult {
   model: string;
 }
 
+export interface LastAnalysis extends AnalyzeResult {
+  analyzedAt: string;
+}
+
 /** ברירות מחדל — הדגמים המתקדמים בכל ספק */
 const DEFAULT_MODELS: Record<AiProvider, string> = {
   anthropic: 'claude-opus-4-8',
@@ -66,6 +70,38 @@ export class AiService {
 
   private secret(): string {
     return this.config.getOrThrow<string>('JWT_SECRET');
+  }
+
+  /** רשומת הלקוח (התיק) של המשתמש — נוצרת אוטומטית בהרשמה */
+  private async clientIdFor(userId: string): Promise<string | null> {
+    const client = await this.prisma.client.findFirst({
+      where: { userId },
+      orderBy: { createdAt: 'asc' },
+      select: { id: true },
+    });
+    return client?.id ?? null;
+  }
+
+  /** הניתוח האחרון שנשמר — נטען עם התיק כדי לא לנתח מחדש בכל כניסה */
+  async getLastAnalysis(userId: string): Promise<LastAnalysis | null> {
+    const clientId = await this.clientIdFor(userId);
+    if (!clientId) return null;
+    const c = await this.prisma.client.findUnique({
+      where: { id: clientId },
+      select: {
+        lastAiAnalysisText: true,
+        lastAiAnalysisProvider: true,
+        lastAiAnalysisModel: true,
+        lastAiAnalysisAt: true,
+      },
+    });
+    if (!c?.lastAiAnalysisText || !c.lastAiAnalysisAt) return null;
+    return {
+      text: c.lastAiAnalysisText,
+      provider: (c.lastAiAnalysisProvider as AiProvider) ?? 'anthropic',
+      model: c.lastAiAnalysisModel ?? '',
+      analyzedAt: c.lastAiAnalysisAt.toISOString(),
+    };
   }
 
   async getSettings(userId: string): Promise<AiSettingsView | null> {
@@ -150,12 +186,28 @@ export class AiService {
     }
   }
 
+  /** שומר את הניתוח האחרון על רשומת הלקוח — כדי לא לנתח מחדש בכל כניסה */
+  private async saveLast(userId: string, result: AnalyzeResult): Promise<void> {
+    const clientId = await this.clientIdFor(userId);
+    if (!clientId) return;
+    await this.prisma.client.update({
+      where: { id: clientId },
+      data: {
+        lastAiAnalysisText: result.text,
+        lastAiAnalysisProvider: result.provider,
+        lastAiAnalysisModel: result.model,
+        lastAiAnalysisAt: new Date(),
+      },
+    });
+  }
+
   /** ניתוח חכם של התיק — הנתונים חושבו במנוע; ה-AI מפרש וממליץ */
   async analyze(userId: string, context: unknown): Promise<AnalyzeResult> {
     const { provider, model, apiKey } = await this.clientFor(userId);
-    const userContent = `להלן נתוני התיק הפנסיוני (כולם חושבו במנוע הדטרמיניסטי של המערכת). נתח והמלץ:\n\n\`\`\`json\n${JSON.stringify(context, null, 1)}\n\`\`\``;
+    const userContent = `להלן נתוני התיק הפנסיוני (כולם חושבו במנוע הדטרמיניסטי של המערכת). נתח והמלץ:\n\n\`\`\`json\n${JSON.stringify(context, null, 1)}\n\`\`\`\n\nחשוב: ענה בעברית בלבד, מההתחלה ועד הסוף.`;
 
     try {
+      let result: AnalyzeResult;
       if (provider === 'anthropic') {
         const client = new Anthropic({ apiKey });
         const resp = await client.messages.create({
@@ -169,25 +221,31 @@ export class AiService {
           .filter((b): b is Anthropic.TextBlock => b.type === 'text')
           .map((b) => b.text)
           .join('\n');
-        return { text, provider, model: resp.model };
+        result = { text, provider, model: resp.model };
+      } else {
+        const client = new OpenAI({ apiKey });
+        const resp = await client.chat.completions.create({
+          model,
+          max_completion_tokens: 8000,
+          // מודלי o1/gpt-5+ (הסקה) מחליפים את role:'system' ב-role:'developer' —
+          // הוראת "ענה בעברית בלבד" נדחקת אחרת ומודלים אלה נוטים לחזור לאנגלית
+          messages: [
+            { role: 'developer', content: SYSTEM_PROMPT },
+            { role: 'user', content: userContent },
+          ],
+        });
+        result = {
+          text: resp.choices[0]?.message?.content ?? '',
+          provider,
+          model: resp.model,
+        };
       }
-
-      const client = new OpenAI({ apiKey });
-      const resp = await client.chat.completions.create({
-        model,
-        max_completion_tokens: 8000,
-        messages: [
-          { role: 'system', content: SYSTEM_PROMPT },
-          { role: 'user', content: userContent },
-        ],
-      });
-      return {
-        text: resp.choices[0]?.message?.content ?? '',
-        provider,
-        model: resp.model,
-      };
+      await this.saveLast(userId, result);
+      return result;
     } catch (e) {
-      throw new BadRequestException(`קריאת ה-AI נכשלה: ${(e as Error).message}`);
+      throw new BadRequestException(
+        `קריאת ה-AI נכשלה (${provider}/${model}): ${(e as Error).message}`,
+      );
     }
   }
 }

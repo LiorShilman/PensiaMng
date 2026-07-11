@@ -8,6 +8,11 @@ import { calcRetirement } from './retirement';
 import type { RetirementInput, RetirementResult } from './retirement';
 import { calcScenarios } from './scenarios';
 import type { ScenariosInput, ScenariosResult } from './scenarios';
+import { RightsFixationService } from './rights-fixation.service';
+import type {
+  RightsFixationInput,
+  RightsFixationResult,
+} from './rights-fixation';
 import type {
   AnnuityInput,
   AnnuityResult,
@@ -19,10 +24,24 @@ import type {
 
 @Controller('calc')
 export class CalcEngineController {
+  constructor(private readonly rightsFixation: RightsFixationService) {}
+
   /** מסלולי ההשקעה הסטנדרטיים + הנחות התשואה שלהם */
   @Get('tracks')
   tracks(): readonly TrackDef[] {
     return TRACK_DEFS;
+  }
+
+  /** קיבוע זכויות (סעיף 9א / טופס 161ד) — סימולציית ניצול ההון הפטור */
+  @Post('rights-fixation')
+  async rightsFixationCalc(
+    @Body() body: RightsFixationInput,
+  ): Promise<RightsFixationResult> {
+    try {
+      return await this.rightsFixation.calc(body);
+    } catch (e) {
+      throw new BadRequestException((e as Error).message);
+    }
   }
 
   @Post('retirement')

@@ -22,12 +22,13 @@ import {
   type ScenariosResult,
   type TrackDef,
 } from './api';
-import { aiAnalyze } from './api';
+import { aiAnalyze, getLastAiAnalysis, type RightsFixationResult } from './api';
 import { openReport } from './report';
 import { AuthScreen } from './AuthScreen';
 import { AiPanel } from './AiPanel';
 import { FanChart } from './FanChart';
 import { MoneyFlow } from './MoneyFlow';
+import { RightsFixation } from './RightsFixation';
 
 // ---------- מטא-דאטה לסוגי מוצרים ----------
 
@@ -273,6 +274,17 @@ const MARITAL_LABELS: Record<MaritalStatus, string> = {
 /** האם יש בן/בת זוג לצורך קצבת שאירים */
 const hasSpouse = (m?: MaritalStatus) => m === 'MARRIED' || m === 'COMMON_LAW';
 
+const aiMetaLabel = (provider: 'anthropic' | 'openai', model: string) =>
+  `${provider === 'anthropic' ? 'Claude' : 'ChatGPT'} · ${model}`;
+
+/** "2026-07-11T10:00:00Z" → "11/07 10:00" */
+function formatAiTimestamp(iso: string): string {
+  const d = new Date(iso);
+  const date = d.toLocaleDateString('he-IL', { day: '2-digit', month: '2-digit' });
+  const time = d.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' });
+  return `${date} ${time}`;
+}
+
 /** סוגי מוצרים עם כיסוי ביטוחי מובנה (שאירים+נכות) */
 const INSURED_PENSION_TYPES: ReadonlySet<ProductType> = new Set([
   'PENSION_COMPREHENSIVE',
@@ -318,11 +330,23 @@ function App() {
   const [aiBusy, setAiBusy] = useState(false);
   const [aiText, setAiText] = useState<string | null>(null);
   const [aiMeta, setAiMeta] = useState<string | null>(null);
+  const [aiAnalyzedAt, setAiAnalyzedAt] = useState<string | null>(null);
   const [aiError, setAiError] = useState<string | null>(null);
+  /** תוצאת סימולציית קיבוע הזכויות האחרונה — לניתוח ה-AI ולדוח */
+  const [fixation, setFixation] = useState<RightsFixationResult | null>(null);
 
   useEffect(() => {
     if (!user) return;
     getTracks().then(setTrackDefs).catch(() => {});
+    // הניתוח האחרון שנשמר — כדי לא לנתח מחדש בכל כניסה
+    getLastAiAnalysis()
+      .then((last) => {
+        if (!last) return;
+        setAiText(last.text);
+        setAiMeta(aiMetaLabel(last.provider, last.model));
+        setAiAnalyzedAt(last.analyzedAt);
+      })
+      .catch(() => {});
   }, [user]);
 
   // טעינת התיק השמור בכניסה
@@ -592,6 +616,19 @@ function App() {
             אזהרות_המערכת: scenarios.warnings,
           }
         : null,
+      קיבוע_זכויות: fixation
+        ? {
+            הון_פטור_מלא: fixation.exemptCapitalCeiling,
+            קיזוז_מענקי_עבר: fixation.grantOffset,
+            יתרה_פטורה: fixation.remainingExemptCapital,
+            תרחישים: fixation.scenarios.map((s) => ({
+              תרחיש: s.label,
+              היוון_פטור: s.lumpSum,
+              פטור_חודשי: s.monthlyExemption,
+              קצבה_חייבת: s.taxableMonthlyPension,
+            })),
+          }
+        : null,
     };
   }
 
@@ -601,7 +638,8 @@ function App() {
     try {
       const r = await aiAnalyze(buildAiContext());
       setAiText(r.text);
-      setAiMeta(`${r.provider === 'anthropic' ? 'Claude' : 'ChatGPT'} · ${r.model}`);
+      setAiMeta(aiMetaLabel(r.provider, r.model));
+      setAiAnalyzedAt(new Date().toISOString());
     } catch (e) {
       if (e instanceof UnauthorizedError) return logout();
       setAiError((e as Error).message);
@@ -925,6 +963,7 @@ function App() {
                   result,
                   scenarios,
                   retirement,
+                  fixation,
                   aiText,
                   aiMeta,
                   typeLabel: (t) => TYPE_META[t].label,
@@ -1177,6 +1216,16 @@ function App() {
         </section>
       )}
 
+      {result && retirement && (
+        <RightsFixation
+          key={retirement.retirementDate}
+          defaultYear={Number(retirement.retirementDate.slice(0, 4))}
+          defaultMonthlyPension={result.totals.central.totalMonthlyAnnuity}
+          onUnauthorized={logout}
+          onResult={setFixation}
+        />
+      )}
+
       {result && (
         <section className="results ai-section">
           <div className="whatif-head">
@@ -1198,7 +1247,13 @@ function App() {
           {aiError && <div className="error">{aiError}</div>}
           {aiText && (
             <div className="card ai-result">
-              {aiMeta && <div className="ai-meta">{aiMeta}</div>}
+              {(aiMeta || aiAnalyzedAt) && (
+                <div className="ai-meta">
+                  {aiMeta}
+                  {aiMeta && aiAnalyzedAt && ' · '}
+                  {aiAnalyzedAt && `נשמר מ-${formatAiTimestamp(aiAnalyzedAt)}`}
+                </div>
+              )}
               <AiMarkdown text={aiText} />
             </div>
           )}

@@ -3,6 +3,7 @@ import type {
   PortfolioProductInput,
   PortfolioResult,
   RetirementResult,
+  RightsFixationResult,
   ScenariosResult,
 } from './api';
 
@@ -18,6 +19,7 @@ interface ReportData {
   result: PortfolioResult;
   scenarios: ScenariosResult | null;
   retirement: RetirementResult | null;
+  fixation: RightsFixationResult | null;
   aiText: string | null;
   aiMeta: string | null;
   typeLabel: (t: PortfolioProductInput['type']) => string;
@@ -131,6 +133,31 @@ export function openReport(d: ReportData): void {
     }`
     : '';
 
+  const fixationBlock = d.fixation
+    ? `
+    <h2>קיבוע זכויות (סעיף 9א / טופס 161ד) — סימולציה</h2>
+    <div class="cards" style="grid-template-columns: repeat(3, 1fr)">
+      <div class="stat"><div class="v">${nis(d.fixation.exemptCapitalCeiling)}</div><div class="l">ההון הפטור המלא (${d.fixation.params.exemptionPct}%)</div></div>
+      <div class="stat"><div class="v">${d.fixation.grantOffset > 0 ? '−' + nis(d.fixation.grantOffset) : nis(0)}</div><div class="l">קיזוז מענקי עבר</div></div>
+      <div class="stat hero"><div class="v">${nis(d.fixation.remainingExemptCapital)}</div><div class="l">היתרה הפטורה לניצול</div></div>
+    </div>
+    <table>
+      <thead><tr><th>תרחיש</th><th>היוון פטור</th><th>פטור חודשי</th><th>קצבה חייבת</th><th>חיסכון מס מוערך</th></tr></thead>
+      <tbody>${d.fixation.scenarios
+        .map(
+          (s) => `<tr>
+        <td class="strong">${esc(s.label)}</td>
+        <td class="num">${nis(s.lumpSum)}</td>
+        <td class="num">${nis(s.monthlyExemption)}</td>
+        <td class="num">${nis(s.taxableMonthlyPension)}</td>
+        <td class="num">${s.estMonthlyTaxSaved !== null ? nis(s.estMonthlyTaxSaved) + ' לחודש' : '—'}</td>
+      </tr>`,
+        )
+        .join('')}</tbody>
+    </table>
+    <p class="disclaimer">קיבוע זכויות הוא בחירה חד-פעמית וכמעט בלתי-הפיכה — הסימולציה להמחשה בלבד וחובה להתייעץ עם יועץ מס מוסמך לפני הגשת טופס 161ד.</p>`
+    : '';
+
   const aiBlock = d.aiText
     ? `
     <h2>ניתוח והמלצות AI ${d.aiMeta ? `<span class="ai-src">(${esc(d.aiMeta)})</span>` : ''}</h2>
@@ -231,6 +258,7 @@ export function openReport(d: ReportData): void {
 
   ${transfersBlock}
   ${scenariosBlock}
+  ${fixationBlock}
   ${aiBlock}
 
   <div class="foot">
