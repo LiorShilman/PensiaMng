@@ -218,6 +218,12 @@ export interface PortfolioInput {
   annualReturnPct: number;
   /** שכר חודשי — לחישוב שיעור תחלופה */
   insuredMonthlySalary?: number;
+  /** קצבת אזרח ותיק מביטוח לאומי — נכללת בקצבה ובשיעור התחלופה */
+  nationalInsurance?: {
+    include: boolean;
+    insuranceYears: number;
+    spouseSupplementEligible?: boolean;
+  };
   products: PortfolioProductInput[];
 }
 
@@ -240,6 +246,8 @@ export interface PortfolioScenarioTotals {
   totalBalance: number;
   series: SeriesPoint[];
   totalMonthlyAnnuity: number;
+  /** קצבת אזרח ותיק מביטוח לאומי (0 כשלא נכללה) */
+  niOldAgeMonthly: number;
   totalLumpSum: number;
   totalFeesPaid: number;
   /** קצבה ÷ שכר בפרישה, באחוזים; null אם לא נמסר שכר */
@@ -351,6 +359,8 @@ export interface ScenariosInput {
   asOf?: string;
   /** מצב "אחרי פרישה" — כללי שלב הקצבה */
   retirementPhase?: { monthsSinceRetirement: number };
+  /** שילוב קצבאות ביטוח לאומי בתרחישים */
+  nationalInsurance?: { include: boolean; spouseAge?: number };
   products: {
     id: string;
     name: string;
@@ -394,6 +404,8 @@ export interface ScenariosResult {
   death: {
     eligibleChildren: number;
     totalSurvivorMonthly: number;
+    /** קצבת שאירים מביטוח לאומי (0 כשלא נכלל) */
+    niSurvivorsMonthly: number;
     totalLumpSum: number;
     targetMonthly: number;
     gapMonthly: number;
@@ -403,6 +415,10 @@ export interface ScenariosResult {
     totalDisabilityMonthly: number;
     uncappedTotalMonthly: number;
     excessMonthly: number;
+    /** קצבת נכות כללית מביטוח לאומי (0 כשלא נכלל) */
+    niDisabilityMonthly: number;
+    /** הפחתת הקרן בגין קיזוז ביטוח לאומי */
+    niOffsetReduction: number;
     targetMonthly: number;
     gapMonthly: number;
     products: DisabilityProductOutcome[];
@@ -413,6 +429,55 @@ export interface ScenariosResult {
 
 export function calcScenarios(input: ScenariosInput): Promise<ScenariosResult> {
   return post<ScenariosResult>('/calc/scenarios', input);
+}
+
+// ---------- ציון בריאות פנסיוני (מפרט 7.1) ----------
+
+export interface HealthScoreProductInput {
+  type: ProductType;
+  frozen?: boolean;
+  currentBalance: number;
+  feeFromBalancePct: number;
+  feeFromDepositPct: number;
+  hasBeneficiaries: boolean;
+  equityPct?: number;
+  ageDependentTrack?: boolean;
+}
+
+export interface HealthScoreInput {
+  age: number;
+  replacementRatePct: number | null;
+  deathCoverageRatio: number | null;
+  disabilityCoverageRatio: number | null;
+  products: HealthScoreProductInput[];
+}
+
+export interface HealthComponent {
+  key:
+    | 'replacement'
+    | 'fees'
+    | 'death_coverage'
+    | 'disability_coverage'
+    | 'track_fit'
+    | 'hygiene';
+  label: string;
+  score: number;
+  max: number;
+  detail: string;
+  recommendation?: string;
+}
+
+export interface HealthScoreResult {
+  total: number;
+  grade: 'excellent' | 'good' | 'fair' | 'poor';
+  gradeLabel: string;
+  components: HealthComponent[];
+  topRecommendations: string[];
+  trace: CalcTrace;
+}
+
+export function calcHealthScore(input: HealthScoreInput): Promise<HealthScoreResult> {
+  return post<HealthScoreResult>('/calc/health-score', input);
 }
 
 // ---------- קיבוע זכויות (סעיף 9א / טופס 161ד) ----------

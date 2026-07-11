@@ -1,4 +1,5 @@
 import type { CalcTrace, ProductType } from './types';
+import { calcNiDisability, calcNiSurvivors } from './national-insurance';
 
 /**
  * תרחישי "מה אם" — מוות ואובדן כושר עבודה (מפרט פרק 5).
@@ -69,6 +70,8 @@ export interface ScenariosInput {
    * הכללים שונים לגמרי — קצבת שאיר כאחוז מהקצבה + הבטחת תשלומים.
    */
   retirementPhase?: { monthsSinceRetirement: number };
+  /** שילוב קצבאות ביטוח לאומי בתרחישים (שאירים + נכות) */
+  nationalInsurance?: { include: boolean; spouseAge?: number };
 }
 
 export interface DeathProductOutcome {
@@ -100,19 +103,25 @@ export interface ScenariosResult {
   death: {
     eligibleChildren: number;
     totalSurvivorMonthly: number;
+    /** קצבת שאירים מביטוח לאומי (0 כשלא נכלל) */
+    niSurvivorsMonthly: number;
     totalLumpSum: number;
     targetMonthly: number;
-    /** פער חודשי מול היעד (0 = אין פער) */
+    /** פער חודשי מול היעד (0 = אין פער) — כולל ביטוח לאומי */
     gapMonthly: number;
     products: DeathProductOutcome[];
   };
   disability: {
-    /** קצבת הנכות בפועל — מוגבלת ל-75% מהשכר המבוטח הכולל */
+    /** קצבת הנכות מהקרנות בפועל — אחרי תקרת 75% וקיזוז ביטוח לאומי */
     totalDisabilityMonthly: number;
     /** סך הכיסויים לפני הקיטום — להצגת כיסוי עודף */
     uncappedTotalMonthly: number;
     /** כיסוי עודף שמשולם עליו אך לא ניתן לממשו (0 = אין) */
     excessMonthly: number;
+    /** קצבת נכות כללית מביטוח לאומי (0 כשלא נכלל) */
+    niDisabilityMonthly: number;
+    /** הפחתת הקרן בגין קיזוז ביטוח לאומי (0 = אין / מטריה מבטלת) */
+    niOffsetReduction: number;
     targetMonthly: number;
     gapMonthly: number;
     products: DisabilityProductOutcome[];
@@ -329,11 +338,49 @@ export function calcScenarios(input: ScenariosInput): ScenariosResult {
     input.insuredMonthlySalary > 0
       ? round2(input.insuredMonthlySalary * 0.75)
       : null;
-  const totalDisabilityMonthly =
+  const cappedFundMonthly =
     disabilityCap !== null
       ? Math.min(uncappedTotalMonthly, disabilityCap)
       : uncappedTotalMonthly;
-  const excessMonthly = round2(uncappedTotalMonthly - totalDisabilityMonthly);
+  const excessMonthly = round2(uncappedTotalMonthly - cappedFundMonthly);
+
+  // ---------- ביטוח לאומי ----------
+  const includeNi = input.nationalInsurance?.include === true;
+  const childrenAges = input.family.childrenBirthDates.map((b) =>
+    ageInYears(new Date(b), asOf),
+  );
+
+  const niSurvivorsMonthly =
+    includeNi && hasSurvivors
+      ? calcNiSurvivors({
+          hasSpouse: input.family.hasSpouse,
+          spouseAge: input.nationalInsurance?.spouseAge,
+          childrenAges,
+        }).monthly
+      : 0;
+
+  const niDisabilityMonthly = includeNi ? calcNiDisability().monthly : 0;
+
+  // קיזוז: כשקצבת הקרן + ביטוח לאומי עולים על השכר, הקרן מפחיתה —
+  // אלא אם הכיסוי מגיע ממוצר עם מטריה ביטוחית (ביטול קיזוז)
+  let niOffsetReduction = 0;
+  if (includeNi && input.insuredMonthlySalary > 0) {
+    const combined = cappedFundMonthly + niDisabilityMonthly;
+    if (combined > input.insuredMonthlySalary) {
+      const offsetNeeded = round2(combined - input.insuredMonthlySalary);
+      const protectedByUmbrella = round2(
+        input.products
+          .filter((p) => p.umbrella)
+          .reduce((s, p) => {
+            const out = disabilityProducts.find((d) => d.id === p.id);
+            return s + (out?.disabilityMonthly ?? 0);
+          }, 0),
+      );
+      const reducible = Math.max(0, cappedFundMonthly - protectedByUmbrella);
+      niOffsetReduction = round2(Math.min(offsetNeeded, reducible));
+    }
+  }
+  const totalDisabilityMonthly = round2(cappedFundMonthly - niOffsetReduction);
 
   // ---------- אזהרות ----------
   if (input.insuredMonthlySalary === 0) {
@@ -374,21 +421,39 @@ export function calcScenarios(input: ScenariosInput): ScenariosResult {
     );
   }
 
+  if (niOffsetReduction > 0) {
+    warnings.push(
+      `קיזוז ביטוח לאומי בנכות: הקרן מפחיתה ${niOffsetReduction.toLocaleString('he-IL')} ₪/חודש כי הסך עולה על השכר המבוטח — מטריה ביטוחית (ביטול קיזוז) הייתה מונעת זאת`,
+    );
+  }
+  if (includeNi) {
+    warnings.push(
+      'קצבאות ביטוח לאומי מחושבות לפי ערכי 2025 בהנחות מפושטות (ללא מבחני הכנסה ותוספות תלויים) — לאימות מול ביטוח לאומי',
+    );
+  }
+
   return {
     death: {
       eligibleChildren,
       totalSurvivorMonthly,
+      niSurvivorsMonthly,
       totalLumpSum,
       targetMonthly,
-      gapMonthly: round2(Math.max(0, targetMonthly - totalSurvivorMonthly)),
+      gapMonthly: round2(
+        Math.max(0, targetMonthly - totalSurvivorMonthly - niSurvivorsMonthly),
+      ),
       products: deathProducts,
     },
     disability: {
       totalDisabilityMonthly,
       uncappedTotalMonthly,
       excessMonthly,
+      niDisabilityMonthly,
+      niOffsetReduction,
       targetMonthly,
-      gapMonthly: round2(Math.max(0, targetMonthly - totalDisabilityMonthly)),
+      gapMonthly: round2(
+        Math.max(0, targetMonthly - totalDisabilityMonthly - niDisabilityMonthly),
+      ),
       products: disabilityProducts,
     },
     warnings,
@@ -532,6 +597,7 @@ function calcRetirementPhase(
     death: {
       eligibleChildren,
       totalSurvivorMonthly,
+      niSurvivorsMonthly: 0,
       totalLumpSum,
       targetMonthly,
       gapMonthly: round2(Math.max(0, targetMonthly - totalSurvivorMonthly)),
@@ -541,6 +607,8 @@ function calcRetirementPhase(
       totalDisabilityMonthly: 0,
       uncappedTotalMonthly: 0,
       excessMonthly: 0,
+      niDisabilityMonthly: 0,
+      niOffsetReduction: 0,
       targetMonthly: 0,
       gapMonthly: 0,
       products: input.products.map((p) => ({
@@ -564,6 +632,7 @@ function calcRetirementPhase(
         'שלב הפרישה: קצבת שאיר לבן/בת זוג היא אחוז מהקצבה לפי מסלול הקצבה (ברירת מחדל 60%)',
         'ללא בן/בת זוג: יתרת התשלומים המובטחים (ברירת מחדל 240) משולמת למוטבים',
         'מוצרים הוניים: ההון בפרישה למוטבים, בהנחה שטרם נמשך',
+        'קצבת שאירים מביטוח לאומי לאחר פרישה — בשלב הבא',
         'משיכה הדרגתית של הון בפנסיה (decumulation) — בשלב הבא',
       ],
     },

@@ -13,6 +13,8 @@ import type {
   RightsFixationInput,
   RightsFixationResult,
 } from './rights-fixation';
+import { calcHealthScore } from './health-score';
+import type { HealthScoreInput, HealthScoreResult } from './health-score';
 import type {
   AnnuityInput,
   AnnuityResult,
@@ -84,6 +86,16 @@ export class CalcEngineController {
   annuity(@Body() body: AnnuityInput): AnnuityResult {
     try {
       return annuityFromBalance(body);
+    } catch (e) {
+      throw new BadRequestException((e as Error).message);
+    }
+  }
+
+  /** ציון בריאות פנסיוני 0–100 (מפרט 7.1) */
+  @Post('health-score')
+  healthScore(@Body() body: HealthScoreInput): HealthScoreResult {
+    try {
+      return calcHealthScore(body);
     } catch (e) {
       throw new BadRequestException((e as Error).message);
     }

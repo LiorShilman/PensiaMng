@@ -105,6 +105,14 @@ export interface PortfolioInput {
   annualReturnPct: number;
   /** שכר חודשי נוכחי — לחישוב שיעור תחלופה (אופציונלי) */
   insuredMonthlySalary?: number;
+  /** קצבת אזרח ותיק מביטוח לאומי — נכללת בקצבה הכוללת ובשיעור התחלופה */
+  nationalInsurance?: {
+    include: boolean;
+    /** שנות ביטוח — קובעות את תוספת הוותק (2% לשנה, עד 50%) */
+    insuranceYears: number;
+    /** בן/בת זוג שאינו/ה מקבל/ת קצבה בעצמו/ה */
+    spouseSupplementEligible?: boolean;
+  };
   products: PortfolioProductInput[];
 }
 
@@ -135,6 +143,8 @@ export interface PortfolioScenarioTotals {
   series: SeriesPoint[];
   /** סך קצבה חודשית — מוצרים קצבתיים בלבד */
   totalMonthlyAnnuity: number;
+  /** קצבת אזרח ותיק מביטוח לאומי (0 כשלא נכללה) */
+  niOldAgeMonthly: number;
   /** הון נזיל חד-פעמי — מוצרים הוניים (השתלמות, גמל להשקעה, IRA) */
   totalLumpSum: number;
   /** סך דמי ניהול ששולמו לאורך התקופה */

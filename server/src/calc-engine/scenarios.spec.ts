@@ -438,3 +438,84 @@ describe('calcScenarios — warnings & validation', () => {
     expect(r.trace.inputs.eligibleChildren).toBe(2);
   });
 });
+
+describe('calcScenarios — ביטוח לאומי בתרחישים', () => {
+  it('כבוי כברירת מחדל: שדות ה-NI אפס והסכומים ללא שינוי', () => {
+    const r = calcScenarios(base());
+    expect(r.death.niSurvivorsMonthly).toBe(0);
+    expect(r.disability.niDisabilityMonthly).toBe(0);
+    expect(r.disability.niOffsetReduction).toBe(0);
+  });
+
+  it('מוות עם NI: אלמנה + 2 ילדים מתחת ל-18 → 1,795 + 2×902', () => {
+    const r = calcScenarios(
+      base({ nationalInsurance: { include: true, spouseAge: 45 } }),
+    );
+    // ילדים ילידי 2015/2018 → מתחת ל-18 ב-2026; אלמנה צעירה עם ילדים → קצבה מלאה
+    expect(r.death.niSurvivorsMonthly).toBe(3599);
+    // הפער קטן בהתאם
+    const rOff = calcScenarios(base());
+    expect(r.death.gapMonthly).toBeLessThanOrEqual(rOff.death.gapMonthly);
+  });
+
+  it('נכות עם NI ללא חריגה מהשכר: אין קיזוז', () => {
+    // קרן 75% × 20,000 = 15,000 ; NI 4,291 ; סה"כ 19,291 < 20,000
+    const r = calcScenarios(
+      base({ nationalInsurance: { include: true } }),
+    );
+    expect(r.disability.niDisabilityMonthly).toBe(4291);
+    expect(r.disability.niOffsetReduction).toBe(0);
+    expect(r.disability.totalDisabilityMonthly).toBe(15_000);
+  });
+
+  it('נכות עם NI וחריגה מהשכר: הקרן מקזזת את העודף', () => {
+    // שכר 10,000: קרן 7,500 + NI 4,291 = 11,791 → קיזוז 1,791
+    const r = calcScenarios(
+      base({
+        insuredMonthlySalary: 10_000,
+        nationalInsurance: { include: true },
+      }),
+    );
+    expect(r.disability.niOffsetReduction).toBe(1791);
+    expect(r.disability.totalDisabilityMonthly).toBe(5709);
+    expect(r.warnings.some((w) => w.includes('קיזוז ביטוח לאומי'))).toBe(true);
+  });
+
+  it('מטריה ביטוחית מגינה מפני הקיזוז', () => {
+    // פוליסת אכ"ע פרטית עם מטריה על מחצית השכר + קרן על המחצית השנייה
+    const fund: ScenarioProductInput = {
+      ...pension,
+      insuredMonthlySalary: 5_000,
+    };
+    const policy: ScenarioProductInput = {
+      id: 'p8',
+      name: 'אכ"ע פרטי',
+      type: 'DISABILITY_INSURANCE',
+      currentBalance: 0,
+      insuredMonthlySalary: 5_000,
+      umbrella: true,
+    };
+    const r = calcScenarios(
+      base({
+        insuredMonthlySalary: 10_000,
+        products: [fund, policy],
+        nationalInsurance: { include: true },
+      }),
+    );
+    // קרן 3,750 + פוליסה 3,750 = 7,500 ; NI 4,291 → עודף 1,791
+    // מוגן במטריה: 3,750 → ניתן לקזז רק מהקרן (3,750)
+    expect(r.disability.niOffsetReduction).toBe(1791);
+    expect(r.disability.totalDisabilityMonthly).toBe(5709);
+  });
+
+  it('יתום מעל 18 אינו נספר ב-NI אך נספר בקרן (עד 21)', () => {
+    const r = calcScenarios(
+      base({
+        family: { hasSpouse: false, childrenBirthDates: ['2007-06-15'] }, // גיל 19 ב-2026
+        nationalInsurance: { include: true },
+      }),
+    );
+    expect(r.death.eligibleChildren).toBe(1); // קרן: עד 21
+    expect(r.death.niSurvivorsMonthly).toBe(0); // NI: עד 18
+  });
+});

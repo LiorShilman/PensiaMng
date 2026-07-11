@@ -22,7 +22,13 @@ import {
   type ScenariosResult,
   type TrackDef,
 } from './api';
-import { aiAnalyze, getLastAiAnalysis, type RightsFixationResult } from './api';
+import {
+  aiAnalyze,
+  getLastAiAnalysis,
+  calcHealthScore,
+  type RightsFixationResult,
+  type HealthScoreResult,
+} from './api';
 import { openReport } from './report';
 import { AuthScreen } from './AuthScreen';
 import { AiPanel } from './AiPanel';
@@ -334,6 +340,11 @@ function App() {
   const [aiError, setAiError] = useState<string | null>(null);
   /** תוצאת סימולציית קיבוע הזכויות האחרונה — לניתוח ה-AI ולדוח */
   const [fixation, setFixation] = useState<RightsFixationResult | null>(null);
+  /** ביטוח לאומי: הכללה בחישובים + שנות ביטוח (ריק = אומדן אוטומטי) */
+  const [niInclude, setNiInclude] = useState(true);
+  const [niYears, setNiYears] = useState<number | ''>('');
+  /** ציון הבריאות הפנסיוני */
+  const [health, setHealth] = useState<HealthScoreResult | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -441,6 +452,18 @@ function App() {
     ? Math.floor(retirement.monthsToRetirement / 12)
     : 0;
 
+  /** אומדן שנות ביטוח לתוספת הוותק: מגיל 22 עד הפרישה (עקיפה ידנית אפשרית) */
+  function niYearsEffective(): number {
+    if (niYears !== '') return niYears;
+    if (retirement) {
+      return Math.min(
+        50,
+        Math.max(0, Math.round(retirement.effectiveRetirementAgeMonths / 12 - 22)),
+      );
+    }
+    return 40;
+  }
+
   /** בניית קלט תרחישי הביטוח — לפני הפרישה או אחריה */
   function scenariosInputFor(offsetYears: number, fromResult?: PortfolioResult | null) {
     const asOfDate = new Date();
@@ -455,6 +478,7 @@ function App() {
       },
       insuredMonthlySalary: profile.insuredMonthlySalary ?? 0,
       asOf: asOfDate.toISOString().slice(0, 10),
+      ...(niInclude ? { nationalInsurance: { include: true } } : {}),
       ...(afterRetirement && retirement
         ? {
             retirementPhase: {
@@ -514,6 +538,54 @@ function App() {
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [eventOffsetYears]);
+
+  // ציון הבריאות — מחושב מחדש כשמשתנות התחזית או תרחישי הביטוח
+  useEffect(() => {
+    if (!result || !scenarios) {
+      setHealth(null);
+      return;
+    }
+    const age = Math.floor(
+      (Date.now() - new Date(profile.birthDate).getTime()) / (365.25 * 24 * 3600 * 1000),
+    );
+    const target = scenarios.death.targetMonthly;
+    calcHealthScore({
+      age,
+      replacementRatePct: result.totals.central.replacementRatePct,
+      deathCoverageRatio:
+        target > 0
+          ? (scenarios.death.totalSurvivorMonthly + scenarios.death.niSurvivorsMonthly) /
+            target
+          : null,
+      disabilityCoverageRatio:
+        target > 0
+          ? (scenarios.disability.totalDisabilityMonthly +
+              scenarios.disability.niDisabilityMonthly) /
+            target
+          : null,
+      products: products.map((p) => ({
+        type: p.type,
+        frozen: p.frozen,
+        currentBalance: p.currentBalance,
+        feeFromBalancePct: p.feeFromBalancePct,
+        feeFromDepositPct: p.feeFromDepositPct,
+        hasBeneficiaries: (p.beneficiaries ?? []).length > 0,
+        ...(p.tracks && p.tracks.length > 0
+          ? {
+              equityPct: p.tracks
+                .filter((t) => t.category === 'EQUITY' || t.category === 'SP500')
+                .reduce((s, t) => s + t.pct, 0),
+              ageDependentTrack: p.tracks.some(
+                (t) => t.category === 'AGE_DEPENDENT' && t.pct > 0,
+              ),
+            }
+          : {}),
+      })),
+    })
+      .then(setHealth)
+      .catch(() => setHealth(null));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [result, scenarios]);
 
   /** בניית הקשר אנונימי לניתוח AI — בלי שם, אימייל או ת"ז; ילדים כגילאים בלבד */
   function buildAiContext() {
@@ -588,9 +660,11 @@ function App() {
             מרכזי: {
               סך_צבירה: result.totals.central.totalBalance,
               קצבה_חודשית: result.totals.central.totalMonthlyAnnuity,
+              קצבת_אזרח_ותיק_ביטוח_לאומי: result.totals.central.niOldAgeMonthly,
               הון_נזיל: result.totals.central.totalLumpSum,
               סך_דמי_ניהול: result.totals.central.totalFeesPaid,
-              שיעור_תחלופה_אחוז: result.totals.central.replacementRatePct,
+              שיעור_תחלופה_אחוז_כולל_ביטוח_לאומי:
+                result.totals.central.replacementRatePct,
             },
             פסימי_סך_צבירה: result.totals.pessimistic.totalBalance,
             אופטימי_סך_צבירה: result.totals.optimistic.totalBalance,
@@ -603,17 +677,31 @@ function App() {
       תרחישי_ביטוח_מצב_היום: scenarios
         ? {
             מוות: {
-              קצבת_שאירים_חודשית: scenarios.death.totalSurvivorMonthly,
+              קצבת_שאירים_חודשית_מהקרנות: scenarios.death.totalSurvivorMonthly,
+              קצבת_שאירים_ביטוח_לאומי: scenarios.death.niSurvivorsMonthly,
               סכומים_חד_פעמיים: scenarios.death.totalLumpSum,
               יעד_חודשי: scenarios.death.targetMonthly,
               פער: scenarios.death.gapMonthly,
             },
             נכות: {
-              קצבה_חודשית_בפועל: scenarios.disability.totalDisabilityMonthly,
+              קצבה_חודשית_מהקרנות: scenarios.disability.totalDisabilityMonthly,
+              קצבת_נכות_ביטוח_לאומי: scenarios.disability.niDisabilityMonthly,
+              קיזוז_ביטוח_לאומי_בקרן: scenarios.disability.niOffsetReduction,
               כיסוי_עודף_שלא_ניתן_לממש: scenarios.disability.excessMonthly,
               פער: scenarios.disability.gapMonthly,
             },
             אזהרות_המערכת: scenarios.warnings,
+          }
+        : null,
+      ציון_בריאות_פנסיוני: health
+        ? {
+            ציון: health.total,
+            דירוג: health.gradeLabel,
+            רכיבים: health.components.map((c) => ({
+              רכיב: c.label,
+              ניקוד: `${c.score}/${c.max}`,
+              פירוט: c.detail,
+            })),
           }
         : null,
       קיבוע_זכויות: fixation
@@ -666,6 +754,15 @@ function App() {
           annualReturnPct: assumptions.annualReturnPct,
           annualSalaryGrowthPct: assumptions.annualSalaryGrowthPct,
           insuredMonthlySalary: profile.insuredMonthlySalary,
+          ...(niInclude
+            ? {
+                nationalInsurance: {
+                  include: true,
+                  insuranceYears: niYearsEffective(),
+                  spouseSupplementEligible: hasSpouse(profile.maritalStatus),
+                },
+              }
+            : {}),
           // מוצרי ביטוח טהורים לא נכללים בתחזית הצבירה; trackAllocations = tracks
           products: products
             .filter((p) => !TYPE_META[p.type].insuranceOnly)
@@ -819,7 +916,47 @@ function App() {
             onChange={(v) => setProfile((p) => ({ ...p, insuredMonthlySalary: v }))}
             tooltip="השכר שממנו מחושבות קצבאות שאירים ונכות, ובסיס יעד ההכנסה למשפחה. משמש כברירת מחדל לכל הקרנות; אם לקרן מסוימת שכר קובע שונה — הזן אותו בכרטיס הקרן והוא יגבר. איפה למצוא: תלוש השכר או 'שכר קובע' בדוח השנתי."
           />
+          <label className="field">
+            <span className="field-label">
+              שנות ביטוח (ביטוח לאומי)
+              <span
+                className="tip"
+                data-tip="שנות עבודה/תושבות מבוטחת — קובעות את תוספת הוותק בקצבת אזרח ותיק (2% לשנה, עד 50%). ריק = אומדן אוטומטי מגיל 22 עד הפרישה."
+                tabIndex={0}
+              >
+                ⓘ
+              </span>
+            </span>
+            <input
+              type="number"
+              min={0}
+              max={60}
+              placeholder={retirement ? String(niYearsEffective()) : 'אוטומטי'}
+              value={niYears}
+              onChange={(e) =>
+                setNiYears(e.target.value === '' ? '' : Number(e.target.value))
+              }
+            />
+          </label>
         </div>
+
+        <label className="waiver-row ni-row">
+          <input
+            type="checkbox"
+            checked={niInclude}
+            onChange={(e) => setNiInclude(e.target.checked)}
+          />
+          <span>
+            כלול קצבאות ביטוח לאומי (אזרח ותיק, שאירים, נכות)
+            <span
+              className="tip"
+              data-tip="ביטוח לאומי הוא הרגל השלישית של הפנסיה: קצבת אזרח ותיק בפרישה, קצבת שאירים במקרה מוות וקצבת נכות כללית באובדן כושר. הערכים לפי 2025 בהנחות מפושטות — מומלץ להשאיר פעיל לתמונה מלאה."
+              tabIndex={0}
+            >
+              ⓘ
+            </span>
+          </span>
+        </label>
 
         <div className="children-row">
           <span className="children-label">
@@ -964,6 +1101,7 @@ function App() {
                   scenarios,
                   retirement,
                   fixation,
+                  health,
                   aiText,
                   aiMeta,
                   typeLabel: (t) => TYPE_META[t].label,
@@ -989,6 +1127,8 @@ function App() {
             </div>
           )}
           <h2 className="results-title">תחזית לפרישה — התיק המלא</h2>
+
+          {health && <HealthScoreCard h={health} />}
 
           <div className="totals-grid">
             {(['pessimistic', 'central', 'optimistic'] as ScenarioKey[]).map((key) => (
@@ -1142,16 +1282,32 @@ function App() {
               <h3 className="card-title">חלילה — מקרה מוות</h3>
               <div className="scenario-totals">
                 <div className="scenario-stat">
-                  <div className="stat-value">{nis(scenarios.death.totalSurvivorMonthly)}</div>
+                  <div className="stat-value">
+                    {nis(
+                      scenarios.death.totalSurvivorMonthly +
+                        scenarios.death.niSurvivorsMonthly,
+                    )}
+                  </div>
                   <div className="stat-label">קצבת שאירים חודשית למשפחה</div>
                 </div>
+                {scenarios.death.niSurvivorsMonthly > 0 && (
+                  <div className="scenario-stat">
+                    <div className="stat-value ni">
+                      {nis(scenarios.death.niSurvivorsMonthly)}
+                    </div>
+                    <div className="stat-label">מזה ביטוח לאומי (שאירים)</div>
+                  </div>
+                )}
                 <div className="scenario-stat">
                   <div className="stat-value">{nis(scenarios.death.totalLumpSum)}</div>
                   <div className="stat-label">סכומים חד-פעמיים למוטבים</div>
                 </div>
               </div>
               <GapBar
-                actual={scenarios.death.totalSurvivorMonthly}
+                actual={
+                  scenarios.death.totalSurvivorMonthly +
+                  scenarios.death.niSurvivorsMonthly
+                }
                 target={scenarios.death.targetMonthly}
                 gap={scenarios.death.gapMonthly}
               />
@@ -1171,12 +1327,29 @@ function App() {
               <h3 className="card-title">אובדן כושר עבודה (נכות)</h3>
               <div className="scenario-totals">
                 <div className="scenario-stat">
-                  <div className="stat-value">{nis(scenarios.disability.totalDisabilityMonthly)}</div>
+                  <div className="stat-value">
+                    {nis(
+                      scenarios.disability.totalDisabilityMonthly +
+                        scenarios.disability.niDisabilityMonthly,
+                    )}
+                  </div>
                   <div className="stat-label">
                     קצבת נכות חודשית
                     {scenarios.disability.excessMonthly > 0 && ' (לאחר תקרת 75%)'}
                   </div>
                 </div>
+                {scenarios.disability.niDisabilityMonthly > 0 && (
+                  <div className="scenario-stat">
+                    <div className="stat-value ni">
+                      {nis(scenarios.disability.niDisabilityMonthly)}
+                    </div>
+                    <div className="stat-label">
+                      מזה ביטוח לאומי (נכות כללית)
+                      {scenarios.disability.niOffsetReduction > 0 &&
+                        ` · הקרן מקזזת ${nis(scenarios.disability.niOffsetReduction)}`}
+                    </div>
+                  </div>
+                )}
                 {scenarios.disability.excessMonthly > 0 && (
                   <div className="scenario-stat">
                     <div className="stat-value excess">
@@ -1187,7 +1360,10 @@ function App() {
                 )}
               </div>
               <GapBar
-                actual={scenarios.disability.totalDisabilityMonthly}
+                actual={
+                  scenarios.disability.totalDisabilityMonthly +
+                  scenarios.disability.niDisabilityMonthly
+                }
                 target={scenarios.disability.targetMonthly}
                 gap={scenarios.disability.gapMonthly}
               />
@@ -1849,6 +2025,77 @@ function ProductCard(props: {
   );
 }
 
+// ---------- ציון בריאות פנסיוני ----------
+
+function HealthScoreCard({ h }: { h: HealthScoreResult }) {
+  const [open, setOpen] = useState(false);
+  const angle = Math.round((h.total / 100) * 360);
+  return (
+    <div className={`card health-card ${h.grade}`}>
+      <div className="health-main">
+        <div
+          className="health-ring"
+          style={{
+            background: `conic-gradient(var(--ring-color) ${angle}deg, rgba(148,163,184,0.15) ${angle}deg)`,
+          }}
+          role="img"
+          aria-label={`ציון בריאות פנסיוני: ${h.total} מתוך 100`}
+        >
+          <div className="health-ring-inner">
+            <span className="health-total">{h.total}</span>
+            <span className="health-max">/100</span>
+          </div>
+        </div>
+        <div className="health-info">
+          <h3 className="health-title">
+            ציון בריאות פנסיוני: <span className="health-grade">{h.gradeLabel}</span>
+            <span
+              className="tip"
+              data-tip="ציון משוקלל (מפרט 7.1): שיעור תחלופה 35 נק', דמי ניהול 20, כיסוי שאירים 15, כיסוי אכ&quot;ע 15, התאמת מסלול לגיל 10, היגיינה 5. מחושב מהנתונים שהוזנו — לא ייעוץ."
+              tabIndex={0}
+            >
+              ⓘ
+            </span>
+          </h3>
+          {h.topRecommendations.length > 0 ? (
+            <ul className="health-recs">
+              {h.topRecommendations.slice(0, 3).map((r, i) => (
+                <li key={i}>{r}</li>
+              ))}
+            </ul>
+          ) : (
+            <p className="health-recs-none">כל המדדים תקינים — המשך לעקוב אחת לשנה</p>
+          )}
+          <button className="trace-toggle" onClick={() => setOpen(!open)}>
+            {open ? 'הסתר פירוט' : 'פירוט הרכיבים'}
+          </button>
+        </div>
+      </div>
+      {open && (
+        <div className="health-components">
+          {h.components.map((c) => (
+            <div key={c.key} className="health-comp">
+              <div className="health-comp-head">
+                <span>{c.label}</span>
+                <span className="health-comp-score">
+                  {c.score}/{c.max}
+                </span>
+              </div>
+              <div className="health-comp-bar">
+                <div
+                  className="health-comp-fill"
+                  style={{ width: `${Math.round((c.score / c.max) * 100)}%` }}
+                />
+              </div>
+              <div className="health-comp-detail">{c.detail}</div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ---------- כרטיס סיכום תרחיש ----------
 
 function replacementTone(pct: number): string {
@@ -1895,7 +2142,13 @@ function TotalsCard(props: {
       )}
       <dl>
         <dt>קצבה חודשית</dt>
-        <dd>{nis(props.t.totalMonthlyAnnuity)}</dd>
+        <dd>{nis(props.t.totalMonthlyAnnuity + props.t.niOldAgeMonthly)}</dd>
+        {props.t.niOldAgeMonthly > 0 && (
+          <>
+            <dt className="ni-sub">מזה אזרח ותיק (ביטוח לאומי)</dt>
+            <dd className="ni-sub">{nis(props.t.niOldAgeMonthly)}</dd>
+          </>
+        )}
         <dt>הון חד־פעמי נזיל</dt>
         <dd>{nis(props.t.totalLumpSum)}</dd>
         <dt>סך דמי ניהול</dt>

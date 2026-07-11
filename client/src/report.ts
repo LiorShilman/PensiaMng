@@ -1,5 +1,6 @@
 import type {
   ClientProfile,
+  HealthScoreResult,
   PortfolioProductInput,
   PortfolioResult,
   RetirementResult,
@@ -20,6 +21,7 @@ interface ReportData {
   scenarios: ScenariosResult | null;
   retirement: RetirementResult | null;
   fixation: RightsFixationResult | null;
+  health: HealthScoreResult | null;
   aiText: string | null;
   aiMeta: string | null;
   typeLabel: (t: PortfolioProductInput['type']) => string;
@@ -133,6 +135,30 @@ export function openReport(d: ReportData): void {
     }`
     : '';
 
+  const healthBlock = d.health
+    ? `
+    <h2>ציון בריאות פנסיוני: ${d.health.total}/100 — ${esc(d.health.gradeLabel)}</h2>
+    <table>
+      <thead><tr><th>רכיב</th><th>ניקוד</th><th>פירוט</th></tr></thead>
+      <tbody>${d.health.components
+        .map(
+          (c) => `<tr>
+        <td class="strong">${esc(c.label)}</td>
+        <td class="num">${c.score}/${c.max}</td>
+        <td>${esc(c.detail)}</td>
+      </tr>`,
+        )
+        .join('')}</tbody>
+    </table>
+    ${
+      d.health.topRecommendations.length
+        ? `<div class="warnings"><h4>המלצות לשיפור (לפי סדר השפעה)</h4><ul>${d.health.topRecommendations
+            .map((r) => `<li>${esc(r)}</li>`)
+            .join('')}</ul></div>`
+        : ''
+    }`
+    : '';
+
   const fixationBlock = d.fixation
     ? `
     <h2>קיבוע זכויות (סעיף 9א / טופס 161ד) — סימולציה</h2>
@@ -241,7 +267,7 @@ export function openReport(d: ReportData): void {
   <h2>תחזית לפרישה — תרחיש מרכזי</h2>
   <div class="cards">
     <div class="stat hero"><div class="v">${nis(c.totalBalance)}</div><div class="l">סך צבירה בפרישה</div></div>
-    <div class="stat"><div class="v">${nis(c.totalMonthlyAnnuity)}</div><div class="l">קצבה חודשית</div></div>
+    <div class="stat"><div class="v">${nis(c.totalMonthlyAnnuity + c.niOldAgeMonthly)}</div><div class="l">קצבה חודשית${c.niOldAgeMonthly > 0 ? ` (כולל אזרח ותיק ${nis(c.niOldAgeMonthly)})` : ''}</div></div>
     <div class="stat"><div class="v">${c.replacementRatePct !== null ? c.replacementRatePct + '%' : '—'}</div><div class="l">שיעור תחלופה (יעד: 70%+)</div></div>
     <div class="stat"><div class="v">${nis(c.totalLumpSum)}</div><div class="l">הון נזיל חד־פעמי</div></div>
   </div>
@@ -256,6 +282,7 @@ export function openReport(d: ReportData): void {
     <tbody>${productRows}</tbody>
   </table>
 
+  ${healthBlock}
   ${transfersBlock}
   ${scenariosBlock}
   ${fixationBlock}

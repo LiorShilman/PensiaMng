@@ -164,3 +164,47 @@ describe('calcPortfolio', () => {
     );
   });
 });
+
+describe('calcPortfolio — קצבת אזרח ותיק (ביטוח לאומי)', () => {
+  it('כבוי כברירת מחדל: niOldAgeMonthly = 0', () => {
+    const r = calcPortfolio(basePortfolio);
+    expect(r.totals.central.niOldAgeMonthly).toBe(0);
+  });
+
+  it('נכלל: 35 שנות ביטוח → 2,692.5 ₪, זהה בכל התרחישים', () => {
+    const r = calcPortfolio({
+      ...basePortfolio,
+      nationalInsurance: { include: true, insuranceYears: 35 },
+    });
+    expect(r.totals.central.niOldAgeMonthly).toBe(2692.5);
+    expect(r.totals.pessimistic.niOldAgeMonthly).toBe(2692.5);
+    expect(r.totals.optimistic.niOldAgeMonthly).toBe(2692.5);
+  });
+
+  it('שיעור התחלופה כולל את קצבת אזרח ותיק', () => {
+    const withSalary: PortfolioInput = {
+      ...basePortfolio,
+      insuredMonthlySalary: 20_000,
+    };
+    const without = calcPortfolio(withSalary);
+    const withNi = calcPortfolio({
+      ...withSalary,
+      nationalInsurance: { include: true, insuranceYears: 35 },
+    });
+    expect(withNi.totals.central.replacementRatePct!).toBeGreaterThan(
+      without.totals.central.replacementRatePct!,
+    );
+  });
+
+  it('תוספת בן/בת זוג נכללת', () => {
+    const r = calcPortfolio({
+      ...basePortfolio,
+      nationalInsurance: {
+        include: true,
+        insuranceYears: 35,
+        spouseSupplementEligible: true,
+      },
+    });
+    expect(r.totals.central.niOldAgeMonthly).toBe(3594.5);
+  });
+});

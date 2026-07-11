@@ -1,6 +1,7 @@
 import { projectBalance } from './projection';
 import { annuityFromBalance } from './annuity';
 import { weightedReturnPct } from './tracks';
+import { calcNiOldAge } from './national-insurance';
 import type {
   PortfolioInput,
   PortfolioProductInput,
@@ -53,10 +54,19 @@ export function calcPortfolio(input: PortfolioInput): PortfolioResult {
         Math.pow(1 + input.annualSalaryGrowthPct / 100, input.months / 12)
       : null;
 
+  // קצבת אזרח ותיק — זהה בכל שלושת התרחישים (אינה תלוית שוק)
+  const niOldAgeMonthly = input.nationalInsurance?.include
+    ? calcNiOldAge({
+        insuranceYears: input.nationalInsurance.insuranceYears,
+        spouseSupplementEligible:
+          input.nationalInsurance.spouseSupplementEligible ?? false,
+      }).monthly
+    : 0;
+
   const totals = {
-    pessimistic: aggregate(products, 'pessimistic', salaryAtRetirement),
-    central: aggregate(products, 'central', salaryAtRetirement),
-    optimistic: aggregate(products, 'optimistic', salaryAtRetirement),
+    pessimistic: aggregate(products, 'pessimistic', salaryAtRetirement, niOldAgeMonthly),
+    central: aggregate(products, 'central', salaryAtRetirement, niOldAgeMonthly),
+    optimistic: aggregate(products, 'optimistic', salaryAtRetirement, niOldAgeMonthly),
   };
 
   return {
@@ -135,6 +145,7 @@ function aggregate(
   products: PortfolioProductResult[],
   scenario: 'pessimistic' | 'central' | 'optimistic',
   salaryAtRetirement: number | null,
+  niOldAgeMonthly: number,
 ): PortfolioScenarioTotals {
   let totalBalance = 0;
   let totalMonthlyAnnuity = 0;
@@ -167,10 +178,13 @@ function aggregate(
     totalBalance: round2(totalBalance),
     series,
     totalMonthlyAnnuity: round2(totalMonthlyAnnuity),
+    niOldAgeMonthly: round2(niOldAgeMonthly),
     totalLumpSum: round2(totalLumpSum),
     totalFeesPaid: round2(totalFeesPaid),
+    // שיעור התחלופה כולל את קצבת אזרח ותיק — התמונה האמיתית של ההכנסה בפרישה
     replacementRatePct: salaryAtRetirement
-      ? Math.round((totalMonthlyAnnuity / salaryAtRetirement) * 1000) / 10
+      ? Math.round(((totalMonthlyAnnuity + niOldAgeMonthly) / salaryAtRetirement) * 1000) /
+        10
       : null,
   };
 }
