@@ -29,6 +29,8 @@ import {
   type RightsFixationResult,
   type HealthScoreResult,
   type TaxBenefitsResult,
+  type FixationFormInput,
+  type TaxFormInput,
 } from './api';
 import { openReport } from './report';
 import { AuthScreen } from './AuthScreen';
@@ -349,6 +351,9 @@ function App() {
   const [health, setHealth] = useState<HealthScoreResult | null>(null);
   /** תוצאת מחשבון הטבות המס האחרונה — לניתוח ה-AI */
   const [taxBenefits, setTaxBenefits] = useState<TaxBenefitsResult | null>(null);
+  /** קלטי הסימולטורים — נטענים ונשמרים עם התיק */
+  const [fixationForm, setFixationForm] = useState<FixationFormInput | null>(null);
+  const [taxForm, setTaxForm] = useState<TaxFormInput | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -375,6 +380,9 @@ function App() {
             annualSalaryGrowthPct: saved.assumptions.annualSalaryGrowthPct,
             plannedRetirementAge: saved.assumptions.plannedRetirementAge,
           });
+          // שחזור קלטי הסימולטורים שנשמרו עם התיק
+          setFixationForm(saved.assumptions.fixationInput ?? null);
+          setTaxForm(saved.assumptions.taxInput ?? null);
         }
         if (saved.profile) setProfile(saved.profile);
         // תמיד משקפים את מה ששמור — גם תיק ריק נשאר ריק
@@ -427,7 +435,15 @@ function App() {
     setSaveState('saving');
     setError(null);
     try {
-      const saved = await savePortfolio({ assumptions, profile, products });
+      const saved = await savePortfolio({
+        assumptions: {
+          ...assumptions,
+          fixationInput: fixationForm ?? undefined,
+          taxInput: taxForm ?? undefined,
+        },
+        profile,
+        products,
+      });
       // המוצרים חוזרים עם מזהי DB קבועים — מעדכנים כדי שהשמירה הבאה תהיה עקבית
       setProducts(saved.products);
       setSaveState('saved');
@@ -1412,6 +1428,8 @@ function App() {
           defaultMonthlyPension={result.totals.central.totalMonthlyAnnuity}
           onUnauthorized={logout}
           onResult={setFixation}
+          initial={fixationForm ?? undefined}
+          onInput={setFixationForm}
         />
       )}
 
@@ -1420,6 +1438,8 @@ function App() {
           defaultMonthlyIncome={profile.insuredMonthlySalary ?? 0}
           onUnauthorized={logout}
           onResult={setTaxBenefits}
+          initial={taxForm ?? undefined}
+          onInput={setTaxForm}
         />
       )}
 

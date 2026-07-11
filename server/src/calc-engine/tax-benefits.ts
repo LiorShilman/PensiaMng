@@ -50,6 +50,8 @@ export interface TaxBenefitsInput {
 }
 
 export interface TaxBenefitsResult {
+  /** הפרמטרים ששימשו בחישוב — להצגת ההסבר בממשק */
+  params: TaxParams;
   /** ההכנסה המזכה בפועל (אחרי התקרה), שנתי */
   qualifyingIncomeAnnual: number;
   /** תקרת ההפקדה שמזכה בהטבה, שנתי */
@@ -145,6 +147,7 @@ export function calcTaxBenefits(input: TaxBenefitsInput): TaxBenefitsResult {
   }
 
   return {
+    params: p,
     qualifyingIncomeAnnual,
     maxBenefitedDeposits,
     benefitedDeposits: round2(benefitedDeposits),

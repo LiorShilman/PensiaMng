@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   calcRightsFixation,
   UnauthorizedError,
+  type FixationFormInput,
   type PastGrant,
   type RightsFixationResult,
 } from './api';
@@ -19,17 +20,29 @@ interface Props {
   onUnauthorized: () => void;
   /** מדווח ל-App על תוצאה חדשה — לניתוח ה-AI ולדוח המודפס */
   onResult?: (r: RightsFixationResult) => void;
+  /** קלט שמור מהתיק — משחזר את הטופס אחרי התחברות מחדש */
+  initial?: FixationFormInput;
+  /** מדווח ל-App על שינוי קלט — נשמר עם התיק בלחיצת "שמור" */
+  onInput?: (s: FixationFormInput) => void;
 }
 
 const nis = (n: number) => `₪${n.toLocaleString('he-IL', { maximumFractionDigits: 0 })}`;
 
 export function RightsFixation(props: Props) {
   const [open, setOpen] = useState(false);
-  const [year, setYear] = useState(props.defaultYear);
-  const [pension, setPension] = useState(Math.round(props.defaultMonthlyPension));
-  const [taxRate, setTaxRate] = useState(20);
-  const [lumpSum, setLumpSum] = useState(0);
-  const [grants, setGrants] = useState<PastGrant[]>([]);
+  const [year, setYear] = useState(props.initial?.year ?? props.defaultYear);
+  const [pension, setPension] = useState(
+    props.initial?.pension ?? Math.round(props.defaultMonthlyPension),
+  );
+  const [taxRate, setTaxRate] = useState(props.initial?.taxRate ?? 20);
+  const [lumpSum, setLumpSum] = useState(props.initial?.lumpSum ?? 0);
+  const [grants, setGrants] = useState<PastGrant[]>(props.initial?.grants ?? []);
+
+  // דיווח קלט ל-App — נשמר עם התיק בלחיצת "שמור תיק"
+  useEffect(() => {
+    props.onInput?.({ year, pension, taxRate, lumpSum, grants });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [year, pension, taxRate, lumpSum, grants]);
   const [result, setResult] = useState<RightsFixationResult | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);

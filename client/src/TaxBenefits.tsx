@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   calcTaxBenefits,
   UnauthorizedError,
   type TaxBenefitsResult,
+  type TaxFormInput,
 } from './api';
 
 /**
@@ -15,19 +16,34 @@ interface Props {
   defaultMonthlyIncome: number;
   onUnauthorized: () => void;
   onResult?: (r: TaxBenefitsResult) => void;
+  /** קלט שמור מהתיק — משחזר את הטופס אחרי התחברות מחדש */
+  initial?: TaxFormInput;
+  /** מדווח ל-App על שינוי קלט — נשמר עם התיק בלחיצת "שמור" */
+  onInput?: (s: TaxFormInput) => void;
 }
 
 const nis = (n: number) => `₪${n.toLocaleString('he-IL', { maximumFractionDigits: 0 })}`;
 
 export function TaxBenefits(props: Props) {
   const [open, setOpen] = useState(false);
-  const [status, setStatus] = useState<'EMPLOYEE' | 'SELF_EMPLOYED'>('EMPLOYEE');
-  const [income, setIncome] = useState(Math.round(props.defaultMonthlyIncome));
-  const [deposits, setDeposits] = useState(0);
-  const [taxRate, setTaxRate] = useState(35);
+  const [status, setStatus] = useState<'EMPLOYEE' | 'SELF_EMPLOYED'>(
+    props.initial?.status ?? 'EMPLOYEE',
+  );
+  const [income, setIncome] = useState(
+    props.initial?.income ?? Math.round(props.defaultMonthlyIncome),
+  );
+  const [deposits, setDeposits] = useState(props.initial?.deposits ?? 0);
+  const [taxRate, setTaxRate] = useState(props.initial?.taxRate ?? 35);
+
+  // דיווח קלט ל-App — נשמר עם התיק בלחיצת "שמור תיק"
+  useEffect(() => {
+    props.onInput?.({ status, income, deposits, taxRate });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status, income, deposits, taxRate]);
   const [result, setResult] = useState<TaxBenefitsResult | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showSteps, setShowSteps] = useState(false);
 
   async function onCalc() {
     setBusy(true);
@@ -194,6 +210,88 @@ export function TaxBenefits(props: Props) {
                   </div>
                 )}
               </div>
+
+              <button className="trace-toggle" onClick={() => setShowSteps(!showSteps)}>
+                {showSteps ? 'הסתר את החישוב' : 'איך חושב? — צעד אחר צעד'}
+              </button>
+
+              {showSteps && (
+                <ol className="calc-steps">
+                  {status === 'EMPLOYEE' ? (
+                    <>
+                      <li>
+                        <strong>ההכנסה המזכה:</strong>{' '}
+                        {income > result.params.qualifyingIncomeEmployeeMonthly ? (
+                          <>
+                            השכר שלך ({nis(income)}) גבוה מתקרת ההכנסה המזכה (
+                            {nis(result.params.qualifyingIncomeEmployeeMonthly)}/חודש) —
+                            ההטבה מחושבת עד התקרה בלבד:{' '}
+                            {nis(result.params.qualifyingIncomeEmployeeMonthly)} × 12 ={' '}
+                            <strong>{nis(result.qualifyingIncomeAnnual)}</strong> בשנה
+                          </>
+                        ) : (
+                          <>
+                            {nis(income)} × 12 ={' '}
+                            <strong>{nis(result.qualifyingIncomeAnnual)}</strong> בשנה
+                            (מתחת לתקרה — כל השכר מזכה)
+                          </>
+                        )}
+                      </li>
+                      <li>
+                        <strong>תקרת ההפקדה שמזכה בהטבה:</strong>{' '}
+                        {result.params.employeeCreditDepositPct}% ×{' '}
+                        {nis(result.qualifyingIncomeAnnual)} ={' '}
+                        <strong>{nis(result.maxBenefitedDeposits)}</strong> בשנה
+                      </li>
+                      <li>
+                        <strong>ההפקדות שלך:</strong> {nis(deposits)}
+                        {result.benefitedDeposits < deposits ? (
+                          <>
+                            {' '}
+                            — אבל רק <strong>{nis(result.benefitedDeposits)}</strong>{' '}
+                            מתוכן מזכות (השאר מעל התקרה, ללא הטבה במסלול זה)
+                          </>
+                        ) : (
+                          <> — כולן בתוך התקרה ומזכות</>
+                        )}
+                      </li>
+                      <li>
+                        <strong>הזיכוי:</strong> {result.params.creditRatePct}% ×{' '}
+                        {nis(result.benefitedDeposits)} ={' '}
+                        <strong className="good-text">{nis(result.taxCredit)}</strong>{' '}
+                        לשנה — מגולם אוטומטית בחישוב המס בתלוש
+                      </li>
+                    </>
+                  ) : (
+                    <>
+                      <li>
+                        <strong>ההכנסה המזכה:</strong> ההכנסה השנתית (
+                        {nis(income * 12)}) עד התקרה (
+                        {nis(result.params.qualifyingIncomeSelfAnnual)}) ={' '}
+                        <strong>{nis(result.qualifyingIncomeAnnual)}</strong>
+                      </li>
+                      <li>
+                        <strong>מסלול הזיכוי:</strong> {result.params.creditRatePct}% על
+                        הפקדות עד {result.params.selfCreditPct}% מההכנסה המזכה →{' '}
+                        <strong className="good-text">{nis(result.taxCredit)}</strong>
+                      </li>
+                      <li>
+                        <strong>מסלול הניכוי:</strong> הפקדות נוספות עד{' '}
+                        {result.params.selfDeductionPct}% מקטינות את ההכנסה החייבת —
+                        שווי לפי המס השולי ({taxRate}%) →{' '}
+                        <strong className="good-text">{nis(result.deductionValue)}</strong>
+                      </li>
+                      <li>
+                        <strong>סה"כ חיסכון שנתי:</strong>{' '}
+                        <strong className="good-text">
+                          {nis(result.totalAnnualSaving)}
+                        </strong>{' '}
+                        — נדרש דיווח בדוח השנתי למס הכנסה
+                      </li>
+                    </>
+                  )}
+                </ol>
+              )}
 
               {result.warnings.length > 0 && (
                 <div className="warnings">

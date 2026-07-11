@@ -287,6 +287,23 @@ export function login(email: string, password: string): Promise<AuthResult> {
   return post<AuthResult>('/auth/login', { email, password });
 }
 
+/** קלט סימולטור קיבוע הזכויות — נשמר עם התיק */
+export interface FixationFormInput {
+  year: number;
+  pension: number;
+  taxRate: number;
+  lumpSum: number;
+  grants: PastGrant[];
+}
+
+/** קלט מחשבון הטבות המס — נשמר עם התיק */
+export interface TaxFormInput {
+  status: 'EMPLOYEE' | 'SELF_EMPLOYED';
+  income: number;
+  deposits: number;
+  taxRate: number;
+}
+
 export interface PlanAssumptions {
   annualReturnPct: number;
   annualSalaryGrowthPct: number;
@@ -294,6 +311,9 @@ export interface PlanAssumptions {
   plannedRetirementAge?: number;
   /** שדה מדור קודם (תיקים ישנים) */
   yearsToRetirement?: number;
+  /** קלטי הסימולטורים — נשמרים כחלק מ-JSON ההנחות בשרת */
+  fixationInput?: FixationFormInput;
+  taxInput?: TaxFormInput;
 }
 
 export type Gender = 'MALE' | 'FEMALE';
@@ -492,6 +512,14 @@ export interface TaxBenefitsInput {
 }
 
 export interface TaxBenefitsResult {
+  params: {
+    qualifyingIncomeEmployeeMonthly: number;
+    employeeCreditDepositPct: number;
+    creditRatePct: number;
+    qualifyingIncomeSelfAnnual: number;
+    selfCreditPct: number;
+    selfDeductionPct: number;
+  };
   qualifyingIncomeAnnual: number;
   maxBenefitedDeposits: number;
   benefitedDeposits: number;
