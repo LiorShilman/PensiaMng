@@ -23,8 +23,9 @@ interface ReportData {
   typeLabel: (t: PortfolioProductInput['type']) => string;
 }
 
-const nis = (n: number) =>
-  n.toLocaleString('he-IL', { style: 'currency', currency: 'ILS', maximumFractionDigits: 0 });
+/* בונים ידנית (ולא style:'currency') כי הצבת סימן ה-₪ האוטומטית של
+   ה-locale מסתמכת על הקשר bidi RTL — ומתהפכת בתאים עם direction:ltr (td.num) */
+const nis = (n: number) => `₪${n.toLocaleString('he-IL', { maximumFractionDigits: 0 })}`;
 
 const esc = (s: string) =>
   s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -75,6 +76,27 @@ export function openReport(d: ReportData): void {
       </tr>`;
     })
     .join('');
+
+  const transferRows = d.products
+    .flatMap((p) => (p.transfers ?? []).map((t) => ({ p, t })))
+    .map(
+      ({ p, t }) => `<tr>
+        <td class="strong">${esc(p.name)}</td>
+        <td>${esc(t.fromProvider)}${t.fromType ? ` (${esc(t.fromType)})` : ''}</td>
+        <td class="num">${t.transferDate ? esc(new Date(t.transferDate).toLocaleDateString('he-IL')) : '—'}</td>
+        <td>${t.note ? esc(t.note) : '—'}</td>
+      </tr>`,
+    )
+    .join('');
+
+  const transfersBlock = transferRows
+    ? `
+    <h2>היסטוריית ניוד</h2>
+    <table>
+      <thead><tr><th>מוצר יעד</th><th>מקור הכספים</th><th>תאריך ניוד</th><th>מה אבד/השתנה</th></tr></thead>
+      <tbody>${transferRows}</tbody>
+    </table>`
+    : '';
 
   const scenariosBlock = d.scenarios
     ? `
@@ -207,6 +229,7 @@ export function openReport(d: ReportData): void {
     <tbody>${productRows}</tbody>
   </table>
 
+  ${transfersBlock}
   ${scenariosBlock}
   ${aiBlock}
 

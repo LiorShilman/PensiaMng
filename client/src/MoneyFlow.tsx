@@ -21,17 +21,19 @@ interface FlowLink {
   color: string;
 }
 
-const W = 760;
+const W = 900;
 const NODE_W = 10;
 const GAP = 16;
-const LABEL_W = 210; // עמודת תוויות שמורה בכל צד
-const MIN_NODE_H = 30; // מינימום שמבטיח שתווית שורה אחת לא תתנגש
+const LABEL_W = 260; // עמודת תוויות שמורה בכל צד — הוגדל כדי שהשם יקבל שורה שלמה לעצמו
+const MIN_NODE_H = 36; // מינימום שמבטיח שתי שורות תווית (שם + סכום) בלי התנגשות
 
-const fmt = (n: number) =>
-  n.toLocaleString('he-IL', { style: 'currency', currency: 'ILS', maximumFractionDigits: 0 });
+/* בונים את המחרוזת ידנית (ולא style:'currency') כי הצבת סימן ה-₪
+   האוטומטית של ה-locale מסתמכת על הקשר bidi של RTL — וזה מתהפך
+   בתוך ה-SVG שנקבע כ-direction:ltr (תיקון עוגן הטקסט לתוויות). */
+const fmt = (n: number) => `₪${n.toLocaleString('he-IL', { maximumFractionDigits: 0 })}`;
 
-/** קיצור שם ארוך כדי שלא יגלוש מעמודת התוויות */
-const clip = (s: string, max = 20) => (s.length > max ? s.slice(0, max - 1) + '…' : s);
+/** קיצור שם ארוך כדי שלא יגלוש מעמודת התוויות — הסכום עבר לשורה נפרדת, אז לשם יש תקציב תווים גדול יותר */
+const clip = (s: string, max = 30) => (s.length > max ? s.slice(0, max - 1) + '…' : s);
 
 interface Node {
   name: string;
@@ -133,19 +135,26 @@ function Section(props: { title: string; unitLabel: string; links: FlowLink[] })
           </path>
         ))}
 
-        {/* צמתי מקור (ימין) — תווית בשורה אחת, מחוץ לגרף */}
+        {/* צמתי מקור (ימין) — שם ("שורה מלאה) וסכום בשורה נפרדת מתחתיו, מחוץ לגרף */}
         {layout.sources.map((s) => (
           <g key={s.name}>
             <rect x={srcX} y={s.y0 + 5} width={NODE_W} height={s.h} rx={4} fill={s.color} />
             <text
               x={srcX + NODE_W + 10}
-              y={s.y0 + 5 + s.h / 2 + 4}
+              y={s.y0 + 5 + s.h / 2 - 5}
               className="flow-label"
               textAnchor="start"
             >
               <title>{s.name}</title>
               {clip(s.name)}
-              <tspan className="flow-amount-tspan"> · {fmt(s.total)}</tspan>
+            </text>
+            <text
+              x={srcX + NODE_W + 10}
+              y={s.y0 + 5 + s.h / 2 + 11}
+              className="flow-amount"
+              textAnchor="start"
+            >
+              {fmt(s.total)}
             </text>
           </g>
         ))}
@@ -156,13 +165,20 @@ function Section(props: { title: string; unitLabel: string; links: FlowLink[] })
             <rect x={tgtX} y={t.y0 + 5} width={NODE_W} height={t.h} rx={4} fill="#8285a6" />
             <text
               x={tgtX - 10}
-              y={t.y0 + 5 + t.h / 2 + 4}
+              y={t.y0 + 5 + t.h / 2 - 5}
               className="flow-label"
               textAnchor="end"
             >
               <title>{t.name}</title>
               {clip(t.name)}
-              <tspan className="flow-amount-tspan"> · {fmt(t.total)}</tspan>
+            </text>
+            <text
+              x={tgtX - 10}
+              y={t.y0 + 5 + t.h / 2 + 11}
+              className="flow-amount"
+              textAnchor="end"
+            >
+              {fmt(t.total)}
             </text>
           </g>
         ))}

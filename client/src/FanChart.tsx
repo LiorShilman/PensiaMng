@@ -31,8 +31,11 @@ const fmtCompact = (n: number): string => {
   return String(Math.round(n));
 };
 
+/* בונים את המחרוזת ידנית (ולא style:'currency') כי הצבת סימן ה-₪
+   האוטומטית של ה-locale מסתמכת על הקשר bidi של RTL — וזה מתהפך
+   בתוך אזורים שנקבעו כ-direction:ltr (תיקון עוגן הטקסט ב-SVG). */
 const fmtFull = (n: number): string =>
-  n.toLocaleString('he-IL', { style: 'currency', currency: 'ILS', maximumFractionDigits: 0 });
+  `₪${n.toLocaleString('he-IL', { maximumFractionDigits: 0 })}`;
 
 export function FanChart(props: Props) {
   const { pessimistic, central, optimistic } = props;

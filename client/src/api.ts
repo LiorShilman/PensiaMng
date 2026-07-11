@@ -123,6 +123,19 @@ export interface PortfolioProductInput {
   joinDate?: string;
   /** מטריה ביטוחית (אכ"ע פרטי) */
   umbrella?: boolean;
+  /** היסטוריית ניוד — מקור הכספים אם הועברו ממוצר אחר (למשל ביטוח מנהלים → קופת גמל) */
+  transfers?: ProductTransfer[];
+}
+
+export interface ProductTransfer {
+  /** גוף מנהל מקור, למשל "מנורה" */
+  fromProvider: string;
+  /** סוג מוצר מקור בטקסט חופשי, למשל "ביטוח מנהלים" */
+  fromType?: string;
+  /** ISO yyyy-mm-dd */
+  transferDate: string;
+  /** מה אבד/השתנה — תנאים, מקדם מובטח וכו' */
+  note?: string;
 }
 
 export interface Beneficiary {

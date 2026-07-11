@@ -183,8 +183,22 @@ model Product {
 
   tracks        InvestmentAllocation[]
   beneficiaries Beneficiary[]
+  transfers     ProductTransfer[]
   createdAt     DateTime               @default(now())
   updatedAt     DateTime               @updatedAt
+}
+
+// היסטוריית ניוד — תיעוד מקור הכספים כשמוצר נוצר מאיחוד/ניוד ממוצר אחר
+// (למשל: קופת גמל שמקורה בביטוח מנהלים עם מקדם המרה מובטח שאבד בניוד)
+model ProductTransfer {
+  id           String   @id @default(cuid())
+  productId    String
+  product      Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  fromProvider String // גוף מנהל מקור, למשל "מנורה"
+  fromType     String? // סוג מוצר מקור בטקסט חופשי, למשל "ביטוח מנהלים"
+  transferDate DateTime
+  note         String? // מה אבד/השתנה — תנאים, מקדם מובטח וכו'
+  createdAt    DateTime @default(now())
 }
 
 model InvestmentTrack {

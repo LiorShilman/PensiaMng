@@ -187,8 +187,10 @@ const TYPE_ORDER: ProductType[] = [
 
 // ---------- עזרים ----------
 
-const nis = (n: number) =>
-  n.toLocaleString('he-IL', { style: 'currency', currency: 'ILS', maximumFractionDigits: 0 });
+/* בונים ידנית (ולא style:'currency') כי הצבת סימן ה-₪ האוטומטית של
+   ה-locale מסתמכת על הקשר bidi RTL — ומתהפכת בתאים עם direction:ltr
+   (td.num, לטבלת אלפים ישרה) */
+const nis = (n: number) => `₪${n.toLocaleString('he-IL', { maximumFractionDigits: 0 })}`;
 
 /** "2052-01-01" → "01/2052" */
 function formatMonthYear(isoDate: string): string {
@@ -546,6 +548,15 @@ function App() {
             (p.beneficiaries ?? []).length > 0
               ? p.beneficiaries
               : 'לא הוגדרו (יורשים על פי דין)',
+          היסטוריית_ניוד:
+            (p.transfers ?? []).length > 0
+              ? p.transfers!.map((t) => ({
+                  ממי: t.fromProvider,
+                  סוג_מקורי: t.fromType || null,
+                  תאריך_ניוד: t.transferDate,
+                  הערה: t.note || null,
+                }))
+              : null,
         };
       }),
       תחזית_לפרישה: result
@@ -1305,6 +1316,18 @@ function ProductCard(props: {
               <span className="type-pill locked">נזילה ב-{liq.at}</span>
             );
           })()}
+        {p.type === 'PROVIDENT_INVESTMENT' && (
+          <>
+            <span className="type-pill liquid">נזילה תמיד</span>
+            <span
+              className="tip"
+              data-tip="קופת גמל להשקעה נזילה בכל עת, ללא ותק מינימלי — אבל משיכה כהון חייבת במס רווח הון ריאלי (25%). אם ממתינים לגיל 60 ומושכים כקצבה חודשית, הרווח פטור ממס לגמרי. המערכת עדיין לא מחשבת מס אוטומטית — זה שיקול לקחת בחשבון בעצמך."
+              tabIndex={0}
+            >
+              ⓘ
+            </span>
+          </>
+        )}
         <button className="remove-btn" onClick={onRemove} title="הסר מוצר">
           ✕
         </button>
@@ -1660,6 +1683,113 @@ function ProductCard(props: {
           </span>
         </label>
       )}
+
+      <div className="bens transfers">
+        <span className="bens-label">
+          היסטוריית ניוד
+          <span
+            className="tip"
+            data-tip="תיעוד אם הכספים כאן הגיעו מניוד ממוצר אחר — למשל קופת גמל שמקורה בביטוח מנהלים. שווה לרשום מה אבד במעבר (כגון מקדם המרה מובטח), כדי לזכור את זה בעתיד."
+            tabIndex={0}
+          >
+            ⓘ
+          </span>
+        </span>
+        {(p.transfers ?? []).map((t, i) => (
+          <div key={i} className="transfer-card">
+            <div className="transfer-card-head">
+              <span className="transfer-index">
+                ניוד{t.fromProvider ? ` · ${t.fromProvider}` : ` #${i + 1}`}
+              </span>
+              <button
+                className="chip-remove"
+                title="הסר רשומת ניוד"
+                onClick={() =>
+                  onChange({
+                    transfers: (p.transfers ?? []).filter((_, ii) => ii !== i),
+                  })
+                }
+              >
+                ✕
+              </button>
+            </div>
+            <div className="transfer-fields">
+              <label className="field">
+                <span className="field-label">גוף מקור</span>
+                <input
+                  type="text"
+                  placeholder="למשל: מנורה"
+                  value={t.fromProvider}
+                  onChange={(e) =>
+                    onChange({
+                      transfers: (p.transfers ?? []).map((tt, ii) =>
+                        ii === i ? { ...tt, fromProvider: e.target.value } : tt,
+                      ),
+                    })
+                  }
+                />
+              </label>
+              <label className="field">
+                <span className="field-label">סוג מוצר מקורי</span>
+                <input
+                  type="text"
+                  placeholder="למשל: ביטוח מנהלים"
+                  value={t.fromType ?? ''}
+                  onChange={(e) =>
+                    onChange({
+                      transfers: (p.transfers ?? []).map((tt, ii) =>
+                        ii === i ? { ...tt, fromType: e.target.value } : tt,
+                      ),
+                    })
+                  }
+                />
+              </label>
+              <label className="field">
+                <span className="field-label">תאריך ניוד</span>
+                <input
+                  type="date"
+                  value={t.transferDate}
+                  onChange={(e) =>
+                    onChange({
+                      transfers: (p.transfers ?? []).map((tt, ii) =>
+                        ii === i ? { ...tt, transferDate: e.target.value } : tt,
+                      ),
+                    })
+                  }
+                />
+              </label>
+              <label className="field transfer-note-field">
+                <span className="field-label">מה אבד/השתנה</span>
+                <input
+                  type="text"
+                  placeholder="מקדם המרה מובטח, תנאים..."
+                  value={t.note ?? ''}
+                  onChange={(e) =>
+                    onChange({
+                      transfers: (p.transfers ?? []).map((tt, ii) =>
+                        ii === i ? { ...tt, note: e.target.value } : tt,
+                      ),
+                    })
+                  }
+                />
+              </label>
+            </div>
+          </div>
+        ))}
+        <button
+          className="add-chip small"
+          onClick={() =>
+            onChange({
+              transfers: [
+                ...(p.transfers ?? []),
+                { fromProvider: '', fromType: '', transferDate: '', note: '' },
+              ],
+            })
+          }
+        >
+          + רשומת ניוד
+        </button>
+      </div>
     </div>
   );
 }

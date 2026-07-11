@@ -55,6 +55,13 @@ export interface SavedProduct {
   joinDate?: string;
   /** מטריה ביטוחית (אכ"ע פרטי) */
   umbrella?: boolean;
+  /** היסטוריית ניוד — מקור הכספים אם הועברו ממוצר אחר */
+  transfers?: {
+    fromProvider: string;
+    fromType?: string;
+    transferDate: string;
+    note?: string;
+  }[];
 }
 
 export interface SavedPortfolio {
@@ -90,6 +97,7 @@ export class PortfolioService {
         include: {
           beneficiaries: true,
           tracks: { include: { track: true } },
+          transfers: { orderBy: { transferDate: 'asc' } },
         },
       }),
       this.prisma.child.findMany({
@@ -144,6 +152,12 @@ export class PortfolioService {
         tracks: p.tracks.map((a) => ({
           category: a.track.category,
           pct: Number(a.percentage),
+        })),
+        transfers: p.transfers.map((t) => ({
+          fromProvider: t.fromProvider,
+          fromType: t.fromType ?? undefined,
+          transferDate: t.transferDate.toISOString().slice(0, 10),
+          note: t.note ?? undefined,
         })),
       })),
     };
@@ -205,6 +219,16 @@ export class PortfolioService {
               create: (p.beneficiaries ?? [])
                 .filter((b) => b.name.trim() && b.pct > 0)
                 .map((b) => ({ name: b.name.trim(), percentage: b.pct })),
+            },
+            transfers: {
+              create: (p.transfers ?? [])
+                .filter((t) => t.fromProvider.trim() && t.transferDate)
+                .map((t) => ({
+                  fromProvider: t.fromProvider.trim(),
+                  fromType: t.fromType?.trim() || null,
+                  transferDate: new Date(t.transferDate),
+                  note: t.note?.trim() || null,
+                })),
             },
             tracks: {
               create: (p.tracks ?? [])
