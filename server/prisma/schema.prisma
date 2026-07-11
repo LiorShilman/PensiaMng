@@ -1,0 +1,241 @@
+// PensiaMng — Prisma schema
+// Data model follows SPECIFICATION.md section 3 (מודל הנתונים)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------- Enums ----------
+
+enum Gender {
+  MALE
+  FEMALE
+}
+
+enum MaritalStatus {
+  SINGLE
+  MARRIED
+  COMMON_LAW // ידוע/ה בציבור
+  DIVORCED
+  WIDOWED
+}
+
+enum EmploymentStatus {
+  EMPLOYEE
+  SELF_EMPLOYED
+  BOTH
+  CONTROLLING_SHAREHOLDER // בעל שליטה
+  NOT_WORKING
+  RETIRED
+}
+
+enum ProductType {
+  PENSION_COMPREHENSIVE // קרן פנסיה מקיפה
+  PENSION_GENERAL // קרן פנסיה כללית/משלימה
+  MANAGERS_INSURANCE // ביטוח מנהלים
+  PROVIDENT_FUND // קופת גמל
+  PROVIDENT_INVESTMENT // קופת גמל להשקעה
+  IRA // גמל בניהול אישי
+  STUDY_FUND // קרן השתלמות
+  OLD_PENSION_FUND // קרן ותיקה
+  BUDGETARY_PENSION // פנסיה תקציבית
+}
+
+enum ProductStatus {
+  ACTIVE
+  FROZEN // מוקפא / לא פעיל
+  PAYING // בתשלום קצבה
+  CLOSED
+}
+
+enum InsuranceCoveragePlan {
+  DEFAULT_75_100 // ברירת מחדל: 75% נכות / 100% שארים
+  MAX_SAVINGS // עתיר חיסכון
+  MAX_DISABILITY // עתיר נכות
+  MAX_SURVIVORS // עתיר שארים
+  CUSTOM
+}
+
+enum Section14Status {
+  FULL // סעיף 14 מלא
+  PARTIAL
+  NONE
+}
+
+// ---------- Core entities ----------
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  fullName     String
+  createdAt    DateTime @default(now())
+
+  clients    Client[]
+  aiSettings AiSettings?
+}
+
+// הגדרות AI פר-משתמש (מפרט פרק 10א) — המפתח מוצפן AES-256-GCM
+model AiSettings {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider  String // 'anthropic' | 'openai'
+  apiKeyEnc String // iv:tag:cipher (base64)
+  model     String
+  updatedAt DateTime @updatedAt
+}
+
+model Client {
+  id               String           @id @default(cuid())
+  userId           String
+  user             User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /** הנחות תכנון של התיק (שנים לפרישה, תשואה, עליית שכר) */
+  planAssumptions  Json?
+  fullName         String
+  nationalId       String? // ת"ז — יוצפן בשכבת האפליקציה בהמשך
+  birthDate        DateTime
+  gender           Gender
+  maritalStatus    MaritalStatus
+  employmentStatus EmploymentStatus
+  grossSalary      Decimal?         @db.Decimal(12, 2) // שכר ברוטו חודשי
+  insuredSalary    Decimal?         @db.Decimal(12, 2) // שכר מבוטח
+  annualIncome     Decimal?         @db.Decimal(14, 2) // לעצמאי
+  spouseBirthDate  DateTime?
+  spouseGender     Gender?
+  healthFlag       Boolean          @default(false) // מצב בריאותי מיוחד
+  smokerFlag       Boolean          @default(false)
+  notes            String?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  children    Child[]
+  products    Product[]
+  employments Employment[]
+}
+
+model Child {
+  id        String   @id @default(cuid())
+  clientId  String
+  client    Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  birthDate DateTime
+  name      String?
+}
+
+model Product {
+  id            String        @id @default(cuid())
+  clientId      String
+  client        Client        @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  type          ProductType
+  provider      String // גוף מנהל
+  accountNumber String?
+  joinDate      DateTime // תאריך הצטרפות — קובע משטר מס ומקדמים
+  status        ProductStatus @default(ACTIVE)
+
+  // יתרות (פירוט רכיבים)
+  balanceTotal        Decimal   @default(0) @db.Decimal(14, 2)
+  balanceEmployee     Decimal?  @db.Decimal(14, 2) // תגמולי עובד
+  balanceEmployer     Decimal?  @db.Decimal(14, 2) // תגמולי מעסיק
+  balanceSeverance    Decimal?  @db.Decimal(14, 2) // פיצויים
+  balanceAsOf         DateTime? // תאריך עדכון יתרה
+
+  // דמי ניהול
+  feeFromDeposit Decimal @default(0) @db.Decimal(5, 3) // % מהפקדה
+  feeFromBalance Decimal @default(0) @db.Decimal(5, 3) // % שנתי מצבירה
+
+  // הפקדות שוטפות (חודשי, ₪)
+  depositTotal     Decimal? @db.Decimal(10, 2) // סה"כ הפקדה חודשית (לשלב ה-MVP)
+  depositEmployee  Decimal? @db.Decimal(10, 2)
+  depositEmployer  Decimal? @db.Decimal(10, 2)
+  depositSeverance Decimal? @db.Decimal(10, 2)
+  depositSelf      Decimal? @db.Decimal(10, 2) // עצמאי
+
+  // מקדם המרה לקצבה (נבחר ע"י המשתמש בשלב ה-MVP; בהמשך — מטבלאות תקנון)
+  conversionFactor Decimal? @db.Decimal(8, 4)
+
+  // שכר מבוטח בקרן זו ("שכר קובע") — ריק = השכר הגלובלי של הלקוח
+  insuredSalary Decimal? @db.Decimal(12, 2)
+
+  // כיסויים ביטוחיים (רלוונטי לפנסיה/מנהלים)
+  coveragePlan          InsuranceCoveragePlan? // מסלול ביטוח
+  disabilityPct         Decimal?               @db.Decimal(5, 2) // % כיסוי נכות
+  survivorsPct          Decimal?               @db.Decimal(5, 2) // % כיסוי שארים
+  survivorsWaiver       Boolean                @default(false) // ויתור שארים (רווק/ה)
+  survivorsWaiverDate   DateTime? // תוקף שנתיים — תאריך חתימה אחרון
+  qualifyingPeriodStart DateTime? // תחילת תקופת אכשרה (60 חודשים)
+  monthlyCoverageCost   Decimal?               @db.Decimal(10, 2) // עלות כיסויים חודשית
+
+  // ביטוח מנהלים
+  policyGeneration     String? // דור פוליסה
+  guaranteedFactor     Decimal? @db.Decimal(8, 4) // מקדם קצבה מובטח
+  deathBenefitAmount   Decimal? @db.Decimal(14, 2) // סכום ביטוח למקרה מוות
+
+  section14 Section14Status @default(NONE)
+
+  tracks        InvestmentAllocation[]
+  beneficiaries Beneficiary[]
+  createdAt     DateTime               @default(now())
+  updatedAt     DateTime               @updatedAt
+}
+
+model InvestmentTrack {
+  id            String                 @id @default(cuid())
+  name          String // שם המסלול
+  category      String                 @unique // מפתח: AGE_DEPENDENT / EQUITY / SP500...
+  riskLevel     Int                    @default(4) // 1–7
+  defaultReturn Decimal                @default(3.74) @db.Decimal(5, 2) // הנחת תשואה שנתית %
+  allocations   InvestmentAllocation[]
+}
+
+model InvestmentAllocation {
+  id         String          @id @default(cuid())
+  productId  String
+  product    Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
+  trackId    String
+  track      InvestmentTrack @relation(fields: [trackId], references: [id])
+  percentage Decimal         @db.Decimal(5, 2) // % מהצבירה במסלול
+
+  @@unique([productId, trackId])
+}
+
+model Beneficiary {
+  id         String  @id @default(cuid())
+  productId  String
+  product    Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  name       String
+  relation   String? // קרבה
+  percentage Decimal @db.Decimal(5, 2)
+}
+
+model Employment {
+  id               String          @id @default(cuid())
+  clientId         String
+  client           Client          @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  employerName     String
+  startDate        DateTime
+  endDate          DateTime?
+  insuredSalary    Decimal?        @db.Decimal(12, 2)
+  section14        Section14Status @default(NONE)
+  severanceOutcome String? // בעזיבה: נמשכו / רצף קצבה / רצף זכויות
+}
+
+// ---------- Regulatory parameters (סעיף 12 במפרט) ----------
+// כל ערך רגולטורי — תקרה, אחוז, גיל — נשמר כאן עם תאריכי תחולה.
+// לעולם לא כקבוע בקוד.
+
+model RegulatoryParameter {
+  id        String    @id @default(cuid())
+  key       String // e.g. "avg_wage_monthly", "retirement_age_male"
+  value     Decimal   @db.Decimal(14, 4)
+  validFrom DateTime
+  validTo   DateTime?
+  source    String? // מקור: חוק/תקנה/פרסום
+  notes     String?
+
+  @@index([key, validFrom])
+}
