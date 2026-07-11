@@ -1,0 +1,211 @@
+import { useState } from 'react';
+import {
+  calcTaxBenefits,
+  UnauthorizedError,
+  type TaxBenefitsResult,
+} from './api';
+
+/**
+ * הטבות מס בהפקדה (מפרט 6.1) — "כמה מס חסכת השנה וכמה נשאר לנצל".
+ * המנוע מחשב; המסך מציג. כלי המחשה — לא ייעוץ מס.
+ */
+
+interface Props {
+  /** ברירת מחדל מהשכר המבוטח בפרופיל */
+  defaultMonthlyIncome: number;
+  onUnauthorized: () => void;
+  onResult?: (r: TaxBenefitsResult) => void;
+}
+
+const nis = (n: number) => `₪${n.toLocaleString('he-IL', { maximumFractionDigits: 0 })}`;
+
+export function TaxBenefits(props: Props) {
+  const [open, setOpen] = useState(false);
+  const [status, setStatus] = useState<'EMPLOYEE' | 'SELF_EMPLOYED'>('EMPLOYEE');
+  const [income, setIncome] = useState(Math.round(props.defaultMonthlyIncome));
+  const [deposits, setDeposits] = useState(0);
+  const [taxRate, setTaxRate] = useState(35);
+  const [result, setResult] = useState<TaxBenefitsResult | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function onCalc() {
+    setBusy(true);
+    setError(null);
+    try {
+      const r = await calcTaxBenefits({
+        employmentStatus: status,
+        monthlyIncome: income,
+        annualOwnDeposits: deposits,
+        marginalTaxRatePct: taxRate,
+      });
+      setResult(r);
+      props.onResult?.(r);
+    } catch (e) {
+      if (e instanceof UnauthorizedError) return props.onUnauthorized();
+      setError((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <section className="results fixation-section">
+      <div className="whatif-head">
+        <h2 className="results-title">
+          💰 הטבות מס בהפקדה — כמה חסכת השנה?
+          <span
+            className="tip"
+            data-tip="הפקדות לפנסיה מזכות בהטבות מס: שכיר מקבל זיכוי של 35% על הפקדותיו (עד 7% מההכנסה המזכה); עצמאי משלב זיכוי וניכוי. המחשבון מראה כמה חסכת וכמה עוד אפשר לנצל עד סוף שנת המס."
+            tabIndex={0}
+          >
+            ⓘ
+          </span>
+        </h2>
+        <button className="calc-btn" onClick={() => setOpen(!open)}>
+          {open ? 'סגור' : 'פתח מחשבון'}
+        </button>
+      </div>
+
+      {open && (
+        <div className="card fixation-card">
+          <div className="fixation-form">
+            <label className="field">
+              <span className="field-label">מעמד</span>
+              <select
+                className="field-select"
+                value={status}
+                onChange={(e) =>
+                  setStatus(e.target.value as 'EMPLOYEE' | 'SELF_EMPLOYED')
+                }
+              >
+                <option value="EMPLOYEE">שכיר</option>
+                <option value="SELF_EMPLOYED">עצמאי</option>
+              </select>
+            </label>
+            <label className="field">
+              <span className="field-label">
+                {status === 'EMPLOYEE' ? 'שכר ברוטו חודשי' : 'הכנסה חודשית ממוצעת'}
+              </span>
+              <div className="input-wrap has-unit">
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  dir="ltr"
+                  value={income === 0 ? '' : income.toLocaleString('en-US')}
+                  onChange={(e) => {
+                    const digits = e.target.value.replace(/[^\d]/g, '');
+                    setIncome(digits === '' ? 0 : Number(digits));
+                  }}
+                />
+                <span className="unit">₪</span>
+              </div>
+            </label>
+            <label className="field">
+              <span className="field-label">
+                {status === 'EMPLOYEE'
+                  ? 'הפקדות עובד שנתיות (תגמולי עובד)'
+                  : 'הפקדות שנתיות לפנסיה/גמל'}
+                <span
+                  className="tip"
+                  data-tip={
+                    status === 'EMPLOYEE'
+                      ? 'רק החלק שאתה מפקיד לפנסיה/גמל/ביטוח מנהלים (בדרך כלל 6-7% מהשכר) — לא חלק המעסיק, ולא קרן השתלמות (לה מסלול הטבה נפרד: הפקדת המעסיק פטורה משווי והרווחים פטורים ממס — ללא זיכוי על חלק העובד). איפה למצוא: תלוש השכר, שורת "תגמולי עובד".'
+                      : 'סך ההפקדות שהפקדת השנה לקופת גמל / קרן פנסיה כעצמאי — לא כולל קרן השתלמות (ניכוי ההשתלמות לעצמאי יתווסף בשלב הבא).'
+                  }
+                  tabIndex={0}
+                >
+                  ⓘ
+                </span>
+              </span>
+              <div className="input-wrap has-unit">
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  dir="ltr"
+                  value={deposits === 0 ? '' : deposits.toLocaleString('en-US')}
+                  onChange={(e) => {
+                    const digits = e.target.value.replace(/[^\d]/g, '');
+                    setDeposits(digits === '' ? 0 : Number(digits));
+                  }}
+                />
+                <span className="unit">₪</span>
+              </div>
+            </label>
+            {status === 'SELF_EMPLOYED' && (
+              <label className="field">
+                <span className="field-label">
+                  מס שולי
+                  <span
+                    className="tip"
+                    data-tip="שיעור המס על השקל האחרון של הכנסתך — קובע את שווי הניכוי. מדרגות 2025: 31% מ-~21.7 אלף לחודש, 35% מ-~45 אלף, 47% מעל ~58 אלף."
+                    tabIndex={0}
+                  >
+                    ⓘ
+                  </span>
+                </span>
+                <div className="input-wrap has-unit">
+                  <input
+                    type="number"
+                    min={10}
+                    max={50}
+                    value={taxRate}
+                    onChange={(e) => setTaxRate(Number(e.target.value))}
+                  />
+                  <span className="unit">%</span>
+                </div>
+              </label>
+            )}
+          </div>
+
+          <p className="hint tax-hint">
+            המחשבון מתייחס להפקדות <strong>קצבתיות בלבד</strong> (פנסיה, גמל, ביטוח
+            מנהלים). קרן השתלמות אינה נכללת — לה מסלול הטבה נפרד: הפקדת המעסיק פטורה
+            ממס בידיך (עד שכר 15,712 ₪) והרווחים פטורים ממס רווח הון; על הפקדת העובד
+            אין זיכוי. ניכוי השתלמות לעצמאי — יתווסף בשלב הבא.
+          </p>
+
+          <button className="calc-btn fixation-calc" onClick={onCalc} disabled={busy}>
+            {busy ? 'מחשב…' : 'חשב הטבות מס'}
+          </button>
+          {error && <div className="error">{error}</div>}
+
+          {result && (
+            <>
+              <div className="fixation-summary">
+                <div className="scenario-stat">
+                  <div className="stat-value good">{nis(result.totalAnnualSaving)}</div>
+                  <div className="stat-label">
+                    חיסכון המס השנתי שלך
+                    {result.deductionValue > 0 &&
+                      ` (זיכוי ${nis(result.taxCredit)} + ניכוי ${nis(result.deductionValue)})`}
+                  </div>
+                </div>
+                <div className="scenario-stat">
+                  <div className="stat-value">{nis(result.remainingDepositAllowance)}</div>
+                  <div className="stat-label">תקרה שנותרה לניצול השנה</div>
+                </div>
+                {result.potentialExtraSaving > 0 && (
+                  <div className="scenario-stat">
+                    <div className="stat-value ni">
+                      +{nis(result.potentialExtraSaving)}
+                    </div>
+                    <div className="stat-label">חיסכון מס נוסף אם תנצל את המלוא</div>
+                  </div>
+                )}
+              </div>
+
+              {result.warnings.length > 0 && (
+                <div className="warnings">
+                  {result.warnings.map((w, i) => (
+                    <div key={i} className="warning-item">⚠ {w}</div>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      )}
+    </section>
+  );
+}

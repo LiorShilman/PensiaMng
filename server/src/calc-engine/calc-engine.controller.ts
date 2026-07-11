@@ -15,6 +15,8 @@ import type {
 } from './rights-fixation';
 import { calcHealthScore } from './health-score';
 import type { HealthScoreInput, HealthScoreResult } from './health-score';
+import { calcTaxBenefits } from './tax-benefits';
+import type { TaxBenefitsInput, TaxBenefitsResult } from './tax-benefits';
 import type {
   AnnuityInput,
   AnnuityResult,
@@ -96,6 +98,16 @@ export class CalcEngineController {
   healthScore(@Body() body: HealthScoreInput): HealthScoreResult {
     try {
       return calcHealthScore(body);
+    } catch (e) {
+      throw new BadRequestException((e as Error).message);
+    }
+  }
+
+  /** הטבות מס בהפקדה (מפרט 6.1) — כמה מס חסכת השנה */
+  @Post('tax-benefits')
+  taxBenefits(@Body() body: TaxBenefitsInput): TaxBenefitsResult {
+    try {
+      return calcTaxBenefits(body);
     } catch (e) {
       throw new BadRequestException((e as Error).message);
     }

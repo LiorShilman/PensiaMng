@@ -480,6 +480,34 @@ export function calcHealthScore(input: HealthScoreInput): Promise<HealthScoreRes
   return post<HealthScoreResult>('/calc/health-score', input);
 }
 
+// ---------- הטבות מס בהפקדה (מפרט 6.1) ----------
+
+export interface TaxBenefitsInput {
+  employmentStatus: 'EMPLOYEE' | 'SELF_EMPLOYED';
+  /** שכיר: שכר ברוטו חודשי; עצמאי: הכנסה שנתית ÷ 12 */
+  monthlyIncome: number;
+  /** סך ההפקדות השנתיות שלך (תגמולי עובד / הפקדות עצמאי) */
+  annualOwnDeposits: number;
+  marginalTaxRatePct?: number;
+}
+
+export interface TaxBenefitsResult {
+  qualifyingIncomeAnnual: number;
+  maxBenefitedDeposits: number;
+  benefitedDeposits: number;
+  taxCredit: number;
+  deductionValue: number;
+  totalAnnualSaving: number;
+  remainingDepositAllowance: number;
+  potentialExtraSaving: number;
+  warnings: string[];
+  trace: CalcTrace;
+}
+
+export function calcTaxBenefits(input: TaxBenefitsInput): Promise<TaxBenefitsResult> {
+  return post<TaxBenefitsResult>('/calc/tax-benefits', input);
+}
+
 // ---------- קיבוע זכויות (סעיף 9א / טופס 161ד) ----------
 
 export interface PastGrant {

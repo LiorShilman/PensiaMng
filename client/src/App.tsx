@@ -28,6 +28,7 @@ import {
   calcHealthScore,
   type RightsFixationResult,
   type HealthScoreResult,
+  type TaxBenefitsResult,
 } from './api';
 import { openReport } from './report';
 import { AuthScreen } from './AuthScreen';
@@ -35,6 +36,7 @@ import { AiPanel } from './AiPanel';
 import { FanChart } from './FanChart';
 import { MoneyFlow } from './MoneyFlow';
 import { RightsFixation } from './RightsFixation';
+import { TaxBenefits } from './TaxBenefits';
 
 // ---------- מטא-דאטה לסוגי מוצרים ----------
 
@@ -345,6 +347,8 @@ function App() {
   const [niYears, setNiYears] = useState<number | ''>('');
   /** ציון הבריאות הפנסיוני */
   const [health, setHealth] = useState<HealthScoreResult | null>(null);
+  /** תוצאת מחשבון הטבות המס האחרונה — לניתוח ה-AI */
+  const [taxBenefits, setTaxBenefits] = useState<TaxBenefitsResult | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -691,6 +695,15 @@ function App() {
               פער: scenarios.disability.gapMonthly,
             },
             אזהרות_המערכת: scenarios.warnings,
+          }
+        : null,
+      הטבות_מס_בהפקדה: taxBenefits
+        ? {
+            חיסכון_מס_שנתי: taxBenefits.totalAnnualSaving,
+            זיכוי: taxBenefits.taxCredit,
+            שווי_ניכוי: taxBenefits.deductionValue,
+            תקרה_שנותרה_לניצול: taxBenefits.remainingDepositAllowance,
+            חיסכון_נוסף_אפשרי: taxBenefits.potentialExtraSaving,
           }
         : null,
       ציון_בריאות_פנסיוני: health
@@ -1399,6 +1412,14 @@ function App() {
           defaultMonthlyPension={result.totals.central.totalMonthlyAnnuity}
           onUnauthorized={logout}
           onResult={setFixation}
+        />
+      )}
+
+      {result && (
+        <TaxBenefits
+          defaultMonthlyIncome={profile.insuredMonthlySalary ?? 0}
+          onUnauthorized={logout}
+          onResult={setTaxBenefits}
         />
       )}
 
