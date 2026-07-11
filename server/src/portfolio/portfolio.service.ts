@@ -53,6 +53,8 @@ export interface SavedProduct {
   tracks?: { category: string; pct: number }[];
   /** תאריך פתיחת הקרן — לוותק ונזילות */
   joinDate?: string;
+  /** מטריה ביטוחית (אכ"ע פרטי) */
+  umbrella?: boolean;
 }
 
 export interface SavedPortfolio {
@@ -128,6 +130,7 @@ export class PortfolioService {
           ? Number(p.insuredSalary)
           : undefined,
         frozen: p.status === 'FROZEN',
+        umbrella: p.umbrellaFlag,
         survivorsPct: p.survivorsPct ? Number(p.survivorsPct) : undefined,
         disabilityPct: p.disabilityPct ? Number(p.disabilityPct) : undefined,
         survivorsWaiver: p.survivorsWaiver,
@@ -193,6 +196,7 @@ export class PortfolioService {
             conversionFactor: p.conversionFactor ?? null,
             insuredSalary: p.insuredMonthlySalary ?? null,
             status: p.frozen ? ('FROZEN' as const) : ('ACTIVE' as const),
+            umbrellaFlag: p.umbrella ?? false,
             survivorsPct: p.survivorsPct ?? null,
             disabilityPct: p.disabilityPct ?? null,
             survivorsWaiver: p.survivorsWaiver ?? false,

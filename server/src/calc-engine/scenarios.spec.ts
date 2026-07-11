@@ -209,6 +209,46 @@ describe('calcScenarios — disability', () => {
   });
 });
 
+describe('calcScenarios — standalone disability insurance (אכ"ע פרטי)', () => {
+  const policy: ScenarioProductInput = {
+    id: 'pol',
+    name: 'אכ"ע פרטי מנורה',
+    type: 'DISABILITY_INSURANCE',
+    currentBalance: 0,
+    insuredMonthlySalary: 15_523, // חצי השכר שלא מבוטח בקרן
+    umbrella: true,
+  };
+
+  it("the user's exact case: pension on half salary + private policy on the other half = exactly the 75% cap, no gap", () => {
+    const halfPension = { ...pension, insuredMonthlySalary: 15_522 };
+    const r = calcScenarios(
+      base({
+        insuredMonthlySalary: 31_045,
+        products: [halfPension, policy],
+      }),
+    );
+    // 75%×15,522 + 75%×15,523 = 23,283.75 = בדיוק 75% מ-31,045
+    expect(r.disability.uncappedTotalMonthly).toBeCloseTo(23_283.75, 1);
+    expect(r.disability.totalDisabilityMonthly).toBeCloseTo(23_283.75, 1);
+    expect(r.disability.excessMonthly).toBe(0);
+    // היעד 70% מ-31,045 = 21,731.5 — מכוסה
+    expect(r.disability.gapMonthly).toBe(0);
+  });
+
+  it('policy pays nothing on death (pure insurance, no savings)', () => {
+    const r = calcScenarios(base({ products: [policy] }));
+    const d = r.death.products[0];
+    expect(d.survivorMonthly).toBe(0);
+    expect(d.lumpSum).toBe(0);
+    expect(d.detail).toContain('ביטוח טהורה');
+  });
+
+  it('umbrella flag is reflected in the disability detail', () => {
+    const r = calcScenarios(base({ products: [policy] }));
+    expect(r.disability.products[0].detail).toContain('מטריה');
+  });
+});
+
 describe('calcScenarios — aggregate disability cap (75%)', () => {
   it('two active pensions are capped at 75% of the global salary, with excess reported', () => {
     const second = { ...pension, id: 'p9', name: 'קרן שנייה' };

@@ -31,6 +31,8 @@ const FEE_CAPS: Record<ProductType, { deposit: number; balance: number }> = {
   PROVIDENT_INVESTMENT: { deposit: 4, balance: 1.05 },
   IRA: { deposit: 4, balance: 1.05 },
   STUDY_FUND: { deposit: 0, balance: 2 },
+  // ביטוח טהור — אין צבירה ואין דמי ניהול; נכלל רק בתרחישי ביטוח
+  DISABILITY_INSURANCE: { deposit: 0, balance: 0 },
 };
 
 /**

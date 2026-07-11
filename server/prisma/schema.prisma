@@ -44,6 +44,7 @@ enum ProductType {
   STUDY_FUND // קרן השתלמות
   OLD_PENSION_FUND // קרן ותיקה
   BUDGETARY_PENSION // פנסיה תקציבית
+  DISABILITY_INSURANCE // ביטוח אכ"ע פרטי / מטריה ביטוחית — ביטוח טהור ללא חיסכון
 }
 
 enum ProductStatus {
@@ -160,6 +161,9 @@ model Product {
 
   // שכר מבוטח בקרן זו ("שכר קובע") — ריק = השכר הגלובלי של הלקוח
   insuredSalary Decimal? @db.Decimal(12, 2)
+
+  // מטריה ביטוחית (לאכ"ע פרטי): הגדרה עיסוקית, ביטול קיזוז, ביטול אכשרה
+  umbrellaFlag Boolean @default(false)
 
   // כיסויים ביטוחיים (רלוונטי לפנסיה/מנהלים)
   coveragePlan          InsuranceCoveragePlan? // מסלול ביטוח

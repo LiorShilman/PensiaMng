@@ -91,7 +91,8 @@ export type ProductType =
   | 'PROVIDENT_FUND'
   | 'PROVIDENT_INVESTMENT'
   | 'IRA'
-  | 'STUDY_FUND';
+  | 'STUDY_FUND'
+  | 'DISABILITY_INSURANCE';
 
 export interface PortfolioProductInput {
   id: string;
@@ -120,6 +121,8 @@ export interface PortfolioProductInput {
   tracks?: TrackAllocation[];
   /** תאריך פתיחת הקרן (ISO) — לחישוב ותק ונזילות (קרן השתלמות: 6 שנים) */
   joinDate?: string;
+  /** מטריה ביטוחית (אכ"ע פרטי) */
+  umbrella?: boolean;
 }
 
 export interface Beneficiary {
@@ -337,6 +340,7 @@ export interface ScenariosInput {
     survivorsWaiver?: boolean;
     deathBenefitAmount?: number;
     beneficiaries?: Beneficiary[];
+    umbrella?: boolean;
     /** שלב פרישה */
     monthlyAnnuity?: number;
     balanceAtRetirement?: number;

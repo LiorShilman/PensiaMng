@@ -416,6 +416,12 @@
   border: 1px solid rgba(148, 163, 184, 0.35);
 }
 
+.type-pill.insurance {
+  color: #5eead4;
+  background: rgba(20, 184, 166, 0.1);
+  border: 1px solid rgba(20, 184, 166, 0.35);
+}
+
 .type-pill.liquid {
   color: var(--good);
   background: rgba(74, 222, 128, 0.1);
@@ -1604,6 +1610,25 @@ td.fees {
 .save-btn:disabled {
   opacity: 0.6;
   cursor: wait;
+}
+
+.report-btn {
+  padding: 12px 24px;
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
+  background: transparent;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.report-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: rgba(139, 92, 246, 0.08);
 }
 
 /* ---------- AI module ---------- */

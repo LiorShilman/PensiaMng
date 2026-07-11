@@ -51,6 +51,8 @@ export interface ScenarioProductInput {
   retirementSurvivorPct?: number;
   /** תקופת הבטחת תשלומים בחודשים (ברירת מחדל 240 — המסלול הנפוץ) */
   guaranteedMonths?: number;
+  /** מטריה ביטוחית (לאכ"ע פרטי): הגדרה עיסוקית, ביטול קיזוז ביטוח לאומי, ביטול אכשרה */
+  umbrella?: boolean;
 }
 
 export interface ScenariosInput {
@@ -199,6 +201,13 @@ export function calcScenarios(input: ScenariosInput): ScenariosResult {
   });
 
   const deathProducts: DeathProductOutcome[] = input.products.map((p) => {
+    if (p.type === 'DISABILITY_INSURANCE') {
+      return lumpOutcome(
+        p,
+        0,
+        'פוליסת ביטוח טהורה (אכ"ע) — אין רכיב חיסכון ואין תשלום במקרה מוות',
+      );
+    }
     if (PENSION_TYPES.has(p.type)) {
       if (p.frozen) {
         return lumpOutcome(
@@ -265,6 +274,21 @@ export function calcScenarios(input: ScenariosInput): ScenariosResult {
 
   // ---------- תרחיש נכות (אובדן כושר עבודה) ----------
   const disabilityProducts: DisabilityProductOutcome[] = input.products.map((p) => {
+    if (p.type === 'DISABILITY_INSURANCE') {
+      const pct = p.disabilityPct ?? DEFAULT_DISABILITY_PCT;
+      const monthly = round2((salaryOf(p) * pct) / 100);
+      return {
+        id: p.id,
+        name: p.name,
+        type: p.type,
+        disabilityMonthly: monthly,
+        detail:
+          `פוליסת אכ"ע פרטית: ${pct}% מהשכר המבוטח בפוליסה` +
+          (p.umbrella
+            ? ' · כוללת מטריה ביטוחית (הגדרה עיסוקית, ביטול קיזוז ביטוח לאומי) — משדרגת גם את איכות הכיסוי בקרן הפנסיה'
+            : ''),
+      };
+    }
     if (PENSION_TYPES.has(p.type)) {
       if (p.frozen) {
         return {

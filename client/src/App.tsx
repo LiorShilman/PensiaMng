@@ -23,6 +23,7 @@ import {
   type TrackDef,
 } from './api';
 import { aiAnalyze } from './api';
+import { openReport } from './report';
 import { AuthScreen } from './AuthScreen';
 import { AiPanel } from './AiPanel';
 import { FanChart } from './FanChart';
@@ -43,6 +44,8 @@ interface TypeMeta {
   /** זהות ויזואלית: אייקון + גרדיאנט */
   icon: IconKey;
   accent: [string, string];
+  /** מוצר ביטוח טהור — בלי חיסכון, לא נכלל בתחזית הצבירה */
+  insuranceOnly?: boolean;
   defaults: {
     feeFromDepositPct: number;
     feeFromBalancePct: number;
@@ -158,6 +161,17 @@ const TYPE_META: Record<ProductType, TypeMeta> = {
     accent: ['#d97706', '#f59e0b'],
     defaults: { feeFromDepositPct: 0, feeFromBalancePct: 0.6, monthlyCoverageCost: 0 },
   },
+  DISABILITY_INSURANCE: {
+    label: 'ביטוח אכ"ע / מטריה (פרטי)',
+    short: 'אכ"ע פרטי',
+    isAnnuity: false,
+    hasCoverage: false,
+    maxDepositFee: 0,
+    icon: 'shield',
+    accent: ['#0d9488', '#14b8a6'],
+    insuranceOnly: true,
+    defaults: { feeFromDepositPct: 0, feeFromBalancePct: 0, monthlyCoverageCost: 0 },
+  },
 };
 
 const TYPE_ORDER: ProductType[] = [
@@ -168,6 +182,7 @@ const TYPE_ORDER: ProductType[] = [
   'PROVIDENT_INVESTMENT',
   'IRA',
   'STUDY_FUND',
+  'DISABILITY_INSURANCE',
 ];
 
 // ---------- עזרים ----------
@@ -210,6 +225,9 @@ function newProduct(type: ProductType): PortfolioProductInput {
     ...(type === 'MANAGERS_INSURANCE' ? { deathBenefitAmount: 0 } : {}),
     ...(type === 'STUDY_FUND'
       ? { joinDate: new Date().toISOString().slice(0, 10) }
+      : {}),
+    ...(type === 'DISABILITY_INSURANCE'
+      ? { currentBalance: 0, monthlyDeposit: 0, disabilityPct: 75, umbrella: false }
       : {}),
   };
 }
@@ -444,6 +462,7 @@ function App() {
           survivorsWaiver: p.survivorsWaiver,
           deathBenefitAmount: p.deathBenefitAmount,
           beneficiaries: p.beneficiaries,
+          umbrella: p.umbrella,
           ...(afterRetirement
             ? {
                 monthlyAnnuity: proj?.monthlyAnnuity?.central ?? 0,
@@ -498,18 +517,37 @@ function App() {
         תשואה_ריאלית_שנתית_אחוז: assumptions.annualReturnPct,
         עליית_שכר_שנתית_אחוז: assumptions.annualSalaryGrowthPct,
       },
-      מוצרים: products.map((p) => ({
-        שם: p.name,
-        סוג: TYPE_META[p.type].label,
-        יתרה_צבורה: p.currentBalance,
-        הפקדה_חודשית: p.monthlyDeposit,
-        דמי_ניהול_מהפקדה_אחוז: p.feeFromDepositPct,
-        דמי_ניהול_מצבירה_אחוז: p.feeFromBalancePct,
-        עלות_כיסויים_חודשית: p.monthlyCoverageCost,
-        לא_פעילה: p.frozen ?? false,
-        מסלולי_השקעה: p.tracks ?? [],
-        שכר_מבוטח_בקרן: p.insuredMonthlySalary,
-      })),
+      מוצרים: products.map((p) => {
+        const liq = p.type === 'STUDY_FUND' ? studyFundLiquidity(p.joinDate) : null;
+        return {
+          שם: p.name,
+          סוג: TYPE_META[p.type].label,
+          יתרה_צבורה: p.currentBalance,
+          הפקדה_חודשית: p.monthlyDeposit,
+          דמי_ניהול_מהפקדה_אחוז: p.feeFromDepositPct,
+          דמי_ניהול_מצבירה_אחוז: p.feeFromBalancePct,
+          עלות_כיסויים_או_פרמיה_חודשית: p.monthlyCoverageCost,
+          לא_פעילה: p.frozen ?? false,
+          מסלולי_השקעה: p.tracks ?? [],
+          שכר_מבוטח_בקרן_או_בפוליסה: p.insuredMonthlySalary,
+          ...(liq
+            ? {
+                תאריך_פתיחה: p.joinDate,
+                נזילות: liq.liquid ? 'נזילה למשיכה בפטור' : `תהיה נזילה ב-${liq.at}`,
+              }
+            : {}),
+          ...(p.type === 'DISABILITY_INSURANCE'
+            ? {
+                כיסוי_נכות_אחוז: p.disabilityPct,
+                כוללת_מטריה_ביטוחית: p.umbrella ?? false,
+              }
+            : {}),
+          מוטבים:
+            (p.beneficiaries ?? []).length > 0
+              ? p.beneficiaries
+              : 'לא הוגדרו (יורשים על פי דין)',
+        };
+      }),
       תחזית_לפרישה: result
         ? {
             מרכזי: {
@@ -579,8 +617,10 @@ function App() {
           annualReturnPct: assumptions.annualReturnPct,
           annualSalaryGrowthPct: assumptions.annualSalaryGrowthPct,
           insuredMonthlySalary: profile.insuredMonthlySalary,
-          // המנוע מצפה ל-trackAllocations; אצלנו השדה נקרא tracks (כמו בשמירה)
-          products: products.map((p) => ({ ...p, trackAllocations: p.tracks })),
+          // מוצרי ביטוח טהורים לא נכללים בתחזית הצבירה; trackAllocations = tracks
+          products: products
+            .filter((p) => !TYPE_META[p.type].insuranceOnly)
+            .map((p) => ({ ...p, trackAllocations: p.tracks })),
         }),
         calcScenarios(scenariosInputFor(0)),
       ]);
@@ -863,6 +903,27 @@ function App() {
                 ? '✓ נשמר'
                 : 'שמור תיק'}
           </button>
+          {result && (
+            <button
+              className="report-btn"
+              onClick={() =>
+                openReport({
+                  userName: user.fullName,
+                  profile,
+                  products,
+                  result,
+                  scenarios,
+                  retirement,
+                  aiText,
+                  aiMeta,
+                  typeLabel: (t) => TYPE_META[t].label,
+                })
+              }
+              title="דוח מעוצב להדפסה או שמירה כ-PDF, כולל ניתוח ה-AI אם הופק"
+            >
+              🖨 הפק דוח
+            </button>
+          )}
           {error && <div className="error">{error}</div>}
         </div>
       </section>
@@ -1227,6 +1288,8 @@ function ProductCard(props: {
         </select>
         {p.frozen ? (
           <span className="type-pill frozen">לא פעילה</span>
+        ) : meta.insuranceOnly ? (
+          <span className="type-pill insurance">ביטוחי</span>
         ) : (
           <span className={`type-pill ${meta.isAnnuity ? 'annuity' : 'capital'}`}>
             {meta.isAnnuity ? 'קצבתי' : 'הוני'}
@@ -1255,21 +1318,47 @@ function ProductCard(props: {
       />
 
       <div className="product-fields">
-        <MoneyField
-          label="יתרה צבורה"
-          value={p.currentBalance}
-          onChange={(v) => onChange({ currentBalance: v })}
-          tooltip="הסכום שנצבר בחשבון עד היום. איפה למצוא: הדוח השנתי/רבעוני של הקרן, האזור האישי באתר הגוף המנהל, או אתר 'הר הכסף'."
-        />
-        {!p.frozen && (
-          <MoneyField
-            label="הפקדה חודשית"
-            value={p.monthlyDeposit}
-            onChange={(v) => onChange({ monthlyDeposit: v })}
-            tooltip="סך ההפקדה החודשית — עובד + מעסיק + פיצויים יחד. איפה למצוא: תלוש השכר (סעיפי הפרשות) או פירוט ההפקדות בדוח השנתי."
-          />
+        {meta.insuranceOnly ? (
+          <>
+            <MoneyField
+              label="שכר מבוטח בפוליסה"
+              value={p.insuredMonthlySalary ?? 0}
+              onChange={(v) => onChange({ insuredMonthlySalary: v === 0 ? undefined : v })}
+              tooltip="השכר שהפוליסה מכסה — לרוב החלק שאינו מבוטח בקרן הפנסיה (למשל השכר שמופקד לקופת גמל). איפה למצוא: דף פרטי הביטוח של הפוליסה."
+            />
+            <Field
+              label="כיסוי נכות"
+              unit="%"
+              value={p.disabilityPct ?? 75}
+              onChange={(v) => onChange({ disabilityPct: v })}
+              tooltip="אחוז השכר המבוטח שישולם כקצבה חודשית באובדן כושר עבודה. מקסימום מקובל: 75%."
+            />
+            <MoneyField
+              label="פרמיה חודשית"
+              value={p.monthlyCoverageCost}
+              onChange={(v) => onChange({ monthlyCoverageCost: v })}
+              tooltip="עלות הפוליסה בחודש — לידיעה ולניתוח כדאיות; אינה משפיעה על תחזית הצבירה."
+            />
+          </>
+        ) : (
+          <>
+            <MoneyField
+              label="יתרה צבורה"
+              value={p.currentBalance}
+              onChange={(v) => onChange({ currentBalance: v })}
+              tooltip="הסכום שנצבר בחשבון עד היום. איפה למצוא: הדוח השנתי/רבעוני של הקרן, האזור האישי באתר הגוף המנהל, או אתר 'הר הכסף'."
+            />
+            {!p.frozen && (
+              <MoneyField
+                label="הפקדה חודשית"
+                value={p.monthlyDeposit}
+                onChange={(v) => onChange({ monthlyDeposit: v })}
+                tooltip="סך ההפקדה החודשית — עובד + מעסיק + פיצויים יחד. איפה למצוא: תלוש השכר (סעיפי הפרשות) או פירוט ההפקדות בדוח השנתי."
+              />
+            )}
+          </>
         )}
-        {meta.maxDepositFee > 0 && (
+        {!meta.insuranceOnly && meta.maxDepositFee > 0 && (
           <Field
             label={`ד"נ מהפקדה (עד ${meta.maxDepositFee})`}
             unit="%"
@@ -1279,6 +1368,7 @@ function ProductCard(props: {
             tooltip="אחוז שנגבה מכל הפקדה חדשה לפני שהיא נכנסת לחיסכון. איפה למצוא: הדוח השנתי, סעיף 'דמי ניהול מהפקדות'."
           />
         )}
+        {!meta.insuranceOnly && (
         <Field
           label='ד"נ מצבירה (שנתי)'
           unit="%"
@@ -1287,6 +1377,7 @@ function ProductCard(props: {
           onChange={(v) => onChange({ feeFromBalancePct: v })}
           tooltip="אחוז שנתי שנגבה מכלל היתרה הצבורה. איפה למצוא: הדוח השנתי, סעיף 'דמי ניהול מצבירה' — נקוב בדיוק של עד 3 ספרות (למשל 0.145%)."
         />
+        )}
         {meta.hasCoverage && !p.frozen && (
           <MoneyField
             label="עלות כיסויים לחודש"
@@ -1304,7 +1395,7 @@ function ProductCard(props: {
             tooltip="המספר שבו מחלקים את הצבירה כדי לקבל קצבה חודשית (למשל: 1,000,000 ÷ 200 = 5,000 ₪). טווח טיפוסי: 180–210. איפה למצוא: תקנון הקרן או מסמך מסלול הקצבה; בביטוח מנהלים ותיק — המקדם המובטח שבפוליסה."
           />
         )}
-        {INSURED_PENSION_TYPES.has(p.type) && !p.frozen && (
+        {!meta.insuranceOnly && INSURED_PENSION_TYPES.has(p.type) && !p.frozen && (
           <MoneyField
             label="שכר מבוטח בקרן"
             value={p.insuredMonthlySalary ?? 0}
@@ -1352,6 +1443,7 @@ function ProductCard(props: {
           />
         )}
       </div>
+      {!meta.insuranceOnly && (
       <div className="bens">
         <span className="bens-label">
           מסלולי השקעה
@@ -1431,7 +1523,9 @@ function ProductCard(props: {
           <span className="tracks-eff">תשואה אפקטיבית: {effReturn}%</span>
         )}
       </div>
+      )}
 
+      {!meta.insuranceOnly && (
       <div className="bens">
         <span className="bens-label">
           מוטבים
@@ -1496,7 +1590,27 @@ function ProductCard(props: {
           + מוטב
         </button>
       </div>
+      )}
 
+      {meta.insuranceOnly && (
+        <label className="waiver-row">
+          <input
+            type="checkbox"
+            checked={p.umbrella ?? false}
+            onChange={(e) => onChange({ umbrella: e.target.checked })}
+          />
+          <span>
+            כוללת מטריה ביטוחית
+            <span
+              className="tip"
+              data-tip="מטריה ביטוחית משדרגת את כיסוי הנכות של קרן הפנסיה: הגדרה עיסוקית (כיסוי אם אינך יכול לעבוד במקצוע שלך), ביטול קיזוז ביטוח לאומי וביטול תקופת אכשרה."
+              tabIndex={0}
+            >
+              ⓘ
+            </span>
+          </span>
+        </label>
+      )}
       {canFreeze && (
         <label className="waiver-row">
           <input

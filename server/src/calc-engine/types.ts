@@ -72,7 +72,8 @@ export type ProductType =
   | 'PROVIDENT_FUND'
   | 'PROVIDENT_INVESTMENT'
   | 'IRA'
-  | 'STUDY_FUND';
+  | 'STUDY_FUND'
+  | 'DISABILITY_INSURANCE'; // ביטוח אכ"ע פרטי / מטריה — ביטוח טהור
 
 /** מוצר בודד בתוך תיק */
 export interface PortfolioProductInput {
