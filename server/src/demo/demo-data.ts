@@ -56,6 +56,7 @@ export const DEMO_PRIMARY_PORTFOLIO: SavedPortfolio = {
       feeFromDepositPct: 0,
       feeFromBalancePct: 0.3,
       monthlyCoverageCost: 0,
+      conversionFactor: 200,
       frozen: true,
       joinDate: '2005-03-01',
     },
