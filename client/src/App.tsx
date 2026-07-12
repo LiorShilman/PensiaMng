@@ -43,7 +43,7 @@ import { AuthScreen } from './AuthScreen';
 import { AiPanel } from './AiPanel';
 import { AiMarkdown } from './AiMarkdown';
 import { AiChat } from './AiChat';
-import { Glossary } from './Glossary';
+import { Glossary, BookIcon } from './Glossary';
 import { FanChart } from './FanChart';
 import { MoneyFlow } from './MoneyFlow';
 import { RightsFixation } from './RightsFixation';
@@ -974,7 +974,8 @@ function App() {
               }}
               title="מרכז ידע — מילון מונחים"
             >
-              📖 ידע
+              {BookIcon}
+              ידע
             </button>
             <button
               className={`ai-toggle ${aiConfigured ? 'configured' : ''}`}
