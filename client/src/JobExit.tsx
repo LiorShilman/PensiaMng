@@ -19,9 +19,11 @@ interface Props {
 const nis = (n: number) => `₪${n.toLocaleString('he-IL', { maximumFractionDigits: 0 })}`;
 
 export function JobExit(props: Props) {
+  const DEFAULT_YEARS = 10;
   const [open, setOpen] = useState(false);
-  const [severance, setSeverance] = useState(0);
-  const [years, setYears] = useState(10);
+  // ברירת מחדל: חודש שכר לכל שנת ותק — נוסחת הפיצויים הסטנדרטית (הערכה, ניתנת לעריכה)
+  const [severance, setSeverance] = useState(Math.round(props.defaultSalary * DEFAULT_YEARS));
+  const [years, setYears] = useState(DEFAULT_YEARS);
   const [salary, setSalary] = useState(Math.round(props.defaultSalary));
   const [factor, setFactor] = useState(200);
   const [taxRate, setTaxRate] = useState(35);

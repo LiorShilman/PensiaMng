@@ -33,7 +33,10 @@ export function TaxBenefits(props: Props) {
   const [income, setIncome] = useState(
     props.initial?.income ?? Math.round(props.defaultMonthlyIncome),
   );
-  const [deposits, setDeposits] = useState(props.initial?.deposits ?? 0);
+  // ברירת מחדל: 6% שכר — שיעור תגמולי העובד המינימלי לפי חוק פנסיה חובה
+  const [deposits, setDeposits] = useState(
+    props.initial?.deposits ?? Math.round(props.defaultMonthlyIncome * 12 * 0.06),
+  );
   const [taxRate, setTaxRate] = useState(props.initial?.taxRate ?? 35);
 
   // דיווח קלט ל-App — נשמר עם התיק בלחיצת "שמור תיק"
