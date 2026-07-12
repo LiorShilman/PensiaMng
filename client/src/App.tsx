@@ -39,12 +39,13 @@ import {
   type DecumulationResult,
 } from './api';
 import { openReport } from './report';
+import { exportPortfolioExcel } from './exportExcel';
 import { AuthScreen } from './AuthScreen';
 import { AiPanel } from './AiPanel';
 import { AiMarkdown } from './AiMarkdown';
 import { AiChat } from './AiChat';
 import { Glossary } from './Glossary';
-import { IconBook, IconBot, IconPrinter, IconSparkles } from './icons';
+import { IconBook, IconBot, IconPrinter, IconSheet, IconSparkles } from './icons';
 import { FanChart } from './FanChart';
 import { MoneyFlow } from './MoneyFlow';
 import { RightsFixation } from './RightsFixation';
@@ -1341,6 +1342,25 @@ function App() {
           >
             {IconPrinter}
             הפק דוח
+          </button>
+        )}
+        {result && (
+          <button
+            className="report-btn excel-btn"
+            onClick={() =>
+              exportPortfolioExcel({
+                userName: user.fullName,
+                profile,
+                products,
+                result,
+                scenarios,
+                typeLabel: (t) => TYPE_META[t].label,
+              })
+            }
+            title="ייצוא התיק, התחזית ותרחישי הביטוח לקובץ Excel"
+          >
+            {IconSheet}
+            ייצוא לאקסל
           </button>
         )}
       </div>

@@ -1988,6 +1988,11 @@ button .t-icon {
   backdrop-filter: blur(6px);
 }
 
+.excel-btn:hover {
+  border-color: #22c55e;
+  color: #4ade80;
+}
+
 /* במסכים צרים הסרגל הופך לשורה תחתונה כדי לא להסתיר תוכן */
 @media (max-width: 900px) {
   .action-dock {
