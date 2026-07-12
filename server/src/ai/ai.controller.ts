@@ -14,6 +14,7 @@ import type {
   AiModelInfo,
   AiProvider,
   AiSettingsView,
+  AiUsageView,
   AnalyzeResult,
   ChatMessage,
   ChatResult,
@@ -34,9 +35,21 @@ export class AiController {
   @Put('settings')
   saveSettings(
     @Req() req: AuthedRequest,
-    @Body() dto: { provider: AiProvider; apiKey?: string; model?: string },
+    @Body()
+    dto: {
+      provider: AiProvider;
+      apiKey?: string;
+      model?: string;
+      monthlyBudgetUsd?: number | null;
+    },
   ): Promise<AiSettingsView> {
     return this.ai.saveSettings(req.user.sub, dto);
+  }
+
+  /** ניצול החודש + התקציב + יומן הקריאות האחרון (מפרט 10א) */
+  @Get('usage')
+  usage(@Req() req: AuthedRequest): Promise<AiUsageView> {
+    return this.ai.getUsage(req.user.sub);
   }
 
   /** רשימת מודלים מהספק — משמש גם כבדיקת חיבור */

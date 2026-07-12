@@ -2,10 +2,12 @@ import { useEffect, useState } from 'react';
 import {
   getAiModels,
   getAiSettings,
+  getAiUsage,
   saveAiSettings,
   type AiModelInfo,
   type AiProvider,
   type AiSettingsView,
+  type AiUsageView,
 } from './api';
 
 /** ברירות מחדל — הדגמים המתקדמים בכל ספק */
@@ -26,6 +28,8 @@ export function AiPanel(props: {
   const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [budget, setBudget] = useState<number | ''>('');
+  const [usage, setUsage] = useState<AiUsageView | null>(null);
 
   useEffect(() => {
     getAiSettings()
@@ -34,10 +38,12 @@ export function AiPanel(props: {
           setSettings(s);
           setProvider(s.provider);
           setModel(s.model);
+          setBudget(s.monthlyBudgetUsd ?? '');
           props.onConfigured(true);
         }
       })
       .catch(() => {});
+    getAiUsage().then(setUsage).catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -57,6 +63,7 @@ export function AiPanel(props: {
         provider,
         apiKey: apiKey || undefined,
         model,
+        monthlyBudgetUsd: budget === '' ? null : budget,
       });
       setSettings(saved);
       setApiKey('');
@@ -152,7 +159,84 @@ export function AiPanel(props: {
             />
           )}
         </label>
+
+        <label className="field">
+          <span className="field-label">
+            תקציב חודשי ($)
+            <span
+              className="tip"
+              data-tip="תקרת הוצאה חודשית מוערכת לקריאות ה-AI. בהגעה ל-100% הקריאות נחסמות עד תחילת החודש הבא. ריק = ללא הגבלה. האומדן לפי מחירוני הספקים — לא חיוב בפועל."
+              tabIndex={0}
+            >
+              ⓘ
+            </span>
+          </span>
+          <input
+            type="number"
+            dir="ltr"
+            min={0}
+            step={1}
+            placeholder="ללא הגבלה"
+            value={budget}
+            onChange={(e) =>
+              setBudget(e.target.value === '' ? '' : Number(e.target.value))
+            }
+          />
+        </label>
       </div>
+
+      {usage && (
+        <div className="ai-usage">
+          <div className="ai-usage-head">
+            <span>
+              שימוש החודש: <strong>${usage.monthCostUsd.toFixed(2)}</strong>
+              {usage.budgetUsd !== null && <> מתוך ${usage.budgetUsd}</>}
+              {' · '}
+              {(usage.monthInputTokens + usage.monthOutputTokens).toLocaleString('he-IL')}{' '}
+              טוקנים
+            </span>
+            {usage.usagePct !== null && (
+              <span
+                className={`ai-usage-pct ${
+                  usage.usagePct >= 100 ? 'over' : usage.usagePct >= 80 ? 'warn' : ''
+                }`}
+              >
+                {usage.usagePct}%
+              </span>
+            )}
+          </div>
+          {usage.usagePct !== null && (
+            <div className="ai-usage-bar">
+              <div
+                className={`ai-usage-fill ${
+                  usage.usagePct >= 100 ? 'over' : usage.usagePct >= 80 ? 'warn' : ''
+                }`}
+                style={{ width: `${Math.min(100, usage.usagePct)}%` }}
+              />
+            </div>
+          )}
+          {usage.entries.length > 0 && (
+            <details className="ai-usage-log">
+              <summary>יומן הקריאות האחרון ({usage.entries.length})</summary>
+              <ul>
+                {usage.entries.map((e, i) => (
+                  <li key={i}>
+                    {new Date(e.createdAt).toLocaleString('he-IL', {
+                      day: '2-digit',
+                      month: '2-digit',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}{' '}
+                    · {e.capability} · {e.model} ·{' '}
+                    {(e.inputTokens + e.outputTokens).toLocaleString('he-IL')} טוקנים · $
+                    {e.costUsd.toFixed(4)}
+                  </li>
+                ))}
+              </ul>
+            </details>
+          )}
+        </div>
+      )}
 
       <div className="ai-panel-actions">
         <button className="calc-btn ai-save" onClick={onSave} disabled={busy}>

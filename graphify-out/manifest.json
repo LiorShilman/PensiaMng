@@ -1,0 +1,482 @@
+{
+  ".claude/settings.local.json": {
+    "mtime": 1783756054.8569913,
+    "ast_hash": "31ef65408fbb9d15d7d4334d289cd9f1",
+    "semantic_hash": "31ef65408fbb9d15d7d4334d289cd9f1"
+  },
+  "client/.oxlintrc.json": {
+    "mtime": 1783078002.4128714,
+    "ast_hash": "029f4905006c1fffd96bc863e2d98d3e",
+    "semantic_hash": "029f4905006c1fffd96bc863e2d98d3e"
+  },
+  "client/package.json": {
+    "mtime": 1783746976.5866623,
+    "ast_hash": "b1910412f25a9711b1df6508e5bfe0dd",
+    "semantic_hash": "b1910412f25a9711b1df6508e5bfe0dd"
+  },
+  "client/src/AiChat.tsx": {
+    "mtime": 1783830801.7791605,
+    "ast_hash": "087f4fb94dbf1d6da55b11d79cc3822e",
+    "semantic_hash": "087f4fb94dbf1d6da55b11d79cc3822e"
+  },
+  "client/src/AiMarkdown.tsx": {
+    "mtime": 1783845687.9036417,
+    "ast_hash": "506cdeacd7fee8cba7d483eaa15d3e3f",
+    "semantic_hash": "506cdeacd7fee8cba7d483eaa15d3e3f"
+  },
+  "client/src/AiPanel.tsx": {
+    "mtime": 1783845121.736696,
+    "ast_hash": "8595f1800fa74fdcb26e9de41b472b47",
+    "semantic_hash": "8595f1800fa74fdcb26e9de41b472b47"
+  },
+  "client/src/App.tsx": {
+    "mtime": 1783843978.7062473,
+    "ast_hash": "dae3326a7565efb1407ae19bc6a9fe79",
+    "semantic_hash": "dae3326a7565efb1407ae19bc6a9fe79"
+  },
+  "client/src/AuthScreen.tsx": {
+    "mtime": 1783751855.1278653,
+    "ast_hash": "6bf018de890eace0dc3816986638092d",
+    "semantic_hash": "6bf018de890eace0dc3816986638092d"
+  },
+  "client/src/Decumulation.tsx": {
+    "mtime": 1783843953.576284,
+    "ast_hash": "491bb265b3c418970c3654c28512c027",
+    "semantic_hash": "491bb265b3c418970c3654c28512c027"
+  },
+  "client/src/FanChart.tsx": {
+    "mtime": 1783788281.560393,
+    "ast_hash": "c61083ba050a044d2ec570a7df981a44",
+    "semantic_hash": "c61083ba050a044d2ec570a7df981a44"
+  },
+  "client/src/JobExit.tsx": {
+    "mtime": 1783837976.8026497,
+    "ast_hash": "dd76953c1af562987a050288daa4faf4",
+    "semantic_hash": "dd76953c1af562987a050288daa4faf4"
+  },
+  "client/src/MoneyFlow.tsx": {
+    "mtime": 1783788555.0089405,
+    "ast_hash": "a72e8bfecce789f3c5d59883d9639070",
+    "semantic_hash": "a72e8bfecce789f3c5d59883d9639070"
+  },
+  "client/src/ReportImport.tsx": {
+    "mtime": 1783829160.4245186,
+    "ast_hash": "ab8d22dbea4952d4fe0ba66bdf808462",
+    "semantic_hash": "ab8d22dbea4952d4fe0ba66bdf808462"
+  },
+  "client/src/RightsFixation.tsx": {
+    "mtime": 1783837976.797649,
+    "ast_hash": "97b86071d7ceca36bbee6742b02d7390",
+    "semantic_hash": "97b86071d7ceca36bbee6742b02d7390"
+  },
+  "client/src/SimulatedPension.tsx": {
+    "mtime": 1783837976.8006487,
+    "ast_hash": "9e648f2ead80826b0c25f125b7a96c5a",
+    "semantic_hash": "9e648f2ead80826b0c25f125b7a96c5a"
+  },
+  "client/src/TaxBenefits.tsx": {
+    "mtime": 1783837976.7996485,
+    "ast_hash": "65b9ce823af1c22e3fb1acfb4e2d31d6",
+    "semantic_hash": "65b9ce823af1c22e3fb1acfb4e2d31d6"
+  },
+  "client/src/api.ts": {
+    "mtime": 1783845086.644184,
+    "ast_hash": "3766f4e040d81e089013ddcf15376030",
+    "semantic_hash": "3766f4e040d81e089013ddcf15376030"
+  },
+  "client/src/main.tsx": {
+    "mtime": 1783078002.8113441,
+    "ast_hash": "787e5a07efeb2bf6209d5937195f2f68",
+    "semantic_hash": "787e5a07efeb2bf6209d5937195f2f68"
+  },
+  "client/src/report.ts": {
+    "mtime": 1783827997.9891837,
+    "ast_hash": "ea13f68795906606c4e99cd8a4e92359",
+    "semantic_hash": "ea13f68795906606c4e99cd8a4e92359"
+  },
+  "client/tsconfig.app.json": {
+    "mtime": 1783078002.4570117,
+    "ast_hash": "5f2dafd737dea8a4ddcbb10f5113ac5a",
+    "semantic_hash": "5f2dafd737dea8a4ddcbb10f5113ac5a"
+  },
+  "client/tsconfig.json": {
+    "mtime": 1783078002.4659898,
+    "ast_hash": "a3d39fa780ebff65444de257f291ce6c",
+    "semantic_hash": "a3d39fa780ebff65444de257f291ce6c"
+  },
+  "client/tsconfig.node.json": {
+    "mtime": 1783078002.4739916,
+    "ast_hash": "f9cb81ddcea69ffdab672fc8c48dca66",
+    "semantic_hash": "f9cb81ddcea69ffdab672fc8c48dca66"
+  },
+  "client/vite.config.ts": {
+    "mtime": 1783078002.7883453,
+    "ast_hash": "88439104b3c207f17d33ef3160e3b080",
+    "semantic_hash": "88439104b3c207f17d33ef3160e3b080"
+  },
+  "graphify-refresh.ps1": {
+    "mtime": 1783846899.8245568,
+    "ast_hash": "c41f73aff3f65561de59ad737ee9c948",
+    "semantic_hash": "c41f73aff3f65561de59ad737ee9c948"
+  },
+  "server/eslint.config.mjs": {
+    "mtime": 1783746718.7911842,
+    "ast_hash": "069d66f3fd2af0b03d917cf51a1f4c42",
+    "semantic_hash": "069d66f3fd2af0b03d917cf51a1f4c42"
+  },
+  "server/nest-cli.json": {
+    "mtime": 1783746718.7931888,
+    "ast_hash": "fa439650fa28a1a7aa8c2b6d81c8cc20",
+    "semantic_hash": "fa439650fa28a1a7aa8c2b6d81c8cc20"
+  },
+  "server/package.json": {
+    "mtime": 1783782896.438079,
+    "ast_hash": "4d9b4ae292819ffb7430d700adb7e02a",
+    "semantic_hash": "4d9b4ae292819ffb7430d700adb7e02a"
+  },
+  "server/prisma/migrations/20260711062336_init/migration.sql": {
+    "mtime": 1783751016.6793177,
+    "ast_hash": "d64b36f2e7c023b4f9deaf655fc869d2",
+    "semantic_hash": "d64b36f2e7c023b4f9deaf655fc869d2"
+  },
+  "server/prisma/migrations/20260711063036_auth_and_portfolio/migration.sql": {
+    "mtime": 1783751436.57208,
+    "ast_hash": "d9f17c2ce994a41ac16e9f7cbb08cb95",
+    "semantic_hash": "d9f17c2ce994a41ac16e9f7cbb08cb95"
+  },
+  "server/prisma/migrations/20260711123553_product_insured_salary/migration.sql": {
+    "mtime": 1783773353.9614875,
+    "ast_hash": "034fbdb806161936d0845156565c33ab",
+    "semantic_hash": "034fbdb806161936d0845156565c33ab"
+  },
+  "server/prisma/migrations/20260711175447_track_category_unique/migration.sql": {
+    "mtime": 1783781687.3546937,
+    "ast_hash": "76711c795d2d35de653b97b54dfc63ab",
+    "semantic_hash": "76711c795d2d35de653b97b54dfc63ab"
+  },
+  "server/prisma/migrations/20260711181521_ai_settings/migration.sql": {
+    "mtime": 1783782921.9187374,
+    "ast_hash": "070e8ed93d1263bdf8e7507886cb17ef",
+    "semantic_hash": "070e8ed93d1263bdf8e7507886cb17ef"
+  },
+  "server/prisma/migrations/20260711183737_disability_insurance_type/migration.sql": {
+    "mtime": 1783784257.9239216,
+    "ast_hash": "06759276ac3a312360946b638b122fad",
+    "semantic_hash": "06759276ac3a312360946b638b122fad"
+  },
+  "server/prisma/migrations/20260711190000_product_transfer_history/migration.sql": {
+    "mtime": 1783786331.9274223,
+    "ast_hash": "bc9673b5b67b5b726822d5dfe6fe0d25",
+    "semantic_hash": "bc9673b5b67b5b726822d5dfe6fe0d25"
+  },
+  "server/prisma/migrations/20260711200000_last_ai_analysis/migration.sql": {
+    "mtime": 1783788819.6167881,
+    "ast_hash": "65cb89eb81813d209a8867b1dcac85ba",
+    "semantic_hash": "65cb89eb81813d209a8867b1dcac85ba"
+  },
+  "server/prisma/migrations/20260711210000_seed_rights_fixation_params/migration.sql": {
+    "mtime": 1783791229.4098063,
+    "ast_hash": "0f59e5a8f68f4500b4cc61cac957b712",
+    "semantic_hash": "0f59e5a8f68f4500b4cc61cac957b712"
+  },
+  "server/prisma/migrations/20260711220000_seed_ni_params/migration.sql": {
+    "mtime": 1783794218.2923877,
+    "ast_hash": "9726681e90a85a66ee879f513819077a",
+    "semantic_hash": "9726681e90a85a66ee879f513819077a"
+  },
+  "server/prisma/migrations/20260711230000_seed_tax_benefit_params/migration.sql": {
+    "mtime": 1783797900.9814324,
+    "ast_hash": "64ed47f01d5bcaa417d0df155eb1d630",
+    "semantic_hash": "64ed47f01d5bcaa417d0df155eb1d630"
+  },
+  "server/prisma/migrations/20260712010000_fix_exemption_schedule/migration.sql": {
+    "mtime": 1783825631.5580003,
+    "ast_hash": "b709ab9944d9d1b7e2be78600c3d47ab",
+    "semantic_hash": "b709ab9944d9d1b7e2be78600c3d47ab"
+  },
+  "server/prisma/migrations/20260712020000_seed_severance_ceiling/migration.sql": {
+    "mtime": 1783828656.4910426,
+    "ast_hash": "7a10553002f2f84ebbe108930da08d4c",
+    "semantic_hash": "7a10553002f2f84ebbe108930da08d4c"
+  },
+  "server/prisma/migrations/20260712030000_life_insurance_type/migration.sql": {
+    "mtime": 1783830300.207745,
+    "ast_hash": "327d8f8808764bc81729c83bc6b1b812",
+    "semantic_hash": "327d8f8808764bc81729c83bc6b1b812"
+  },
+  "server/prisma/migrations/20260712040000_ai_usage_log/migration.sql": {
+    "mtime": 1783844529.1838062,
+    "ast_hash": "3d7f45999d69cdd7e0ebd4d83691be73",
+    "semantic_hash": "3d7f45999d69cdd7e0ebd4d83691be73"
+  },
+  "server/src/ai/ai-tools.service.ts": {
+    "mtime": 1783843902.615268,
+    "ast_hash": "81e3aa5619bdb9df59c091b415d8c5b5",
+    "semantic_hash": "81e3aa5619bdb9df59c091b415d8c5b5"
+  },
+  "server/src/ai/ai.controller.ts": {
+    "mtime": 1783844904.3628752,
+    "ast_hash": "d4d96b322cf8390605ed72016670905e",
+    "semantic_hash": "d4d96b322cf8390605ed72016670905e"
+  },
+  "server/src/ai/ai.module.ts": {
+    "mtime": 1783803472.9047723,
+    "ast_hash": "209f74c65347f1232027006e4f145fd2",
+    "semantic_hash": "209f74c65347f1232027006e4f145fd2"
+  },
+  "server/src/ai/ai.service.ts": {
+    "mtime": 1783844882.3200624,
+    "ast_hash": "7ac76ee1f573ac4a0b7bd0bb934b9002",
+    "semantic_hash": "7ac76ee1f573ac4a0b7bd0bb934b9002"
+  },
+  "server/src/ai/crypto.util.ts": {
+    "mtime": 1783782946.4858506,
+    "ast_hash": "d56df8a131625a7b5dbcf05e3394c8ff",
+    "semantic_hash": "d56df8a131625a7b5dbcf05e3394c8ff"
+  },
+  "server/src/app.controller.spec.ts": {
+    "mtime": 1783746718.837191,
+    "ast_hash": "e91fed2ee35431d60d1adbf1d5739b83",
+    "semantic_hash": "e91fed2ee35431d60d1adbf1d5739b83"
+  },
+  "server/src/app.controller.ts": {
+    "mtime": 1783746718.8291874,
+    "ast_hash": "ae15d1c5a85e6ebfad68b7193766dfb5",
+    "semantic_hash": "ae15d1c5a85e6ebfad68b7193766dfb5"
+  },
+  "server/src/app.module.ts": {
+    "mtime": 1783783020.957972,
+    "ast_hash": "2f34b21a3a32c8be242381c292219824",
+    "semantic_hash": "2f34b21a3a32c8be242381c292219824"
+  },
+  "server/src/app.service.ts": {
+    "mtime": 1783746718.8321903,
+    "ast_hash": "08e985e831bca61f6be89c5c2ecef2fa",
+    "semantic_hash": "08e985e831bca61f6be89c5c2ecef2fa"
+  },
+  "server/src/auth/auth.controller.ts": {
+    "mtime": 1783751505.3328936,
+    "ast_hash": "d8ec8b26a5e7caddb185a52a3fc3e97e",
+    "semantic_hash": "d8ec8b26a5e7caddb185a52a3fc3e97e"
+  },
+  "server/src/auth/auth.module.ts": {
+    "mtime": 1783751510.9205632,
+    "ast_hash": "03907424927da47c88e730d3fff20138",
+    "semantic_hash": "03907424927da47c88e730d3fff20138"
+  },
+  "server/src/auth/auth.service.ts": {
+    "mtime": 1783751498.3295784,
+    "ast_hash": "4915a2b59fa4d173e8f691fbc0d2f585",
+    "semantic_hash": "4915a2b59fa4d173e8f691fbc0d2f585"
+  },
+  "server/src/auth/jwt-auth.guard.ts": {
+    "mtime": 1783751503.1396105,
+    "ast_hash": "59583fb9601ed59d353e7ebeb2e4b60d",
+    "semantic_hash": "59583fb9601ed59d353e7ebeb2e4b60d"
+  },
+  "server/src/calc-engine/annuity.ts": {
+    "mtime": 1783747366.7091537,
+    "ast_hash": "4dd0f4e1731900a86e347bff7665e0c4",
+    "semantic_hash": "4dd0f4e1731900a86e347bff7665e0c4"
+  },
+  "server/src/calc-engine/calc-engine.controller.ts": {
+    "mtime": 1783843902.6132693,
+    "ast_hash": "794025dc6d580cc1247768886dd699a9",
+    "semantic_hash": "794025dc6d580cc1247768886dd699a9"
+  },
+  "server/src/calc-engine/calc-engine.module.ts": {
+    "mtime": 1783791269.2331467,
+    "ast_hash": "6d10a093b0a9929a632d41f2d499b159",
+    "semantic_hash": "6d10a093b0a9929a632d41f2d499b159"
+  },
+  "server/src/calc-engine/decumulation.spec.ts": {
+    "mtime": 1783843851.2137666,
+    "ast_hash": "2715acda201fb2c532fab6c32ee6e656",
+    "semantic_hash": "2715acda201fb2c532fab6c32ee6e656"
+  },
+  "server/src/calc-engine/decumulation.ts": {
+    "mtime": 1783843827.5279157,
+    "ast_hash": "9e14848318e5a24519df4ff1e7225437",
+    "semantic_hash": "9e14848318e5a24519df4ff1e7225437"
+  },
+  "server/src/calc-engine/fee-comparison.spec.ts": {
+    "mtime": 1783838161.3647108,
+    "ast_hash": "1fc8467bac4039f054fc80654c460721",
+    "semantic_hash": "1fc8467bac4039f054fc80654c460721"
+  },
+  "server/src/calc-engine/fee-comparison.ts": {
+    "mtime": 1783838136.2335985,
+    "ast_hash": "eb1f8771dee84d4a9e23652c511c6f03",
+    "semantic_hash": "eb1f8771dee84d4a9e23652c511c6f03"
+  },
+  "server/src/calc-engine/health-score.spec.ts": {
+    "mtime": 1783794706.9876797,
+    "ast_hash": "ec418908aebb4f011734f2302e2bc076",
+    "semantic_hash": "ec418908aebb4f011734f2302e2bc076"
+  },
+  "server/src/calc-engine/health-score.ts": {
+    "mtime": 1783830468.0940108,
+    "ast_hash": "4b7edc02973daef92c41fadf8eee466b",
+    "semantic_hash": "4b7edc02973daef92c41fadf8eee466b"
+  },
+  "server/src/calc-engine/job-exit.spec.ts": {
+    "mtime": 1783828613.8248384,
+    "ast_hash": "75e50925c17cefdbc1b91d5b47745bc9",
+    "semantic_hash": "75e50925c17cefdbc1b91d5b47745bc9"
+  },
+  "server/src/calc-engine/job-exit.ts": {
+    "mtime": 1783828587.621889,
+    "ast_hash": "ebc65dd61760b1300a788ae4343b4365",
+    "semantic_hash": "ebc65dd61760b1300a788ae4343b4365"
+  },
+  "server/src/calc-engine/national-insurance.spec.ts": {
+    "mtime": 1783794182.857172,
+    "ast_hash": "5a5faf1264684071a66afe67aec71abe",
+    "semantic_hash": "5a5faf1264684071a66afe67aec71abe"
+  },
+  "server/src/calc-engine/national-insurance.ts": {
+    "mtime": 1783794160.7918046,
+    "ast_hash": "61cf791512559c55ef2bb09f1f9358f0",
+    "semantic_hash": "61cf791512559c55ef2bb09f1f9358f0"
+  },
+  "server/src/calc-engine/portfolio.spec.ts": {
+    "mtime": 1783794574.0051553,
+    "ast_hash": "d1a56978bf79460020bb2a729af86b23",
+    "semantic_hash": "d1a56978bf79460020bb2a729af86b23"
+  },
+  "server/src/calc-engine/portfolio.ts": {
+    "mtime": 1783830332.084782,
+    "ast_hash": "590c5fd4106d36d80f4c59031d175032",
+    "semantic_hash": "590c5fd4106d36d80f4c59031d175032"
+  },
+  "server/src/calc-engine/projection.spec.ts": {
+    "mtime": 1783776468.9604495,
+    "ast_hash": "876cbfea296cfd9fd3c9dadbc76abebd",
+    "semantic_hash": "876cbfea296cfd9fd3c9dadbc76abebd"
+  },
+  "server/src/calc-engine/projection.ts": {
+    "mtime": 1783776429.6219213,
+    "ast_hash": "eb05c17af36f4aa53d8abcba0aad97de",
+    "semantic_hash": "eb05c17af36f4aa53d8abcba0aad97de"
+  },
+  "server/src/calc-engine/retirement.spec.ts": {
+    "mtime": 1783770435.416407,
+    "ast_hash": "1419ba142618333f41c63f73d4751c03",
+    "semantic_hash": "1419ba142618333f41c63f73d4751c03"
+  },
+  "server/src/calc-engine/retirement.ts": {
+    "mtime": 1783770414.4337094,
+    "ast_hash": "7c4229636d4e9aeadd40ef41597bac6d",
+    "semantic_hash": "7c4229636d4e9aeadd40ef41597bac6d"
+  },
+  "server/src/calc-engine/rights-fixation.service.ts": {
+    "mtime": 1783791259.8380003,
+    "ast_hash": "e5521a10083adfa642e35c5dc7edb960",
+    "semantic_hash": "e5521a10083adfa642e35c5dc7edb960"
+  },
+  "server/src/calc-engine/rights-fixation.spec.ts": {
+    "mtime": 1783825653.9775639,
+    "ast_hash": "b19fab89513e8ca92e1d99df1922a192",
+    "semantic_hash": "b19fab89513e8ca92e1d99df1922a192"
+  },
+  "server/src/calc-engine/rights-fixation.ts": {
+    "mtime": 1783825604.2436392,
+    "ast_hash": "ec9609e5641899eacbb5565589553553",
+    "semantic_hash": "ec9609e5641899eacbb5565589553553"
+  },
+  "server/src/calc-engine/scenarios.spec.ts": {
+    "mtime": 1783830571.357513,
+    "ast_hash": "307ceead0dcb64dcff5df1c11bf33b2d",
+    "semantic_hash": "307ceead0dcb64dcff5df1c11bf33b2d"
+  },
+  "server/src/calc-engine/scenarios.ts": {
+    "mtime": 1783830387.0832734,
+    "ast_hash": "da64e0dac3ea360f62f61ab59a8fb6b6",
+    "semantic_hash": "da64e0dac3ea360f62f61ab59a8fb6b6"
+  },
+  "server/src/calc-engine/simulated-pension.spec.ts": {
+    "mtime": 1783825349.6127598,
+    "ast_hash": "6f2c6e3b763a75f43ecd1ed1567226ef",
+    "semantic_hash": "6f2c6e3b763a75f43ecd1ed1567226ef"
+  },
+  "server/src/calc-engine/simulated-pension.ts": {
+    "mtime": 1783825717.3777783,
+    "ast_hash": "e25d6eb23ad753e315c46ee32c20049f",
+    "semantic_hash": "e25d6eb23ad753e315c46ee32c20049f"
+  },
+  "server/src/calc-engine/tax-benefits.spec.ts": {
+    "mtime": 1783797861.564772,
+    "ast_hash": "60c6f0a2f9ddf1bda0fd06eef87d866a",
+    "semantic_hash": "60c6f0a2f9ddf1bda0fd06eef87d866a"
+  },
+  "server/src/calc-engine/tax-benefits.ts": {
+    "mtime": 1783798636.797216,
+    "ast_hash": "a0fea8f852d027ee15efdbdbca5b0e92",
+    "semantic_hash": "a0fea8f852d027ee15efdbdbca5b0e92"
+  },
+  "server/src/calc-engine/tracks.spec.ts": {
+    "mtime": 1783781592.7533474,
+    "ast_hash": "a3c0be9062e481941faf1aa0deee9cac",
+    "semantic_hash": "a3c0be9062e481941faf1aa0deee9cac"
+  },
+  "server/src/calc-engine/tracks.ts": {
+    "mtime": 1783781585.0774713,
+    "ast_hash": "1505af05b2d12b251bf650280502a08b",
+    "semantic_hash": "1505af05b2d12b251bf650280502a08b"
+  },
+  "server/src/calc-engine/types.ts": {
+    "mtime": 1783830346.7201912,
+    "ast_hash": "4c327e87749824266e72654250fe3695",
+    "semantic_hash": "4c327e87749824266e72654250fe3695"
+  },
+  "server/src/main.ts": {
+    "mtime": 1783828716.1452892,
+    "ast_hash": "e9d62223e7bf9a9fe8880be7d0c6ef09",
+    "semantic_hash": "e9d62223e7bf9a9fe8880be7d0c6ef09"
+  },
+  "server/src/portfolio/portfolio.controller.ts": {
+    "mtime": 1783751565.274651,
+    "ast_hash": "d344d63de38d5912ae7ac6dda33d5628",
+    "semantic_hash": "d344d63de38d5912ae7ac6dda33d5628"
+  },
+  "server/src/portfolio/portfolio.module.ts": {
+    "mtime": 1783751566.9690363,
+    "ast_hash": "4e536f2734a76b15a9c635ab6b56223a",
+    "semantic_hash": "4e536f2734a76b15a9c635ab6b56223a"
+  },
+  "server/src/portfolio/portfolio.service.ts": {
+    "mtime": 1783786433.6881218,
+    "ast_hash": "1b962374e27e34b34791a22a21c4f64e",
+    "semantic_hash": "1b962374e27e34b34791a22a21c4f64e"
+  },
+  "server/src/prisma/prisma.module.ts": {
+    "mtime": 1783751478.917041,
+    "ast_hash": "3505a1831c78f0a9475e4ce0f0092410",
+    "semantic_hash": "3505a1831c78f0a9475e4ce0f0092410"
+  },
+  "server/src/prisma/prisma.service.ts": {
+    "mtime": 1783751477.1579993,
+    "ast_hash": "7bb7cda1b0bf147b5015ea9dd61eaaa7",
+    "semantic_hash": "7bb7cda1b0bf147b5015ea9dd61eaaa7"
+  },
+  "server/test/app.e2e-spec.ts": {
+    "mtime": 1783746718.853184,
+    "ast_hash": "668094bf268e0395763312620e5638e8",
+    "semantic_hash": "668094bf268e0395763312620e5638e8"
+  },
+  "server/test/jest-e2e.json": {
+    "mtime": 1783746718.839188,
+    "ast_hash": "707a50895cb1c565825637916e9cf290",
+    "semantic_hash": "707a50895cb1c565825637916e9cf290"
+  },
+  "server/tsconfig.build.json": {
+    "mtime": 1783746718.8151848,
+    "ast_hash": "d23fc4aff02c91ce9c424c15aea9b49b",
+    "semantic_hash": "d23fc4aff02c91ce9c424c15aea9b49b"
+  },
+  "server/tsconfig.json": {
+    "mtime": 1783746718.825185,
+    "ast_hash": "e99b998156dc99eda85378413a794718",
+    "semantic_hash": "e99b998156dc99eda85378413a794718"
+  }
+}

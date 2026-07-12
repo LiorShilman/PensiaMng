@@ -17,6 +17,8 @@ export interface AiSettingsView {
   model: string;
   hasKey: boolean;
   keyMask: string | null;
+  /** תקרת הוצאה חודשית ($); null = ללא הגבלה */
+  monthlyBudgetUsd: number | null;
 }
 
 export interface AiModelInfo {
@@ -45,6 +47,43 @@ export interface ChatResult {
   toolCalls: { name: string }[];
   provider: AiProvider;
   model: string;
+}
+
+export interface AiUsageView {
+  /** עלות מוערכת החודש ($) */
+  monthCostUsd: number;
+  monthInputTokens: number;
+  monthOutputTokens: number;
+  /** תקרת התקציב ($); null = ללא הגבלה */
+  budgetUsd: number | null;
+  /** ניצול באחוזים מהתקציב (null כשאין תקציב) */
+  usagePct: number | null;
+  entries: {
+    capability: string;
+    provider: string;
+    model: string;
+    inputTokens: number;
+    outputTokens: number;
+    costUsd: number;
+    createdAt: string;
+  }[];
+}
+
+/** אומדן מחירים גס ($ למיליון טוקנים) — להערכת עלות בלבד, לא חיוב בפועל */
+const PRICE_TABLE: { match: RegExp; inPerM: number; outPerM: number }[] = [
+  { match: /opus/i, inPerM: 15, outPerM: 75 },
+  { match: /sonnet/i, inPerM: 3, outPerM: 15 },
+  { match: /haiku/i, inPerM: 1, outPerM: 5 },
+  { match: /gpt-5/i, inPerM: 1.25, outPerM: 10 },
+  { match: /gpt-4/i, inPerM: 2.5, outPerM: 10 },
+];
+
+function estimateCostUsd(model: string, inputTokens: number, outputTokens: number): number {
+  const p = PRICE_TABLE.find((t) => t.match.test(model)) ?? { inPerM: 3, outPerM: 15 };
+  return (
+    Math.round(((inputTokens * p.inPerM + outputTokens * p.outPerM) / 1_000_000) * 10_000) /
+    10_000
+  );
 }
 
 /** מוצר שחולץ מדוח שנתי — טיוטה לאישור המשתמש לפני הוספה לתיק */
@@ -238,12 +277,18 @@ export class AiService {
       model: s.model,
       hasKey: true,
       keyMask: mask,
+      monthlyBudgetUsd: s.monthlyBudgetUsd !== null ? Number(s.monthlyBudgetUsd) : null,
     };
   }
 
   async saveSettings(
     userId: string,
-    dto: { provider: AiProvider; apiKey?: string; model?: string },
+    dto: {
+      provider: AiProvider;
+      apiKey?: string;
+      model?: string;
+      monthlyBudgetUsd?: number | null;
+    },
   ): Promise<AiSettingsView> {
     if (dto.provider !== 'anthropic' && dto.provider !== 'openai') {
       throw new BadRequestException('ספק לא נתמך');
@@ -259,10 +304,22 @@ export class AiService {
       throw new BadRequestException('נדרש מפתח API בהגדרה ראשונה');
     }
 
+    const budget =
+      dto.monthlyBudgetUsd === undefined
+        ? undefined
+        : dto.monthlyBudgetUsd === null || dto.monthlyBudgetUsd <= 0
+          ? null
+          : dto.monthlyBudgetUsd;
     await this.prisma.aiSettings.upsert({
       where: { userId },
-      create: { userId, provider: dto.provider, apiKeyEnc, model },
-      update: { provider: dto.provider, apiKeyEnc, model },
+      create: {
+        userId,
+        provider: dto.provider,
+        apiKeyEnc,
+        model,
+        monthlyBudgetUsd: budget ?? null,
+      },
+      update: { provider: dto.provider, apiKeyEnc, model, monthlyBudgetUsd: budget },
     });
     return (await this.getSettings(userId))!;
   }
@@ -321,8 +378,86 @@ export class AiService {
     });
   }
 
+  /** רישום קריאה ביומן ה-AI — טוקנים ואומדן עלות, ללא תוכן */
+  private async logUsage(
+    userId: string,
+    capability: string,
+    provider: AiProvider,
+    model: string,
+    inputTokens: number,
+    outputTokens: number,
+  ): Promise<void> {
+    try {
+      await this.prisma.aiUsageLog.create({
+        data: {
+          userId,
+          capability,
+          provider,
+          model,
+          inputTokens,
+          outputTokens,
+          costUsd: estimateCostUsd(model, inputTokens, outputTokens),
+        },
+      });
+    } catch {
+      // כשל ברישום היומן לא מפיל את הקריאה עצמה
+    }
+  }
+
+  /** ניצול החודש הנוכחי + התקציב + יומן אחרון */
+  async getUsage(userId: string): Promise<AiUsageView> {
+    const monthStart = new Date();
+    monthStart.setDate(1);
+    monthStart.setHours(0, 0, 0, 0);
+    const [agg, entries, settings] = await Promise.all([
+      this.prisma.aiUsageLog.aggregate({
+        where: { userId, createdAt: { gte: monthStart } },
+        _sum: { costUsd: true, inputTokens: true, outputTokens: true },
+      }),
+      this.prisma.aiUsageLog.findMany({
+        where: { userId },
+        orderBy: { createdAt: 'desc' },
+        take: 20,
+      }),
+      this.prisma.aiSettings.findUnique({ where: { userId } }),
+    ]);
+    const monthCostUsd = Number(agg._sum.costUsd ?? 0);
+    const budgetUsd =
+      settings?.monthlyBudgetUsd != null ? Number(settings.monthlyBudgetUsd) : null;
+    return {
+      monthCostUsd: Math.round(monthCostUsd * 100) / 100,
+      monthInputTokens: agg._sum.inputTokens ?? 0,
+      monthOutputTokens: agg._sum.outputTokens ?? 0,
+      budgetUsd,
+      usagePct:
+        budgetUsd && budgetUsd > 0
+          ? Math.round((monthCostUsd / budgetUsd) * 100)
+          : null,
+      entries: entries.map((e) => ({
+        capability: e.capability,
+        provider: e.provider,
+        model: e.model,
+        inputTokens: e.inputTokens,
+        outputTokens: e.outputTokens,
+        costUsd: Number(e.costUsd),
+        createdAt: e.createdAt.toISOString(),
+      })),
+    };
+  }
+
+  /** אכיפת תקרת התקציב החודשי — נבדקת לפני כל קריאה לספק */
+  private async enforceBudget(userId: string): Promise<void> {
+    const usage = await this.getUsage(userId);
+    if (usage.budgetUsd !== null && usage.monthCostUsd >= usage.budgetUsd) {
+      throw new BadRequestException(
+        `תקרת התקציב החודשי ל-AI (${usage.budgetUsd}$) נוצלה במלואה — הגדל את התקציב בהגדרות ה-AI או המתן לחודש הבא`,
+      );
+    }
+  }
+
   /** ניתוח חכם של התיק — הנתונים חושבו במנוע; ה-AI מפרש וממליץ */
   async analyze(userId: string, context: unknown): Promise<AnalyzeResult> {
+    await this.enforceBudget(userId);
     const { provider, model, apiKey } = await this.clientFor(userId);
     const userContent = `להלן נתוני התיק הפנסיוני (כולם חושבו במנוע הדטרמיניסטי של המערכת). נתח והמלץ:\n\n\`\`\`json\n${JSON.stringify(context, null, 1)}\n\`\`\`\n\nחשוב: ענה בעברית בלבד, מההתחלה ועד הסוף.`;
 
@@ -341,6 +476,14 @@ export class AiService {
           .filter((b): b is Anthropic.TextBlock => b.type === 'text')
           .map((b) => b.text)
           .join('\n');
+        await this.logUsage(
+          userId,
+          'analyze',
+          provider,
+          resp.model,
+          resp.usage.input_tokens,
+          resp.usage.output_tokens,
+        );
         result = { text, provider, model: resp.model };
       } else {
         const client = new OpenAI({ apiKey });
@@ -354,6 +497,14 @@ export class AiService {
             { role: 'user', content: userContent },
           ],
         });
+        await this.logUsage(
+          userId,
+          'analyze',
+          provider,
+          resp.model,
+          resp.usage?.prompt_tokens ?? 0,
+          resp.usage?.completion_tokens ?? 0,
+        );
         result = {
           text: resp.choices[0]?.message?.content ?? '',
           provider,
@@ -375,10 +526,13 @@ export class AiService {
    */
   async chat(userId: string, messages: ChatMessage[]): Promise<ChatResult> {
     if (!messages?.length) throw new BadRequestException('שיחה ריקה');
+    await this.enforceBudget(userId);
     const { provider, model, apiKey } = await this.clientFor(userId);
     const toolDefs = this.tools.defs();
     const toolLog: { name: string }[] = [];
     const MAX_TURNS = 6;
+    let totalIn = 0;
+    let totalOut = 0;
 
     const runTool = async (name: string, args: unknown): Promise<string> => {
       toolLog.push({ name });
@@ -409,6 +563,8 @@ export class AiService {
             tools,
             messages: msgs,
           });
+          totalIn += resp.usage.input_tokens;
+          totalOut += resp.usage.output_tokens;
           if (resp.stop_reason === 'tool_use') {
             msgs.push({ role: 'assistant', content: resp.content });
             const results: Anthropic.ToolResultBlockParam[] = [];
@@ -428,6 +584,7 @@ export class AiService {
             .filter((b): b is Anthropic.TextBlock => b.type === 'text')
             .map((b) => b.text)
             .join('\n');
+          await this.logUsage(userId, 'chat', provider, resp.model, totalIn, totalOut);
           return { text, toolCalls: toolLog, provider, model: resp.model };
         }
         throw new Error('חריגה ממספר סבבי הכלים המרבי');
@@ -451,6 +608,8 @@ export class AiService {
         });
         const msg = resp.choices[0]?.message;
         if (!msg) throw new Error('תשובה ריקה מהמודל');
+        totalIn += resp.usage?.prompt_tokens ?? 0;
+        totalOut += resp.usage?.completion_tokens ?? 0;
         if (msg.tool_calls?.length) {
           msgs.push(msg);
           for (const tc of msg.tool_calls) {
@@ -466,6 +625,7 @@ export class AiService {
           }
           continue;
         }
+        await this.logUsage(userId, 'chat', provider, resp.model, totalIn, totalOut);
         return {
           text: msg.content ?? '',
           toolCalls: toolLog,
@@ -492,6 +652,7 @@ export class AiService {
     if (pdfBase64.length > 20_000_000) {
       throw new BadRequestException('הקובץ גדול מדי (עד ~15MB)');
     }
+    await this.enforceBudget(userId);
     const { provider, model, apiKey } = await this.clientFor(userId);
     if (provider !== 'anthropic') {
       throw new BadRequestException(
@@ -526,6 +687,14 @@ export class AiService {
           },
         ],
       });
+      await this.logUsage(
+        userId,
+        'extract_report',
+        provider,
+        resp.model,
+        resp.usage.input_tokens,
+        resp.usage.output_tokens,
+      );
       const toolUse = resp.content.find(
         (b): b is Anthropic.ToolUseBlock => b.type === 'tool_use',
       );

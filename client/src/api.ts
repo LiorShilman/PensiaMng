@@ -169,6 +169,8 @@ export interface AiSettingsView {
   model: string;
   hasKey: boolean;
   keyMask: string | null;
+  /** תקרת הוצאה חודשית ($); null = ללא הגבלה */
+  monthlyBudgetUsd: number | null;
 }
 
 export interface AiModelInfo {
@@ -195,6 +197,7 @@ export function saveAiSettings(dto: {
   provider: AiProvider;
   apiKey?: string;
   model?: string;
+  monthlyBudgetUsd?: number | null;
 }): Promise<AiSettingsView> {
   return request<AiSettingsView>('PUT', '/ai/settings', dto);
 }
@@ -211,6 +214,28 @@ export function aiAnalyze(context: unknown): Promise<AnalyzeResult> {
 /** הניתוח האחרון שנשמר — נטען עם הכניסה כדי לא לנתח מחדש כל פעם */
 export function getLastAiAnalysis(): Promise<LastAnalysis | null> {
   return request<LastAnalysis | null>('GET', '/ai/last');
+}
+
+export interface AiUsageView {
+  monthCostUsd: number;
+  monthInputTokens: number;
+  monthOutputTokens: number;
+  budgetUsd: number | null;
+  usagePct: number | null;
+  entries: {
+    capability: string;
+    provider: string;
+    model: string;
+    inputTokens: number;
+    outputTokens: number;
+    costUsd: number;
+    createdAt: string;
+  }[];
+}
+
+/** ניצול ה-AI החודשי + יומן הקריאות (מפרט 10א) */
+export function getAiUsage(): Promise<AiUsageView> {
+  return request<AiUsageView>('GET', '/ai/usage');
 }
 
 // ---------- יועץ צ'אט AI עם Tool Use ----------
