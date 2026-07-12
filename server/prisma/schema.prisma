@@ -69,6 +69,12 @@ enum Section14Status {
   NONE
 }
 
+// מבט זוגי (מסך משפחה) — לכל משתמש תיק ראשי אחד, ולכל היותר תיק בן/בת זוג אחד
+enum ClientRole {
+  PRIMARY
+  SPOUSE
+}
+
 // ---------- Core entities ----------
 
 model User {
@@ -137,6 +143,8 @@ model Client {
   id               String           @id @default(cuid())
   userId           String
   user             User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /** תיק ראשי (בעל החשבון) או תיק בן/בת הזוג (מבט זוגי) — לכל היותר אחד מכל סוג */
+  role             ClientRole       @default(PRIMARY)
   /** הנחות תכנון של התיק (שנים לפרישה, תשואה, עליית שכר) */
   planAssumptions  Json?
   fullName         String
@@ -165,6 +173,8 @@ model Client {
   children    Child[]
   products    Product[]
   employments Employment[]
+
+  @@unique([userId, role])
 }
 
 model Child {

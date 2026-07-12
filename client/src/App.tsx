@@ -45,8 +45,9 @@ import { AiPanel } from './AiPanel';
 import { AiMarkdown } from './AiMarkdown';
 import { AiChat } from './AiChat';
 import { Glossary } from './Glossary';
-import { IconBook, IconBot, IconPrinter, IconShield, IconSheet, IconSparkles } from './icons';
+import { IconBook, IconBot, IconPrinter, IconShield, IconSheet, IconSparkles, IconUsers } from './icons';
 import { SecurityPanel } from './SecurityPanel';
+import { FamilyView } from './FamilyView';
 import { FanChart } from './FanChart';
 import { MoneyFlow } from './MoneyFlow';
 import { RightsFixation } from './RightsFixation';
@@ -117,7 +118,7 @@ const ICONS: Record<IconKey, React.ReactNode> = {
   ),
 };
 
-const TYPE_META: Record<ProductType, TypeMeta> = {
+export const TYPE_META: Record<ProductType, TypeMeta> = {
   PENSION_COMPREHENSIVE: {
     label: 'קרן פנסיה מקיפה',
     short: 'פנסיה מקיפה',
@@ -212,7 +213,7 @@ const TYPE_META: Record<ProductType, TypeMeta> = {
   },
 };
 
-const TYPE_ORDER: ProductType[] = [
+export const TYPE_ORDER: ProductType[] = [
   'PENSION_COMPREHENSIVE',
   'PENSION_GENERAL',
   'MANAGERS_INSURANCE',
@@ -369,6 +370,8 @@ function App() {
   const [glossaryOpen, setGlossaryOpen] = useState(false);
   /** אבטחה — 2FA ויומן גישה */
   const [securityOpen, setSecurityOpen] = useState(false);
+  /** מסך משפחה — מבט זוגי */
+  const [familyOpen, setFamilyOpen] = useState(false);
   /** מודול AI */
   const [aiOpen, setAiOpen] = useState(false);
   const [aiConfigured, setAiConfigured] = useState(false);
@@ -1015,6 +1018,19 @@ function App() {
               {IconShield}
               אבטחה
             </button>
+            <button
+              className="ai-toggle"
+              onClick={() => {
+                setFamilyOpen((v) => {
+                  if (!v) window.scrollTo({ top: 0, behavior: "smooth" });
+                  return !v;
+                });
+              }}
+              title="מסך משפחה — מבט זוגי"
+            >
+              {IconUsers}
+              משפחה
+            </button>
             <span className="user-name">{user.fullName}</span>
             <button className="logout-btn" onClick={logout}>
               התנתק
@@ -1031,6 +1047,10 @@ function App() {
           onClose={() => setSecurityOpen(false)}
           onUnauthorized={logout}
         />
+      )}
+
+      {familyOpen && (
+        <FamilyView onClose={() => setFamilyOpen(false)} onUnauthorized={logout} />
       )}
 
       {aiOpen && (

@@ -1,8 +1,10 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { Prisma, ClientRole } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { TRACK_DEFS } from '../calc-engine/tracks';
 import type { ProductType } from '../calc-engine/types';
+
+export { ClientRole };
 
 /** הנחות התכנון של התיק — נשמרות כ-JSON על הלקוח */
 export interface PlanAssumptions {
@@ -16,6 +18,8 @@ export interface PlanAssumptions {
 
 /** פרופיל אישי — נשמר על רשומת הלקוח עצמה */
 export interface ClientProfile {
+  /** שם/כינוי להצגה — משמש בעיקר בתיק בן/בת הזוג (מבט זוגי) */
+  fullName?: string;
   gender: 'MALE' | 'FEMALE';
   /** ISO yyyy-mm-dd */
   birthDate: string;
@@ -76,20 +80,52 @@ const DEFAULT_JOIN_DATE = new Date('2020-01-01');
 export class PortfolioService {
   constructor(private readonly prisma: PrismaService) {}
 
-  /** הלקוח (התיק) של המשתמש — נוצר אוטומטית בהרשמה */
-  private async clientOf(userId: string) {
-    const client = await this.prisma.client.findFirst({
-      where: { userId },
-      orderBy: { createdAt: 'asc' },
+  /**
+   * הלקוח (התיק) של המשתמש. תיק ראשי נוצר אוטומטית בהרשמה; תיק בן/בת זוג
+   * (מבט זוגי, מפרט §9 פריט 5) נוצר אוטומטית עם ערכי ברירת מחדל בפעם
+   * הראשונה שהוא נטען או נשמר.
+   */
+  private async clientOf(userId: string, role: ClientRole = ClientRole.PRIMARY) {
+    const client = await this.prisma.client.findUnique({
+      where: { userId_role: { userId, role } },
     });
-    if (!client) {
+    if (client) return client;
+    if (role === ClientRole.PRIMARY) {
       throw new NotFoundException('לא נמצא תיק למשתמש — פנה לתמיכה');
     }
-    return client;
+    return this.prisma.client.create({
+      data: {
+        userId,
+        role,
+        fullName: 'בן/בת הזוג',
+        birthDate: new Date('1985-01-01'),
+        gender: 'FEMALE',
+        maritalStatus: 'MARRIED',
+        employmentStatus: 'EMPLOYEE',
+      },
+    });
   }
 
-  async load(userId: string): Promise<SavedPortfolio> {
-    const client = await this.clientOf(userId);
+  /** האם קיים כבר תיק בן/בת זוג שמור (מבט זוגי הופעל) */
+  async hasSpouse(userId: string): Promise<boolean> {
+    const client = await this.prisma.client.findUnique({
+      where: { userId_role: { userId, role: ClientRole.SPOUSE } },
+    });
+    return client !== null;
+  }
+
+  /** מסיר את תיק בן/בת הזוג (וכל מוצריו/ילדיו) — מכבה את מבט הזוג */
+  async deleteSpouse(userId: string): Promise<void> {
+    await this.prisma.client.deleteMany({
+      where: { userId, role: ClientRole.SPOUSE },
+    });
+  }
+
+  async load(
+    userId: string,
+    role: ClientRole = ClientRole.PRIMARY,
+  ): Promise<SavedPortfolio> {
+    const client = await this.clientOf(userId, role);
     const [products, children] = await Promise.all([
       this.prisma.product.findMany({
         where: { clientId: client.id },
@@ -110,6 +146,7 @@ export class PortfolioService {
       assumptions:
         (client.planAssumptions as unknown as PlanAssumptions) ?? null,
       profile: {
+        fullName: client.fullName,
         gender: client.gender as ClientProfile['gender'],
         birthDate: client.birthDate.toISOString().slice(0, 10),
         maritalStatus: client.maritalStatus as ClientProfile['maritalStatus'],
@@ -164,8 +201,12 @@ export class PortfolioService {
   }
 
   /** שמירה מלאה: מחליף את כל מוצרי התיק ואת ההנחות (upsert פשוט ל-MVP) */
-  async save(userId: string, portfolio: SavedPortfolio): Promise<SavedPortfolio> {
-    const client = await this.clientOf(userId);
+  async save(
+    userId: string,
+    portfolio: SavedPortfolio,
+    role: ClientRole = ClientRole.PRIMARY,
+  ): Promise<SavedPortfolio> {
+    const client = await this.clientOf(userId, role);
 
     await this.prisma.$transaction([
       this.prisma.client.update({
@@ -175,6 +216,9 @@ export class PortfolioService {
             portfolio.assumptions as unknown as Prisma.InputJsonValue,
           ...(portfolio.profile
             ? {
+                ...(portfolio.profile.fullName?.trim()
+                  ? { fullName: portfolio.profile.fullName.trim() }
+                  : {}),
                 gender: portfolio.profile.gender,
                 birthDate: new Date(portfolio.profile.birthDate),
                 ...(portfolio.profile.maritalStatus
@@ -256,6 +300,6 @@ export class PortfolioService {
       ),
     ]);
 
-    return this.load(userId);
+    return this.load(userId, role);
   }
 }

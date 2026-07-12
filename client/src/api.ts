@@ -479,6 +479,8 @@ export interface ChildInfo {
 }
 
 export interface ClientProfile {
+  /** שם/כינוי להצגה — משמש בעיקר בתיק בן/בת הזוג (מבט זוגי) */
+  fullName?: string;
   gender: Gender;
   /** ISO yyyy-mm-dd */
   birthDate: string;
@@ -596,6 +598,65 @@ export interface ScenariosResult {
 
 export function calcScenarios(input: ScenariosInput): Promise<ScenariosResult> {
   return post<ScenariosResult>('/calc/scenarios', input);
+}
+
+// ---------- מסך משפחה — מבט זוגי, תרחישי שארים הדדיים (מפרט §9 פריט 5) ----------
+
+export interface FamilyMemberInput {
+  /** שם/כינוי להצגה */
+  label: string;
+  /** שכר מבוטח נוכחי — ההכנסה שממשיכה אם בן/בת הזוג האחר/ת נפטר/ת */
+  insuredMonthlySalary: number;
+  scenarios: ScenariosInput;
+}
+
+export interface FamilyScenariosInput {
+  primary: FamilyMemberInput;
+  spouse: FamilyMemberInput;
+  /** יעד הכנסה משפחתי כאחוז מהכנסת הבסיס (ברירת מחדל 70%) */
+  incomeTargetPct?: number;
+}
+
+export interface FamilyMemberOutcome {
+  survivorLabel: string;
+  ownContinuingIncome: number;
+  productsSurvivorMonthly: number;
+  niSurvivorsMonthly: number;
+  lumpSum: number;
+  totalHouseholdMonthly: number;
+  gapMonthly: number;
+  deceasedScenario: ScenariosResult;
+}
+
+export interface FamilyScenariosResult {
+  baselineHouseholdMonthly: number;
+  targetMonthly: number;
+  ifPrimaryDies: FamilyMemberOutcome;
+  ifSpouseDies: FamilyMemberOutcome;
+  warnings: string[];
+  trace: CalcTrace;
+}
+
+export function calcFamilyScenarios(
+  input: FamilyScenariosInput,
+): Promise<FamilyScenariosResult> {
+  return post<FamilyScenariosResult>('/calc/family-scenarios', input);
+}
+
+export function spouseExists(): Promise<{ exists: boolean }> {
+  return request<{ exists: boolean }>('GET', '/portfolio/spouse/exists');
+}
+
+export function loadSpousePortfolio(): Promise<SavedPortfolio> {
+  return request<SavedPortfolio>('GET', '/portfolio/spouse');
+}
+
+export function saveSpousePortfolio(p: SavedPortfolio): Promise<SavedPortfolio> {
+  return request<SavedPortfolio>('PUT', '/portfolio/spouse', p);
+}
+
+export function removeSpousePortfolio(): Promise<{ ok: true }> {
+  return request<{ ok: true }>('DELETE', '/portfolio/spouse');
 }
 
 // ---------- ציון בריאות פנסיוני (מפרט 7.1) ----------
@@ -902,7 +963,7 @@ export function savePortfolio(p: SavedPortfolio): Promise<SavedPortfolio> {
 }
 
 async function request<T>(
-  method: 'GET' | 'POST' | 'PUT',
+  method: 'GET' | 'POST' | 'PUT' | 'DELETE',
   path: string,
   body?: unknown,
 ): Promise<T> {

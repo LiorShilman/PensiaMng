@@ -8,6 +8,8 @@ import { calcRetirement } from './retirement';
 import type { RetirementInput, RetirementResult } from './retirement';
 import { calcScenarios } from './scenarios';
 import type { ScenariosInput, ScenariosResult } from './scenarios';
+import { calcFamilyScenarios } from './family-scenarios';
+import type { FamilyScenariosInput, FamilyScenariosResult } from './family-scenarios';
 import { RightsFixationService } from './rights-fixation.service';
 import type {
   RightsFixationInput,
@@ -72,6 +74,16 @@ export class CalcEngineController {
   scenarios(@Body() body: ScenariosInput): ScenariosResult {
     try {
       return calcScenarios(body);
+    } catch (e) {
+      throw new BadRequestException((e as Error).message);
+    }
+  }
+
+  /** מסך משפחה — מבט זוגי, תרחישי שארים הדדיים (מפרט §9 פריט 5) */
+  @Post('family-scenarios')
+  familyScenarios(@Body() body: FamilyScenariosInput): FamilyScenariosResult {
+    try {
+      return calcFamilyScenarios(body);
     } catch (e) {
       throw new BadRequestException((e as Error).message);
     }
