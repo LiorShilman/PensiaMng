@@ -1,8 +1,8 @@
 .app {
   position: relative;
-  max-width: 1440px;
+  max-width: 1760px;
   margin: 0 auto;
-  padding: 32px 20px 56px;
+  padding: 32px 28px 56px;
 }
 
 .bg-glow {
@@ -351,10 +351,21 @@
 
 .products-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(370px, 1fr));
   gap: 16px;
-  /* כרטיסים לא נמתחים לגובה השכן — כל כרטיס בגובה התוכן שלו */
-  align-items: start;
+  /* כל הכרטיסים בשורה נמתחים לגובה אחיד (ברירת המחדל של grid) */
+  align-items: stretch;
+}
+
+/* פריסה פנימית גמישה: היסטוריית הניוד נדחפת לתחתית והשאר זורם מלמעלה */
+.products-grid .product-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.products-grid .product-card .bens.transfers {
+  margin-top: auto;
+  padding-top: 12px;
 }
 
 /* ---------- Product card ---------- */
@@ -1868,6 +1879,46 @@ dd.ni-sub {
   color: #7dd3fc;
 }
 
+/* ---------- Fee comparison vs market (דמי ניהול מול השוק) ---------- */
+
+.fee-comp-card {
+  margin-top: 16px;
+}
+
+.fee-comp-summary {
+  border-top: none;
+  padding-top: 0;
+  margin-bottom: 10px;
+}
+
+.fee-comp-card table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.87rem;
+}
+
+.fee-comp-card th {
+  text-align: right;
+  color: var(--muted);
+  font-weight: 600;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.78rem;
+}
+
+.fee-comp-card td {
+  padding: 8px 10px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.08);
+}
+
+.fee-row.expensive td.num {
+  color: var(--danger);
+}
+
+.fee-row.cheaper td.num {
+  color: var(--good);
+}
+
 /* ---------- Rights fixation (קיבוע זכויות) ---------- */
 
 .fixation-section {
@@ -1903,6 +1954,12 @@ dd.ni-sub {
 .fixation-section .results-title {
   margin: 0;
   font-size: 1.02rem;
+}
+
+/* אייקון ההסבר בכותרות — ריווח מהטקסט (בכותרות אין flex-gap כמו בשדות) */
+.results-title .tip,
+.card-title .tip {
+  margin-inline-start: 8px;
 }
 
 .acc-indicator {

@@ -34,6 +34,8 @@ import {
   type TaxFormInput,
   type SimulatedPensionResult,
   type JobExitResult,
+  calcFeeComparison,
+  type FeeComparisonResult,
 } from './api';
 import { openReport } from './report';
 import { AuthScreen } from './AuthScreen';
@@ -372,6 +374,8 @@ function App() {
   const [niYears, setNiYears] = useState<number | ''>('');
   /** ציון הבריאות הפנסיוני */
   const [health, setHealth] = useState<HealthScoreResult | null>(null);
+  /** השוואת דמי ניהול לשוק */
+  const [feeComp, setFeeComp] = useState<FeeComparisonResult | null>(null);
   /** תוצאת מחשבון הטבות המס האחרונה — לניתוח ה-AI */
   const [taxBenefits, setTaxBenefits] = useState<TaxBenefitsResult | null>(null);
   /** תוצאת סימולציית הפרישה המדומה האחרונה — לניתוח ה-AI */
@@ -590,6 +594,33 @@ function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [eventOffsetYears]);
 
+  // השוואת דמי ניהול לשוק — מחושבת עם כל תחזית חדשה
+  useEffect(() => {
+    if (!result || !retirement) {
+      setFeeComp(null);
+      return;
+    }
+    calcFeeComparison({
+      months: Math.max(12, retirement.monthsToRetirement),
+      annualReturnPct: assumptions.annualReturnPct,
+      annualSalaryGrowthPct: assumptions.annualSalaryGrowthPct,
+      products: products
+        .filter((p) => !TYPE_META[p.type].insuranceOnly)
+        .map((p) => ({
+          id: p.id,
+          name: p.name,
+          type: p.type,
+          currentBalance: p.currentBalance,
+          monthlyDeposit: p.frozen ? 0 : p.monthlyDeposit,
+          feeFromDepositPct: p.feeFromDepositPct,
+          feeFromBalancePct: p.feeFromBalancePct,
+        })),
+    })
+      .then(setFeeComp)
+      .catch(() => setFeeComp(null));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [result]);
+
   // ציון הבריאות — מחושב מחדש כשמשתנות התחזית או תרחישי הביטוח
   useEffect(() => {
     if (!result || !scenarios) {
@@ -772,6 +803,18 @@ function App() {
             שווי_ניכוי: taxBenefits.deductionValue,
             תקרה_שנותרה_לניצול: taxBenefits.remainingDepositAllowance,
             חיסכון_נוסף_אפשרי: taxBenefits.potentialExtraSaving,
+          }
+        : null,
+      דמי_ניהול_מול_השוק: feeComp
+        ? {
+            סך_עלות_עודפת_שנתית: feeComp.totalAnnualExcessCost,
+            מחיר_הפער_בפרישה: feeComp.totalGapAtRetirement,
+            פירוט: feeComp.products.map((p) => ({
+              מוצר: p.name,
+              בפועל: p.actual,
+              ממוצע_שוק: p.marketAvg,
+              עודף_שנתי: p.annualExcessCost,
+            })),
           }
         : null,
       ציון_בריאות_פנסיוני: health
@@ -1276,6 +1319,70 @@ function App() {
               optimistic={result.totals.optimistic.series}
             />
           </div>
+
+          {feeComp && feeComp.products.length > 0 && (
+            <div className="card fee-comp-card">
+              <h3 className="card-title">
+                דמי ניהול מול ממוצע השוק
+                <span
+                  className="tip"
+                  data-tip="השוואה לממוצעי דמי הניהול שמפרסמת רשות שוק ההון (2024). 'מחיר הפער' = כמה צבירה תפסיד (או תרוויח) עד הפרישה בגלל ההפרש מהממוצע."
+                  tabIndex={0}
+                >
+                  ⓘ
+                </span>
+              </h3>
+              <div className="fixation-summary fee-comp-summary">
+                <div className="scenario-stat">
+                  <div className={`stat-value ${feeComp.totalAnnualExcessCost > 0 ? 'excess' : 'good'}`}>
+                    {feeComp.totalAnnualExcessCost > 0 ? '+' : ''}
+                    {nis(feeComp.totalAnnualExcessCost)}
+                  </div>
+                  <div className="stat-label">עלות שנתית מול הממוצע (חיובי = עודף)</div>
+                </div>
+                <div className="scenario-stat">
+                  <div className={`stat-value ${feeComp.totalGapAtRetirement > 0 ? 'excess' : 'good'}`}>
+                    {feeComp.totalGapAtRetirement > 0 ? '−' : '+'}
+                    {nis(Math.abs(feeComp.totalGapAtRetirement))}
+                  </div>
+                  <div className="stat-label">"מחיר הפער" בצבירה עד הפרישה</div>
+                </div>
+              </div>
+              <table>
+                <thead>
+                  <tr>
+                    <th>מוצר</th>
+                    <th>בפועל (הפקדה/צבירה)</th>
+                    <th>ממוצע שוק</th>
+                    <th>עודף שנתי</th>
+                    <th>פער בפרישה</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {feeComp.products.map((p) => (
+                    <tr key={p.id} className={`fee-row ${p.verdict}`}>
+                      <td className="prod-name">{p.name}</td>
+                      <td className="num">
+                        {p.actual.deposit}% / {p.actual.balance}%
+                      </td>
+                      <td className="num">
+                        {p.marketAvg.deposit}% / {p.marketAvg.balance}%
+                      </td>
+                      <td className="num">{nis(p.annualExcessCost)}</td>
+                      <td className="num">{nis(p.gapAtRetirement)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {feeComp.warnings.length > 0 && (
+                <div className="warnings">
+                  {feeComp.warnings.map((w, i) => (
+                    <div key={i} className="warning-item">⚠ {w}</div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
           <div className="card breakdown">
             <div className="breakdown-head">

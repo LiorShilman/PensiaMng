@@ -649,6 +649,46 @@ export function aiExtractReport(pdfBase64: string): Promise<ExtractReportResult>
   return request<ExtractReportResult>('POST', '/ai/extract-report', { pdfBase64 });
 }
 
+
+// ---------- השוואת דמי ניהול לשוק (מפרט 7.2) ----------
+
+export interface FeeComparisonProductResult {
+  id: string;
+  name: string;
+  type: ProductType;
+  actual: { deposit: number; balance: number };
+  marketAvg: { deposit: number; balance: number };
+  annualExcessCost: number;
+  gapAtRetirement: number;
+  verdict: 'cheaper' | 'similar' | 'expensive';
+  detail: string;
+}
+
+export interface FeeComparisonResult {
+  products: FeeComparisonProductResult[];
+  totalAnnualExcessCost: number;
+  totalGapAtRetirement: number;
+  warnings: string[];
+  trace: CalcTrace;
+}
+
+export function calcFeeComparison(input: {
+  months: number;
+  annualReturnPct: number;
+  annualSalaryGrowthPct: number;
+  products: {
+    id: string;
+    name: string;
+    type: ProductType;
+    currentBalance: number;
+    monthlyDeposit: number;
+    feeFromDepositPct: number;
+    feeFromBalancePct: number;
+  }[];
+}): Promise<FeeComparisonResult> {
+  return post<FeeComparisonResult>('/calc/fee-comparison', input);
+}
+
 // ---------- קיבוע זכויות (סעיף 9א / טופס 161ד) ----------
 
 export interface PastGrant {

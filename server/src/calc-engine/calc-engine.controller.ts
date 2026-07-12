@@ -24,6 +24,8 @@ import type {
 } from './simulated-pension';
 import { calcJobExit } from './job-exit';
 import type { JobExitInput, JobExitResult } from './job-exit';
+import { calcFeeComparison } from './fee-comparison';
+import type { FeeComparisonInput, FeeComparisonResult } from './fee-comparison';
 import type {
   AnnuityInput,
   AnnuityResult,
@@ -135,6 +137,16 @@ export class CalcEngineController {
   jobExit(@Body() body: JobExitInput): JobExitResult {
     try {
       return calcJobExit(body);
+    } catch (e) {
+      throw new BadRequestException((e as Error).message);
+    }
+  }
+
+  /** השוואת דמי ניהול לממוצעי השוק (מפרט 7.2) — "מחיר הפער" */
+  @Post('fee-comparison')
+  feeComparison(@Body() body: FeeComparisonInput): FeeComparisonResult {
+    try {
+      return calcFeeComparison(body);
     } catch (e) {
       throw new BadRequestException((e as Error).message);
     }

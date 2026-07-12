@@ -12,6 +12,7 @@ import { calcSimulatedPension } from '../calc-engine/simulated-pension';
 import type { SimulatedPensionInput } from '../calc-engine/simulated-pension';
 import { calcJobExit } from '../calc-engine/job-exit';
 import type { JobExitInput } from '../calc-engine/job-exit';
+import { calcFeeComparison } from '../calc-engine/fee-comparison';
 import { RightsFixationService } from '../calc-engine/rights-fixation.service';
 import type { RightsFixationInput } from '../calc-engine/rights-fixation';
 import type { ProductType } from '../calc-engine/types';
@@ -167,6 +168,12 @@ export class AiToolsService {
         },
       },
       {
+        name: 'compare_fees_to_market',
+        description:
+          'השוואת דמי הניהול של כל מוצרי התיק השמור לממוצעי השוק: עלות שנתית עודפת ו"מחיר הפער" בצבירה עד הפרישה.',
+        schema: { type: 'object', properties: {}, additionalProperties: false },
+      },
+      {
         name: 'calc_tax_benefits',
         description:
           'הטבות מס בהפקדה (סעיף 45א): כמה מס נחסך השנה וכמה תקרה נותרה לניצול. שכיר: זיכוי 35% עד 7% מההכנסה המזכה; עצמאי: זיכוי + ניכוי.',
@@ -207,6 +214,8 @@ export class AiToolsService {
         return calcSimulatedPension(a as unknown as SimulatedPensionInput);
       case 'calc_job_exit':
         return calcJobExit(a as unknown as JobExitInput);
+      case 'compare_fees_to_market':
+        return this.feeComparison(userId);
       case 'calc_tax_benefits':
         return calcTaxBenefits(a as unknown as TaxBenefitsInput);
       default:
@@ -236,6 +245,28 @@ export class AiToolsService {
       annualSalaryGrowthPct: 1.5,
     };
     return { client, saved, assumptions };
+  }
+
+  private async feeComparison(userId: string) {
+    const { client, saved, assumptions } = await this.loadAll(userId);
+    const retirement = calcRetirement({
+      gender: client.gender as Gender,
+      birthDate: client.birthDate.toISOString().slice(0, 10),
+    });
+    return calcFeeComparison({
+      months: Math.max(12, retirement.monthsToRetirement),
+      annualReturnPct: assumptions.annualReturnPct,
+      annualSalaryGrowthPct: assumptions.annualSalaryGrowthPct,
+      products: saved.products.map((p) => ({
+        id: p.id,
+        name: p.name,
+        type: p.type,
+        currentBalance: p.currentBalance,
+        monthlyDeposit: p.frozen ? 0 : p.monthlyDeposit,
+        feeFromDepositPct: p.feeFromDepositPct,
+        feeFromBalancePct: p.feeFromBalancePct,
+      })),
+    });
   }
 
   private async portfolioSummary(userId: string) {
