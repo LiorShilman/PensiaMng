@@ -1046,3 +1046,36 @@ export function calcAnnuity(
     conversionFactor,
   });
 }
+
+// ---------- ייצוא PDF אמיתי (מפרט סעיף 8) ----------
+
+/**
+ * שולח את ה-HTML המעוצב (מ-report.ts) לשרת שמריץ Puppeteer ומחזיר PDF
+ * וקטורי אמיתי, ומפעיל הורדה. בשונה מ-openReport (טאב להדפסת דפדפן) —
+ * זה קובץ PDF שיורד ישירות, עם טקסט בר-חיפוש/סימון.
+ */
+export async function downloadReportPdf(html: string, fileName: string): Promise<void> {
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  const token = getToken();
+  if (token) headers.Authorization = `Bearer ${token}`;
+
+  const res = await fetch(`${API_BASE}/report/pdf`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ html }),
+  });
+  if (res.status === 401) throw new UnauthorizedError('נדרשת התחברות מחדש');
+  if (!res.ok) {
+    const err = (await res.json().catch(() => null)) as { message?: string } | null;
+    throw new Error(err?.message ?? `שגיאת שרת (${res.status})`);
+  }
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = fileName;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}

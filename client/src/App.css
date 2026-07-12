@@ -2007,6 +2007,16 @@ button .t-icon {
   color: #4ade80;
 }
 
+.pdf-btn:hover:not(:disabled) {
+  border-color: #f43f5e;
+  color: #fb7185;
+}
+
+.pdf-btn:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
 /* במסכים צרים הסרגל הופך לשורה תחתונה כדי לא להסתיר תוכן */
 @media (max-width: 900px) {
   .action-dock {

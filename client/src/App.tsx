@@ -41,8 +41,9 @@ import {
   calcInsights,
   type InsightsResult,
   type Insight,
+  downloadReportPdf,
 } from './api';
-import { openReport } from './report';
+import { openReport, buildReportHtml } from './report';
 import { exportPortfolioExcel } from './exportExcel';
 import { AuthScreen } from './AuthScreen';
 import { AiPanel } from './AiPanel';
@@ -53,6 +54,7 @@ import {
   IconBook,
   IconBot,
   IconCompass,
+  IconDoc,
   IconPrinter,
   IconShield,
   IconSheet,
@@ -374,6 +376,7 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [showTrace, setShowTrace] = useState(false);
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const [pdfBusy, setPdfBusy] = useState(false);
   const [scenario, setScenario] = useState<ScenarioKey>('central');
   /** התוצאות המוצגות חושבו על נתונים ישנים — יש לחשב מחדש */
   const [stale, setStale] = useState(false);
@@ -524,6 +527,40 @@ function App() {
       if (e instanceof UnauthorizedError) return logout();
       setError((e as Error).message);
       setSaveState('idle');
+    }
+  }
+
+  async function onDownloadPdf() {
+    if (!result || !user) return;
+    setPdfBusy(true);
+    setError(null);
+    try {
+      const html = buildReportHtml({
+        userName: user.fullName,
+        profile,
+        products,
+        result,
+        scenarios,
+        retirement,
+        fixation,
+        health,
+        simPension,
+        taxBenefits,
+        jobExit,
+        decum,
+        feeComparison: feeComp,
+        insights,
+        aiText,
+        aiMeta,
+        typeLabel: (t) => TYPE_META[t].label,
+      });
+      const date = new Date().toISOString().slice(0, 10);
+      await downloadReportPdf(html, `PensiaMng-${user.fullName.replace(/\s+/g, '_')}-${date}.pdf`);
+    } catch (e) {
+      if (e instanceof UnauthorizedError) return logout();
+      setError((e as Error).message);
+    } finally {
+      setPdfBusy(false);
     }
   }
 
@@ -1547,6 +1584,10 @@ function App() {
                 health,
                 simPension,
                 taxBenefits,
+                jobExit,
+                decum,
+                feeComparison: feeComp,
+                insights,
                 aiText,
                 aiMeta,
                 typeLabel: (t) => TYPE_META[t].label,
@@ -1575,6 +1616,17 @@ function App() {
           >
             {IconSheet}
             ייצוא לאקסל
+          </button>
+        )}
+        {result && (
+          <button
+            className="report-btn pdf-btn"
+            onClick={onDownloadPdf}
+            disabled={pdfBusy}
+            title="קובץ PDF אמיתי להורדה — טקסט בר-חיפוש, לא צילום מסך"
+          >
+            {IconDoc}
+            {pdfBusy ? 'מייצר PDF…' : 'הורדת PDF'}
           </button>
         )}
       </div>

@@ -1,6 +1,10 @@
 import type {
   ClientProfile,
+  DecumulationResult,
+  FeeComparisonResult,
   HealthScoreResult,
+  InsightsResult,
+  JobExitResult,
   PortfolioProductInput,
   PortfolioResult,
   RetirementResult,
@@ -26,6 +30,10 @@ interface ReportData {
   health: HealthScoreResult | null;
   simPension: SimulatedPensionResult | null;
   taxBenefits: TaxBenefitsResult | null;
+  jobExit: JobExitResult | null;
+  decum: DecumulationResult | null;
+  feeComparison: FeeComparisonResult | null;
+  insights: InsightsResult | null;
   aiText: string | null;
   aiMeta: string | null;
   typeLabel: (t: PortfolioProductInput['type']) => string;
@@ -56,7 +64,8 @@ function mdToHtml(md: string): string {
     .join('\n');
 }
 
-export function openReport(d: ReportData): void {
+/** בונה את מחרוזת ה-HTML המלאה של הדוח — פונקציה טהורה (בלי גישה ל-window), לשימוש גם בפתיחת טאב וגם ביצירת PDF אמיתי בשרת */
+export function buildReportHtml(d: ReportData): string {
   const now = new Date();
   const dateStr = now.toLocaleDateString('he-IL', {
     day: '2-digit',
@@ -220,6 +229,80 @@ export function openReport(d: ReportData): void {
     </div>`
     : '';
 
+  const jobExitBlock = d.jobExit
+    ? `
+    <h2>עזיבת עבודה (סעיף 5.4) — משיכת פיצויים מול רצף קצבה</h2>
+    <div class="two-col">
+      <div class="box">
+        <h4>משיכה היום</h4>
+        <div class="kv"><span>חלק פטור ממס</span><b>${nis(d.jobExit.exemptAmount)}</b></div>
+        <div class="kv"><span>חלק חייב במס</span><b>${nis(d.jobExit.taxableAmount)}</b></div>
+        <div class="kv bad"><span>מס מוערך</span><b>−${nis(d.jobExit.taxOnTaxable)}</b></div>
+        <div class="kv good"><span>נטו ביד</span><b>${nis(d.jobExit.netToday)}</b></div>
+      </div>
+      <div class="box">
+        <h4>רצף קצבה (השארה)</h4>
+        <div class="kv"><span>צבירה בפרישה</span><b>${nis(d.jobExit.balanceAtRetirement)}</b></div>
+        <div class="kv good"><span>קצבה חודשית שנשמרת</span><b>+${nis(d.jobExit.monthlyAnnuityLoss)}</b></div>
+        <div class="kv good"><span>הפטור בקיבוע נשמר</span><b>+${nis(d.jobExit.kibuaMonthlyExemptionLoss)}/ח'</b></div>
+      </div>
+    </div>
+    <p class="disclaimer">משיכת הפיצויים היום מוחקת ${nis(d.jobExit.monthlyAnnuityLoss)} מהקצבה החודשית לכל החיים, ופוגעת ב-${nis(d.jobExit.kibuaExemptCapitalLoss)} מההון הפטור בקיבוע הזכויות — סימולציה להמחשה בלבד.</p>`
+    : '';
+
+  const decumBlock = d.decum
+    ? `
+    <h2>משיכה הדרגתית בפרישה — ניהול ההון הנזיל</h2>
+    <div class="cards" style="grid-template-columns: repeat(3, 1fr)">
+      ${
+        d.decum.sustainableMonthly !== null
+          ? `<div class="stat hero"><div class="v">${nis(d.decum.sustainableMonthly)}</div><div class="l">משיכה חודשית בת-קיימא עד גיל ${d.decum.targetAge}</div></div>`
+          : ''
+      }
+      <div class="stat"><div class="v">${d.decum.depletionAge !== null ? 'גיל ' + d.decum.depletionAge : 'לא אוזל'}</div><div class="l">מתי ההון אוזל בקצב שנבדק</div></div>
+      <div class="stat"><div class="v">${nis(d.decum.totalWithdrawn)}</div><div class="l">סך המשיכות לאורך הדרך</div></div>
+    </div>`
+    : '';
+
+  const feeComparisonBlock =
+    d.feeComparison && d.feeComparison.products.length > 0
+      ? `
+    <h2>השוואת דמי ניהול לממוצע השוק</h2>
+    <table>
+      <thead><tr><th>מוצר</th><th>דמי ניהול בפועל</th><th>ממוצע שוק</th><th>עלות עודפת שנתית</th><th>סטטוס</th></tr></thead>
+      <tbody>${d.feeComparison.products
+        .map(
+          (p) => `<tr>
+        <td class="strong">${esc(p.name)}</td>
+        <td class="num">${p.actual.deposit}% / ${p.actual.balance}%</td>
+        <td class="num">${p.marketAvg.deposit}% / ${p.marketAvg.balance}%</td>
+        <td class="num">${nis(p.annualExcessCost)}</td>
+        <td>${p.verdict === 'expensive' ? '<span class="tag bad">יקר מהממוצע</span>' : p.verdict === 'cheaper' ? '<span class="tag good">זול מהממוצע</span>' : '<span class="tag">דומה לממוצע</span>'}</td>
+      </tr>`,
+        )
+        .join('')}</tbody>
+    </table>`
+      : '';
+
+  const insightsBlock =
+    d.insights && d.insights.insights.length > 0
+      ? `
+    <h2>תובנות ואיתור בעיות (${d.insights.insights.length})</h2>
+    <div class="insights">
+      ${d.insights.insights
+        .map(
+          (i) => `<div class="insight ${i.severity}">
+        <div class="insight-head">
+          <b>${esc(i.title)}</b>
+          ${i.estimatedAnnualImpact && i.estimatedAnnualImpact > 0 ? `<span class="num">${nis(i.estimatedAnnualImpact)}/שנה</span>` : ''}
+        </div>
+        <p>${esc(i.detail)}</p>
+      </div>`,
+        )
+        .join('')}
+    </div>`
+      : '';
+
   const aiBlock = d.aiText
     ? `
     <h2>ניתוח והמלצות AI ${d.aiMeta ? `<span class="ai-src">(${esc(d.aiMeta)})</span>` : ''}</h2>
@@ -261,6 +344,17 @@ export function openReport(d: ReportData): void {
   td.strong { font-weight: 700; }
   .tag { font-size: 10px; background: #f1f5f9; border: 1px solid #cbd5e1;
     border-radius: 99px; padding: 1px 8px; color: #64748b; }
+  .tag.bad { background: #fef2f2; border-color: #fecaca; color: #b91c1c; }
+  .tag.good { background: #f0fdf4; border-color: #bbf7d0; color: #15803d; }
+  .insights { display: flex; flex-direction: column; gap: 8px; margin-top: 6px; }
+  .insight { border-inline-start: 3px solid #cbd5e1; border-radius: 8px;
+    padding: 8px 12px; background: #f8fafc; font-size: 12px; }
+  .insight.critical { border-inline-start-color: #b91c1c; }
+  .insight.warning { border-inline-start-color: #d97706; }
+  .insight.info { border-inline-start-color: #4f46e5; }
+  .insight-head { display: flex; justify-content: space-between; align-items: center; }
+  .insight-head .num { direction: ltr; font-weight: 700; color: #b91c1c; }
+  .insight p { color: #64748b; margin-top: 2px; }
   .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   .box { border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px; }
   .kv { display: flex; justify-content: space-between; padding: 4px 0;
@@ -319,11 +413,15 @@ export function openReport(d: ReportData): void {
   </table>
 
   ${healthBlock}
+  ${insightsBlock}
   ${transfersBlock}
   ${scenariosBlock}
   ${fixationBlock}
   ${simPensionBlock}
+  ${jobExitBlock}
+  ${decumBlock}
   ${taxBenefitsBlock}
+  ${feeComparisonBlock}
   ${aiBlock}
 
   <div class="foot">
@@ -333,6 +431,11 @@ export function openReport(d: ReportData): void {
 </body>
 </html>`;
 
-  const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+  return html;
+}
+
+/** פותח את הדוח בטאב חדש להדפסה/שמירה כ-PDF דרך הדפדפן */
+export function openReport(d: ReportData): void {
+  const blob = new Blob([buildReportHtml(d)], { type: 'text/html;charset=utf-8' });
   window.open(URL.createObjectURL(blob), '_blank');
 }
