@@ -36,6 +36,7 @@ import {
   type JobExitResult,
   calcFeeComparison,
   type FeeComparisonResult,
+  type DecumulationResult,
 } from './api';
 import { openReport } from './report';
 import { AuthScreen } from './AuthScreen';
@@ -48,6 +49,7 @@ import { RightsFixation } from './RightsFixation';
 import { TaxBenefits } from './TaxBenefits';
 import { SimulatedPension } from './SimulatedPension';
 import { JobExit } from './JobExit';
+import { Decumulation } from './Decumulation';
 import { ReportImport } from './ReportImport';
 
 // ---------- מטא-דאטה לסוגי מוצרים ----------
@@ -376,12 +378,17 @@ function App() {
   const [health, setHealth] = useState<HealthScoreResult | null>(null);
   /** השוואת דמי ניהול לשוק */
   const [feeComp, setFeeComp] = useState<FeeComparisonResult | null>(null);
+  /** מטריצת גילאים לתרחישי הביטוח */
+  const [matrix, setMatrix] = useState<{ offset: number; r: ScenariosResult }[] | null>(null);
+  const [matrixBusy, setMatrixBusy] = useState(false);
   /** תוצאת מחשבון הטבות המס האחרונה — לניתוח ה-AI */
   const [taxBenefits, setTaxBenefits] = useState<TaxBenefitsResult | null>(null);
   /** תוצאת סימולציית הפרישה המדומה האחרונה — לניתוח ה-AI */
   const [simPension, setSimPension] = useState<SimulatedPensionResult | null>(null);
   /** תוצאת סימולציית עזיבת העבודה האחרונה — לניתוח ה-AI */
   const [jobExit, setJobExit] = useState<JobExitResult | null>(null);
+  /** תוצאת תוכנית המשיכה ההדרגתית — לניתוח ה-AI */
+  const [decum, setDecum] = useState<DecumulationResult | null>(null);
   /** קלטי הסימולטורים — נטענים ונשמרים עם התיק */
   const [fixationForm, setFixationForm] = useState<FixationFormInput | null>(null);
   const [taxForm, setTaxForm] = useState<TaxFormInput | null>(null);
@@ -517,6 +524,29 @@ function App() {
       );
     }
     return 40;
+  }
+
+  /** מטריצת גילאים (מפרט 5.1): תרחישי הביטוח בכמה נקודות זמן במקביל */
+  async function onBuildMatrix() {
+    if (!result || matrixBusy) return;
+    setMatrixBusy(true);
+    try {
+      const step = 5;
+      const offsets: number[] = [];
+      for (let o = 0; o < yearsToRetirement; o += step) offsets.push(o);
+      if (!offsets.includes(yearsToRetirement - 1) && yearsToRetirement > 1) {
+        offsets.push(yearsToRetirement - 1); // ערב פרישה
+      }
+      const results = await Promise.all(
+        offsets.map((o) => calcScenarios(scenariosInputFor(o, result))),
+      );
+      setMatrix(offsets.map((offset, i) => ({ offset, r: results[i] })));
+    } catch (e) {
+      if (e instanceof UnauthorizedError) return logout();
+      setError((e as Error).message);
+    } finally {
+      setMatrixBusy(false);
+    }
   }
 
   /** בניית קלט תרחישי הביטוח — לפני הפרישה או אחריה */
@@ -778,6 +808,14 @@ function App() {
             אזהרות_המערכת: scenarios.warnings,
           }
         : null,
+      משיכה_הדרגתית_בפרישה: decum
+        ? {
+            משיכה_בת_קיימא_לחודש: decum.sustainableMonthly,
+            עד_גיל: decum.targetAge,
+            גיל_אזילת_ההון: decum.depletionAge,
+            סך_משיכות: decum.totalWithdrawn,
+          }
+        : null,
       עזיבת_עבודה: jobExit
         ? {
             נטו_במשיכה_היום: jobExit.netToday,
@@ -896,6 +934,7 @@ function App() {
       ]);
       setResult(r);
       setScenarios(s);
+      setMatrix(null);
       setEventOffsetYears(0);
       setStale(false);
     } catch (e) {
@@ -1458,6 +1497,17 @@ function App() {
         <section className="results">
           <div className="whatif-head">
             <h2 className="results-title">מה אם? — תרחישי ביטוח</h2>
+            <button
+              className="trace-toggle"
+              onClick={() => (matrix ? setMatrix(null) : void onBuildMatrix())}
+              disabled={matrixBusy}
+            >
+              {matrixBusy
+                ? 'בונה מטריצה…'
+                : matrix
+                  ? 'הסתר מטריצת גילאים'
+                  : 'מטריצת גילאים — כל נקודות הזמן'}
+            </button>
             {result && retirement && (
               <div className="timing-row">
                 <span className="timing-label">מתי האירוע?</span>
@@ -1607,6 +1657,73 @@ function App() {
             </div>
           </div>
 
+          {matrix && (
+            <div className="card fee-comp-card matrix-card">
+              <h3 className="card-title">
+                מטריצת גילאים — מוות ואובדן כושר לאורך הדרך
+                <span
+                  className="tip"
+                  data-tip="מה תקבל המשפחה אם האירוע יקרה בכל נקודת זמן: הצבירות גדלות עם השנים (מהתחזית המרכזית), גילאי הילדים משתנים והזכאויות בהתאם. כולל ביטוח לאומי אם מסומן."
+                  tabIndex={0}
+                >
+                  ⓘ
+                </span>
+              </h3>
+              <table>
+                <thead>
+                  <tr>
+                    <th>מתי</th>
+                    <th>מוות: קצבה למשפחה</th>
+                    <th>מוות: חד-פעמי</th>
+                    <th>מוות: פער</th>
+                    <th>נכות: קצבה</th>
+                    <th>נכות: פער</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {matrix.map(({ offset, r }) => {
+                    const age = Math.floor(
+                      (Date.now() - new Date(profile.birthDate).getTime()) /
+                        (365.25 * 24 * 3600 * 1000) +
+                        offset,
+                    );
+                    return (
+                      <tr key={offset}>
+                        <td className="prod-name">
+                          {offset === 0 ? 'היום' : `בעוד ${offset} שנים`} (גיל {age})
+                        </td>
+                        <td className="num">
+                          {nis(r.death.totalSurvivorMonthly + r.death.niSurvivorsMonthly)}
+                        </td>
+                        <td className="num">{nis(r.death.totalLumpSum)}</td>
+                        <td className={`num ${r.death.gapMonthly > 0 ? 'gap-bad' : 'gap-ok'}`}>
+                          {r.death.gapMonthly > 0 ? nis(r.death.gapMonthly) : '✓ מכוסה'}
+                        </td>
+                        <td className="num">
+                          {nis(
+                            r.disability.totalDisabilityMonthly +
+                              r.disability.niDisabilityMonthly,
+                          )}
+                        </td>
+                        <td
+                          className={`num ${r.disability.gapMonthly > 0 ? 'gap-bad' : 'gap-ok'}`}
+                        >
+                          {r.disability.gapMonthly > 0
+                            ? nis(r.disability.gapMonthly)
+                            : '✓ מכוסה'}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+              <p className="hint">
+                הצבירות בכל נקודה נלקחות מהתחזית המרכזית; יעד המשפחה קבוע (70% מהשכר של
+                היום). ערב פרישה = השנה האחרונה לפני הגיל החוקי.
+              </p>
+            </div>
+          )}
+
           <div className="card flow-card">
             <h3 className="card-title">לאן הולך הכסף? — מפת הזרימה במקרה מוות</h3>
             <MoneyFlow
@@ -1679,6 +1796,17 @@ function App() {
           defaultReturnPct={assumptions.annualReturnPct}
           onUnauthorized={logout}
           onResult={setJobExit}
+        />
+      )}
+
+      {result && retirement && (
+        <Decumulation
+          defaultCapital={result.totals.central.totalLumpSum}
+          retirementAge={
+            Math.round((retirement.effectiveRetirementAgeMonths / 12) * 10) / 10
+          }
+          onUnauthorized={logout}
+          onResult={setDecum}
         />
       )}
 

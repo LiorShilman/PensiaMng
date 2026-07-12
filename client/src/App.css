@@ -1919,6 +1919,15 @@ dd.ni-sub {
   color: var(--good);
 }
 
+.matrix-card td.gap-bad {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.matrix-card td.gap-ok {
+  color: var(--good);
+}
+
 /* ---------- Rights fixation (קיבוע זכויות) ---------- */
 
 .fixation-section {

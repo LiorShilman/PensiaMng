@@ -13,6 +13,8 @@ import type { SimulatedPensionInput } from '../calc-engine/simulated-pension';
 import { calcJobExit } from '../calc-engine/job-exit';
 import type { JobExitInput } from '../calc-engine/job-exit';
 import { calcFeeComparison } from '../calc-engine/fee-comparison';
+import { calcDecumulation } from '../calc-engine/decumulation';
+import type { DecumulationInput } from '../calc-engine/decumulation';
 import { RightsFixationService } from '../calc-engine/rights-fixation.service';
 import type { RightsFixationInput } from '../calc-engine/rights-fixation';
 import type { ProductType } from '../calc-engine/types';
@@ -168,6 +170,23 @@ export class AiToolsService {
         },
       },
       {
+        name: 'calc_decumulation',
+        description:
+          'משיכה הדרגתית בפרישה: בהינתן ההון הנזיל, גיל הפרישה ותשואה שמרנית — המשיכה החודשית בת-הקיימא עד גיל היעד, וגיל אזילת ההון במשיכה מבוקשת.',
+        schema: {
+          type: 'object',
+          properties: {
+            capitalAtRetirement: { type: 'number', description: 'ההון הנזיל בפרישה (₪)' },
+            retirementAge: { type: 'number' },
+            annualReturnPct: { type: 'number', description: 'תשואה ריאלית בפרישה (מומלץ 1.5–3)' },
+            monthlyWithdrawal: { type: 'number', description: 'משיכה מבוקשת (₪ לחודש)' },
+            targetAge: { type: 'number', description: 'גיל היעד (ברירת מחדל 90)' },
+          },
+          required: ['capitalAtRetirement', 'retirementAge', 'annualReturnPct'],
+          additionalProperties: false,
+        },
+      },
+      {
         name: 'compare_fees_to_market',
         description:
           'השוואת דמי הניהול של כל מוצרי התיק השמור לממוצעי השוק: עלות שנתית עודפת ו"מחיר הפער" בצבירה עד הפרישה.',
@@ -216,6 +235,8 @@ export class AiToolsService {
         return calcJobExit(a as unknown as JobExitInput);
       case 'compare_fees_to_market':
         return this.feeComparison(userId);
+      case 'calc_decumulation':
+        return calcDecumulation(a as unknown as DecumulationInput);
       case 'calc_tax_benefits':
         return calcTaxBenefits(a as unknown as TaxBenefitsInput);
       default:

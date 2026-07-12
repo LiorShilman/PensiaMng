@@ -26,6 +26,8 @@ import { calcJobExit } from './job-exit';
 import type { JobExitInput, JobExitResult } from './job-exit';
 import { calcFeeComparison } from './fee-comparison';
 import type { FeeComparisonInput, FeeComparisonResult } from './fee-comparison';
+import { calcDecumulation } from './decumulation';
+import type { DecumulationInput, DecumulationResult } from './decumulation';
 import type {
   AnnuityInput,
   AnnuityResult,
@@ -137,6 +139,16 @@ export class CalcEngineController {
   jobExit(@Body() body: JobExitInput): JobExitResult {
     try {
       return calcJobExit(body);
+    } catch (e) {
+      throw new BadRequestException((e as Error).message);
+    }
+  }
+
+  /** משיכה הדרגתית בפרישה — כמה זמן יחזיק ההון וכמה אפשר למשוך */
+  @Post('decumulation')
+  decumulation(@Body() body: DecumulationInput): DecumulationResult {
+    try {
+      return calcDecumulation(body);
     } catch (e) {
       throw new BadRequestException((e as Error).message);
     }

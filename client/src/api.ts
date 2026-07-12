@@ -650,6 +650,32 @@ export function aiExtractReport(pdfBase64: string): Promise<ExtractReportResult>
 }
 
 
+
+// ---------- משיכה הדרגתית בפרישה ----------
+
+export interface DecumulationInput {
+  capitalAtRetirement: number;
+  retirementAge: number;
+  annualReturnPct: number;
+  monthlyWithdrawal?: number;
+  targetAge?: number;
+}
+
+export interface DecumulationResult {
+  sustainableMonthly: number | null;
+  targetAge: number;
+  depletionAge: number | null;
+  monthsUntilDepletion: number | null;
+  totalWithdrawn: number;
+  series: SeriesPoint[];
+  warnings: string[];
+  trace: CalcTrace;
+}
+
+export function calcDecumulation(input: DecumulationInput): Promise<DecumulationResult> {
+  return post<DecumulationResult>('/calc/decumulation', input);
+}
+
 // ---------- השוואת דמי ניהול לשוק (מפרט 7.2) ----------
 
 export interface FeeComparisonProductResult {
