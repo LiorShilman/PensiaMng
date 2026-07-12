@@ -252,13 +252,41 @@
   position: relative;
   display: inline-grid;
   place-items: center;
-  width: 15px;
-  height: 15px;
+  width: 16px;
+  height: 16px;
   border-radius: 50%;
-  font-size: 0.68rem;
-  color: var(--primary);
+  /* מסתיר את גליף ה-ⓘ הישן שבתוכן — האייקון המעוצב מצויר ב-::before */
+  font-size: 0;
+  color: transparent;
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.22), rgba(99, 102, 241, 0.14));
+  border: 1px solid rgba(139, 92, 246, 0.4);
   cursor: help;
   outline: none;
+  vertical-align: middle;
+  transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+}
+
+.tip::before {
+  content: 'i';
+  font-family: Georgia, 'Times New Roman', serif;
+  font-style: italic;
+  font-weight: 700;
+  font-size: 11px;
+  line-height: 1;
+  color: #c4b5fd;
+  transition: color 0.15s;
+}
+
+.tip:hover,
+.tip:focus {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.55), rgba(99, 102, 241, 0.45));
+  border-color: var(--primary);
+  box-shadow: 0 0 10px rgba(139, 92, 246, 0.35);
+}
+
+.tip:hover::before,
+.tip:focus::before {
+  color: #fff;
 }
 
 .tip::after {

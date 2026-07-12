@@ -1,13 +1,13 @@
 import { calcRightsFixation, defaultParamsFor } from './rights-fixation';
 
 describe('defaultParamsFor — פרמטרים לפי שנת זכאות', () => {
-  it('2025 ואילך: 67% פטור', () => {
-    const p = defaultParamsFor(2025);
+  it('2028 ואילך: 67% פטור', () => {
+    const p = defaultParamsFor(2028);
     expect(p.exemptionPct).toBe(67);
     expect(p.annuityCeilingMonthly).toBe(9430);
   });
 
-  it('2020–2024: 52% פטור', () => {
+  it('2020–2025: 52% פטור', () => {
     expect(defaultParamsFor(2023).exemptionPct).toBe(52);
     expect(defaultParamsFor(2023).annuityCeilingMonthly).toBe(9120);
   });
@@ -24,9 +24,9 @@ describe('defaultParamsFor — פרמטרים לפי שנת זכאות', () => {
 });
 
 describe('calcRightsFixation — הון פטור ונוסחת קיזוז', () => {
-  it('2025 ללא מענקים: הון פטור 1,137,258 ₪ ופטור חודשי 6,318.1 ₪', () => {
+  it('2028 ללא מענקים: הון פטור 1,137,258 ₪ ופטור חודשי 6,318.1 ₪', () => {
     const r = calcRightsFixation({
-      eligibilityYear: 2025,
+      eligibilityYear: 2028,
       expectedMonthlyPension: 12_000,
     });
     expect(r.exemptCapitalCeiling).toBe(1_137_258);
@@ -47,7 +47,7 @@ describe('calcRightsFixation — הון פטור ונוסחת קיזוז', () =>
 
   it('מענק 100,000 ₪ בחלון: קיזוז 135,000 והפטור החודשי יורד ל-5,568.1', () => {
     const r = calcRightsFixation({
-      eligibilityYear: 2025,
+      eligibilityYear: 2028,
       expectedMonthlyPension: 12_000,
       pastGrants: [{ year: 2015, amount: 100_000 }],
     });
@@ -60,7 +60,7 @@ describe('calcRightsFixation — הון פטור ונוסחת קיזוז', () =>
 
   it('מענק מחוץ לחלון 32 השנים אינו נספר', () => {
     const r = calcRightsFixation({
-      eligibilityYear: 2025,
+      eligibilityYear: 2028,
       expectedMonthlyPension: 12_000,
       pastGrants: [
         { year: 1990, amount: 500_000 }, // מחוץ לחלון (לפני 1993)
@@ -73,7 +73,7 @@ describe('calcRightsFixation — הון פטור ונוסחת קיזוז', () =>
 
   it('מענקים שמוחקים את ההון הפטור: יתרה 0 ואזהרה', () => {
     const r = calcRightsFixation({
-      eligibilityYear: 2025,
+      eligibilityYear: 2028,
       expectedMonthlyPension: 12_000,
       pastGrants: [{ year: 2010, amount: 900_000 }],
     });
@@ -83,7 +83,7 @@ describe('calcRightsFixation — הון פטור ונוסחת קיזוז', () =>
 
   it('היוון מקסימלי: פטור חודשי 0 והקצבה כולה חייבת', () => {
     const r = calcRightsFixation({
-      eligibilityYear: 2025,
+      eligibilityYear: 2028,
       expectedMonthlyPension: 12_000,
     });
     const max = r.scenarios.find((s) => s.key === 'max_lump_sum')!;
@@ -94,7 +94,7 @@ describe('calcRightsFixation — הון פטור ונוסחת קיזוז', () =>
 
   it('תרחיש מותאם: היוון 500,000 והשאר לפטור חודשי', () => {
     const r = calcRightsFixation({
-      eligibilityYear: 2025,
+      eligibilityYear: 2028,
       expectedMonthlyPension: 12_000,
       pastGrants: [{ year: 2015, amount: 100_000 }],
       desiredLumpSum: 500_000,
@@ -107,7 +107,7 @@ describe('calcRightsFixation — הון פטור ונוסחת קיזוז', () =>
 
   it('היוון מבוקש מעל היתרה — מוגבל ליתרה עם אזהרה', () => {
     const r = calcRightsFixation({
-      eligibilityYear: 2025,
+      eligibilityYear: 2028,
       expectedMonthlyPension: 12_000,
       desiredLumpSum: 2_000_000,
     });
@@ -118,7 +118,7 @@ describe('calcRightsFixation — הון פטור ונוסחת קיזוז', () =>
 
   it('קצבה נמוכה מתקרת הפטור: הפטור מוגבל לקצבה + אזהרת ניצול חלקי', () => {
     const r = calcRightsFixation({
-      eligibilityYear: 2025,
+      eligibilityYear: 2028,
       expectedMonthlyPension: 4_000,
     });
     const full = r.scenarios.find((s) => s.key === 'full_pension')!;
@@ -129,7 +129,7 @@ describe('calcRightsFixation — הון פטור ונוסחת קיזוז', () =>
 
   it('הערכת חיסכון מס לפי שיעור שולי', () => {
     const r = calcRightsFixation({
-      eligibilityYear: 2025,
+      eligibilityYear: 2028,
       expectedMonthlyPension: 12_000,
       marginalTaxRatePct: 20,
     });
@@ -141,7 +141,7 @@ describe('calcRightsFixation — הון פטור ונוסחת קיזוז', () =>
 
   it('ללא שיעור מס — אין הערכת חיסכון', () => {
     const r = calcRightsFixation({
-      eligibilityYear: 2025,
+      eligibilityYear: 2028,
       expectedMonthlyPension: 12_000,
     });
     expect(r.scenarios[0].estMonthlyTaxSaved).toBeNull();
@@ -149,7 +149,7 @@ describe('calcRightsFixation — הון פטור ונוסחת קיזוז', () =>
 
   it('אזהרת אי-הפיכות תמיד קיימת', () => {
     const r = calcRightsFixation({
-      eligibilityYear: 2025,
+      eligibilityYear: 2028,
       expectedMonthlyPension: 12_000,
     });
     expect(r.warnings.some((w) => w.includes('161ד'))).toBe(true);
@@ -163,11 +163,32 @@ describe('calcRightsFixation — הון פטור ונוסחת קיזוז', () =>
 
   it('עקיפת פרמטרים (מ-RegulatoryParameter) גוברת על ברירות המחדל', () => {
     const r = calcRightsFixation({
-      eligibilityYear: 2025,
+      eligibilityYear: 2028,
       expectedMonthlyPension: 12_000,
       paramsOverride: { annuityCeilingMonthly: 10_000 },
     });
     // 10,000 × 67% × 180 = 1,206,000
     expect(r.exemptCapitalCeiling).toBe(1_206_000);
+  });
+});
+
+describe('defaultParamsFor — פריסת העלייה ל-67% (חוק ההסדרים)', () => {
+  it('2025 עדיין 52%', () => {
+    expect(defaultParamsFor(2025).exemptionPct).toBe(52);
+  });
+
+  it('2026: 57% — פטור חודשי 5,375.1 ₪ (מאומת מול מקור מקצועי)', () => {
+    const r = calcRightsFixation({
+      eligibilityYear: 2026,
+      expectedMonthlyPension: 8_000,
+    });
+    // 9,430 × 57% = 5,375.1 לחודש
+    expect(r.exemptCapitalCeiling).toBe(967_518);
+    const full = r.scenarios.find((s) => s.key === 'full_pension')!;
+    expect(full.monthlyExemption).toBe(5375.1);
+  });
+
+  it('2027: 62.5%', () => {
+    expect(defaultParamsFor(2027).exemptionPct).toBe(62.5);
   });
 });

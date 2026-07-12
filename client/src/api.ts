@@ -555,6 +555,40 @@ export function calcTaxBenefits(input: TaxBenefitsInput): Promise<TaxBenefitsRes
   return post<TaxBenefitsResult>('/calc/tax-benefits', input);
 }
 
+// ---------- פרישה מדומה (קצבה מגיל 60 תוך המשך עבודה) ----------
+
+export interface SimulatedPensionInput {
+  currentAge: number;
+  startAge: number;
+  legalRetirementAge: number;
+  balanceNow: number;
+  monthlyDeposit: number;
+  annualReturnPct: number;
+  conversionFactorAtStart: number;
+  conversionFactorAtLegal: number;
+  marginalTaxRatePct: number;
+}
+
+export interface SimulatedPensionResult {
+  balanceAtStart: number;
+  balanceAtLegal: number;
+  earlyMonthlyGross: number;
+  earlyMonthlyNetWhileWorking: number;
+  waitMonthlyGross: number;
+  windowMonths: number;
+  totalNetDuringWindow: number;
+  monthlyLossAfterLegal: number;
+  breakEvenAge: number | null;
+  warnings: string[];
+  trace: CalcTrace;
+}
+
+export function calcSimulatedPension(
+  input: SimulatedPensionInput,
+): Promise<SimulatedPensionResult> {
+  return post<SimulatedPensionResult>('/calc/simulated-pension', input);
+}
+
 // ---------- קיבוע זכויות (סעיף 9א / טופס 161ד) ----------
 
 export interface PastGrant {

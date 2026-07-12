@@ -31,6 +31,7 @@ import {
   type TaxBenefitsResult,
   type FixationFormInput,
   type TaxFormInput,
+  type SimulatedPensionResult,
 } from './api';
 import { openReport } from './report';
 import { AuthScreen } from './AuthScreen';
@@ -41,6 +42,7 @@ import { FanChart } from './FanChart';
 import { MoneyFlow } from './MoneyFlow';
 import { RightsFixation } from './RightsFixation';
 import { TaxBenefits } from './TaxBenefits';
+import { SimulatedPension } from './SimulatedPension';
 
 // ---------- מטא-דאטה לסוגי מוצרים ----------
 
@@ -353,6 +355,8 @@ function App() {
   const [health, setHealth] = useState<HealthScoreResult | null>(null);
   /** תוצאת מחשבון הטבות המס האחרונה — לניתוח ה-AI */
   const [taxBenefits, setTaxBenefits] = useState<TaxBenefitsResult | null>(null);
+  /** תוצאת סימולציית הפרישה המדומה האחרונה — לניתוח ה-AI */
+  const [simPension, setSimPension] = useState<SimulatedPensionResult | null>(null);
   /** קלטי הסימולטורים — נטענים ונשמרים עם התיק */
   const [fixationForm, setFixationForm] = useState<FixationFormInput | null>(null);
   const [taxForm, setTaxForm] = useState<TaxFormInput | null>(null);
@@ -713,6 +717,16 @@ function App() {
               פער: scenarios.disability.gapMonthly,
             },
             אזהרות_המערכת: scenarios.warnings,
+          }
+        : null,
+      פרישה_מדומה: simPension
+        ? {
+            קצבה_מוקדמת_ברוטו: simPension.earlyMonthlyGross,
+            נטו_בזמן_עבודה: simPension.earlyMonthlyNetWhileWorking,
+            סך_נטו_בחלון_הביניים: simPension.totalNetDuringWindow,
+            קצבה_אם_ממתינים: simPension.waitMonthlyGross,
+            הפסד_חודשי_לכל_החיים: simPension.monthlyLossAfterLegal,
+            גיל_נקודת_איזון: simPension.breakEvenAge,
           }
         : null,
       הטבות_מס_בהפקדה: taxBenefits
@@ -1133,6 +1147,8 @@ function App() {
                   retirement,
                   fixation,
                   health,
+                  simPension,
+                  taxBenefits,
                   aiText,
                   aiMeta,
                   typeLabel: (t) => TYPE_META[t].label,
@@ -1444,6 +1460,36 @@ function App() {
           onInput={setTaxForm}
         />
       )}
+
+      {result &&
+        retirement &&
+        retirement.effectiveRetirementAgeMonths / 12 > 60 &&
+        (() => {
+          const currentAge =
+            Math.round(
+              ((Date.now() - new Date(profile.birthDate).getTime()) /
+                (365.25 * 24 * 3600 * 1000)) *
+                10,
+            ) / 10;
+          if (currentAge >= retirement.effectiveRetirementAgeMonths / 12) return null;
+          const annuityProducts = products.filter((p) => TYPE_META[p.type].isAnnuity);
+          return (
+            <SimulatedPension
+              currentAge={currentAge}
+              legalRetirementAge={
+                Math.round((retirement.effectiveRetirementAgeMonths / 12) * 10) / 10
+              }
+              defaultBalance={annuityProducts.reduce((s, p) => s + p.currentBalance, 0)}
+              defaultMonthlyDeposit={annuityProducts.reduce(
+                (s, p) => s + (p.frozen ? 0 : p.monthlyDeposit),
+                0,
+              )}
+              defaultReturnPct={assumptions.annualReturnPct}
+              onUnauthorized={logout}
+              onResult={setSimPension}
+            />
+          );
+        })()}
 
       {result && (
         <section className="results ai-section">

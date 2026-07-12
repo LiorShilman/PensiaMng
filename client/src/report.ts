@@ -6,6 +6,8 @@ import type {
   RetirementResult,
   RightsFixationResult,
   ScenariosResult,
+  SimulatedPensionResult,
+  TaxBenefitsResult,
 } from './api';
 
 /**
@@ -22,6 +24,8 @@ interface ReportData {
   retirement: RetirementResult | null;
   fixation: RightsFixationResult | null;
   health: HealthScoreResult | null;
+  simPension: SimulatedPensionResult | null;
+  taxBenefits: TaxBenefitsResult | null;
   aiText: string | null;
   aiMeta: string | null;
   typeLabel: (t: PortfolioProductInput['type']) => string;
@@ -184,6 +188,38 @@ export function openReport(d: ReportData): void {
     <p class="disclaimer">קיבוע זכויות הוא בחירה חד-פעמית וכמעט בלתי-הפיכה — הסימולציה להמחשה בלבד וחובה להתייעץ עם יועץ מס מוסמך לפני הגשת טופס 161ד.</p>`
     : '';
 
+  const simPensionBlock = d.simPension
+    ? `
+    <h2>פרישה מדומה — קצבה מגיל 60 תוך המשך עבודה (סימולציה)</h2>
+    <div class="two-col">
+      <div class="box">
+        <h4>הפעלה מוקדמת</h4>
+        <div class="kv"><span>צבירה בהפעלה</span><b>${nis(d.simPension.balanceAtStart)}</b></div>
+        <div class="kv"><span>קצבה ברוטו לכל החיים</span><b>${nis(d.simPension.earlyMonthlyGross)}</b></div>
+        <div class="kv"><span>נטו בזמן העבודה (אחרי מס שולי)</span><b>${nis(d.simPension.earlyMonthlyNetWhileWorking)}</b></div>
+        <div class="kv good"><span>סה"כ נטו עד הגיל החוקי (${d.simPension.windowMonths} חודשים)</span><b>${nis(d.simPension.totalNetDuringWindow)}</b></div>
+      </div>
+      <div class="box">
+        <h4>המתנה לגיל החוקי</h4>
+        <div class="kv"><span>צבירה בגיל החוקי</span><b>${nis(d.simPension.balanceAtLegal)}</b></div>
+        <div class="kv"><span>קצבה ברוטו לכל החיים</span><b>${nis(d.simPension.waitMonthlyGross)}</b></div>
+        <div class="kv good"><span>יתרון חודשי על ההפעלה המוקדמת</span><b>+${nis(d.simPension.monthlyLossAfterLegal)}</b></div>
+        ${d.simPension.breakEvenAge !== null ? `<div class="kv"><span>גיל נקודת האיזון (ברוטו)</span><b>${d.simPension.breakEvenAge}</b></div>` : ''}
+      </div>
+    </div>
+    <p class="disclaimer">הקצבה המוקדמת פטורה מדמי ביטוח לאומי ואינה נספרת במבחן ההכנסות לקצבת אזרח ותיק; ההפעלה בלתי הפיכה ומבטלת כיסויים ביטוחיים — חובה להתייעץ עם מתכנן פרישה מוסמך.</p>`
+    : '';
+
+  const taxBenefitsBlock = d.taxBenefits
+    ? `
+    <h2>הטבות מס בהפקדה (סעיף 45א) — שנת המס הנוכחית</h2>
+    <div class="cards" style="grid-template-columns: repeat(3, 1fr)">
+      <div class="stat hero"><div class="v">${nis(d.taxBenefits.totalAnnualSaving)}</div><div class="l">חיסכון המס השנתי</div></div>
+      <div class="stat"><div class="v">${nis(d.taxBenefits.remainingDepositAllowance)}</div><div class="l">תקרה שנותרה לניצול</div></div>
+      <div class="stat"><div class="v">${nis(d.taxBenefits.potentialExtraSaving)}</div><div class="l">חיסכון נוסף אם תנוצל במלואה</div></div>
+    </div>`
+    : '';
+
   const aiBlock = d.aiText
     ? `
     <h2>ניתוח והמלצות AI ${d.aiMeta ? `<span class="ai-src">(${esc(d.aiMeta)})</span>` : ''}</h2>
@@ -286,6 +322,8 @@ export function openReport(d: ReportData): void {
   ${transfersBlock}
   ${scenariosBlock}
   ${fixationBlock}
+  ${simPensionBlock}
+  ${taxBenefitsBlock}
   ${aiBlock}
 
   <div class="foot">

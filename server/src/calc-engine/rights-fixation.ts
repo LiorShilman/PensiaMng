@@ -25,12 +25,17 @@ export const ANNUITY_CEILING_BY_YEAR: Record<number, number> = {
   // שנים מאוחרות: הערך האחרון הידוע (יש לעדכן דרך RegulatoryParameter)
 };
 
-/** אחוז הפטור על הקצבה המזכה — מדרגות תיקון 190 */
+/**
+ * אחוז הפטור על הקצבה המזכה — מדרגות תיקון 190, כפי שעודכנו בחקיקה
+ * מאוחרת שפרסה את העלייה ל-67%: 57% ב-2026, 62.5% ב-2027, 67% מ-2028.
+ */
 export const EXEMPTION_PCT_PERIODS: { from: number; to: number; pct: number }[] = [
   { from: 2012, to: 2015, pct: 43.5 },
   { from: 2016, to: 2019, pct: 49 },
-  { from: 2020, to: 2024, pct: 52 },
-  { from: 2025, to: 9999, pct: 67 },
+  { from: 2020, to: 2025, pct: 52 },
+  { from: 2026, to: 2026, pct: 57 },
+  { from: 2027, to: 2027, pct: 62.5 },
+  { from: 2028, to: 9999, pct: 67 },
 ];
 
 /** מקדם ההיוון הקבוע בחוק: הון פטור ⇄ פטור חודשי */

@@ -17,6 +17,11 @@ import { calcHealthScore } from './health-score';
 import type { HealthScoreInput, HealthScoreResult } from './health-score';
 import { calcTaxBenefits } from './tax-benefits';
 import type { TaxBenefitsInput, TaxBenefitsResult } from './tax-benefits';
+import { calcSimulatedPension } from './simulated-pension';
+import type {
+  SimulatedPensionInput,
+  SimulatedPensionResult,
+} from './simulated-pension';
 import type {
   AnnuityInput,
   AnnuityResult,
@@ -108,6 +113,16 @@ export class CalcEngineController {
   taxBenefits(@Body() body: TaxBenefitsInput): TaxBenefitsResult {
     try {
       return calcTaxBenefits(body);
+    } catch (e) {
+      throw new BadRequestException((e as Error).message);
+    }
+  }
+
+  /** פרישה מדומה — הפעלת קצבה מגיל 60 תוך המשך עבודה: השוואה ונקודת איזון */
+  @Post('simulated-pension')
+  simulatedPension(@Body() body: SimulatedPensionInput): SimulatedPensionResult {
+    try {
+      return calcSimulatedPension(body);
     } catch (e) {
       throw new BadRequestException((e as Error).message);
     }

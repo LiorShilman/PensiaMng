@@ -8,6 +8,8 @@ import type { Gender } from '../calc-engine/retirement';
 import { calcScenarios } from '../calc-engine/scenarios';
 import { calcTaxBenefits } from '../calc-engine/tax-benefits';
 import type { TaxBenefitsInput } from '../calc-engine/tax-benefits';
+import { calcSimulatedPension } from '../calc-engine/simulated-pension';
+import type { SimulatedPensionInput } from '../calc-engine/simulated-pension';
 import { RightsFixationService } from '../calc-engine/rights-fixation.service';
 import type { RightsFixationInput } from '../calc-engine/rights-fixation';
 import type { ProductType } from '../calc-engine/types';
@@ -102,6 +104,37 @@ export class AiToolsService {
         },
       },
       {
+        name: 'calc_simulated_pension',
+        description:
+          'פרישה מדומה: הפעלת קצבה מגיל 60 תוך המשך עבודה. משווה קצבה מוקדמת (מס שולי, מקדם גבוה) מול המתנה לגיל החוקי, כולל נקודת איזון. השתמש ב-get_portfolio_summary כדי להעריך צבירה וגילאים לפני הקריאה.',
+        schema: {
+          type: 'object',
+          properties: {
+            currentAge: { type: 'number' },
+            startAge: { type: 'number', description: 'גיל ההפעלה (מ-60)' },
+            legalRetirementAge: { type: 'number' },
+            balanceNow: { type: 'number', description: 'הצבירה היום במוצרים שיופעלו (₪)' },
+            monthlyDeposit: { type: 'number' },
+            annualReturnPct: { type: 'number' },
+            conversionFactorAtStart: { type: 'number', description: 'מקדם בגיל ההפעלה (למשל 200)' },
+            conversionFactorAtLegal: { type: 'number', description: 'מקדם בגיל החוקי (למשל 185)' },
+            marginalTaxRatePct: { type: 'number' },
+          },
+          required: [
+            'currentAge',
+            'startAge',
+            'legalRetirementAge',
+            'balanceNow',
+            'monthlyDeposit',
+            'annualReturnPct',
+            'conversionFactorAtStart',
+            'conversionFactorAtLegal',
+            'marginalTaxRatePct',
+          ],
+          additionalProperties: false,
+        },
+      },
+      {
         name: 'calc_tax_benefits',
         description:
           'הטבות מס בהפקדה (סעיף 45א): כמה מס נחסך השנה וכמה תקרה נותרה לניצול. שכיר: זיכוי 35% עד 7% מההכנסה המזכה; עצמאי: זיכוי + ניכוי.',
@@ -138,6 +171,8 @@ export class AiToolsService {
         return this.insuranceScenarios(userId);
       case 'calc_rights_fixation':
         return this.rightsFixation.calc(a as unknown as RightsFixationInput);
+      case 'calc_simulated_pension':
+        return calcSimulatedPension(a as unknown as SimulatedPensionInput);
       case 'calc_tax_benefits':
         return calcTaxBenefits(a as unknown as TaxBenefitsInput);
       default:
