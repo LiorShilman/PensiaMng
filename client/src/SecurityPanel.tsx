@@ -175,9 +175,11 @@ export function SecurityPanel(props: { onClose: () => void; onUnauthorized: () =
             אימות דו-שלבי (2FA) מוסיף שכבת הגנה נוספת — בנוסף לסיסמה תידרש להזין קוד
             מתחלף מאפליקציית אימות בכל התחברות.
           </p>
-          <button className="calc-btn" onClick={onStartSetup} disabled={busy}>
-            הפעל אימות דו-שלבי
-          </button>
+          <div className="ai-panel-actions">
+            <button className="calc-btn" onClick={onStartSetup} disabled={busy}>
+              הפעל אימות דו-שלבי
+            </button>
+          </div>
         </>
       )}
 
