@@ -8,6 +8,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import OpenAI from 'openai';
 import { PrismaService } from '../prisma/prisma.service';
 import { decryptSecret, encryptSecret, maskKey } from './crypto.util';
+import { AiToolsService } from './ai-tools.service';
 
 export type AiProvider = 'anthropic' | 'openai';
 
@@ -31,6 +32,19 @@ export interface AnalyzeResult {
 
 export interface LastAnalysis extends AnalyzeResult {
   analyzedAt: string;
+}
+
+export interface ChatMessage {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
+export interface ChatResult {
+  text: string;
+  /** הכלים שהמודל הפעיל — לשקיפות בממשק */
+  toolCalls: { name: string }[];
+  provider: AiProvider;
+  model: string;
 }
 
 /** ברירות מחדל — הדגמים המתקדמים בכל ספק */
@@ -61,11 +75,24 @@ const SYSTEM_PROMPT = `אתה אנליסט פנסיוני בכיר במערכת 
 
 סיים תמיד ב: "_ניתוח זה נוצר על ידי AI לצורך המחשה ואינו מהווה ייעוץ פנסיוני כהגדרתו בחוק._"`;
 
+const CHAT_SYSTEM_PROMPT = `אתה יועץ צ'אט פנסיוני במערכת PensiaMng הישראלית.
+
+כללי ברזל:
+1. לעולם אל תחשב מספרים פנסיוניים בעצמך — לרשותך כלים שמפעילים את מנוע החישוב הדטרמיניסטי של המערכת על התיק השמור של המשתמש. הפעל אותם וצטט את תוצאותיהם.
+2. כשחסר לך מידע על התיק — קרא ל-get_portfolio_summary לפני שאתה עונה.
+3. לשאלות "מה אם" (גיל פרישה אחר, תשואה אחרת) — הפעל calc_projection עם הפרמטרים המתאימים, ואם רלוונטי השווה מול המצב הנוכחי (שתי קריאות).
+4. ענה בעברית, קצר וממוקד: המספרים המרכזיים + מסקנה. אל תחזור על כל הפלט של הכלי.
+5. אם המשתמש שואל על נתון שלא קיים בתיק — אמור זאת והצע להזין אותו במערכת.
+6. הכלים פועלים על התיק כפי שנשמר — אם המשתמש מזכיר נתון שסותר את התיק, ציין שהתשובה לפי הנתונים השמורים.
+
+סיים תשובות עם המלצה מהותית ב: "_המידע להמחשה בלבד ואינו ייעוץ פנסיוני כהגדרתו בחוק._"`;
+
 @Injectable()
 export class AiService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly config: ConfigService,
+    private readonly tools: AiToolsService,
   ) {}
 
   private secret(): string {
@@ -245,6 +272,118 @@ export class AiService {
     } catch (e) {
       throw new BadRequestException(
         `קריאת ה-AI נכשלה (${provider}/${model}): ${(e as Error).message}`,
+      );
+    }
+  }
+
+  /**
+   * יועץ צ'אט עם Tool Use (מפרט 10א) — המודל מפעיל את מנוע החישוב
+   * דרך כלים ולעולם לא מחשב בעצמו. לולאה עד 6 סבבי כלים.
+   */
+  async chat(userId: string, messages: ChatMessage[]): Promise<ChatResult> {
+    if (!messages?.length) throw new BadRequestException('שיחה ריקה');
+    const { provider, model, apiKey } = await this.clientFor(userId);
+    const toolDefs = this.tools.defs();
+    const toolLog: { name: string }[] = [];
+    const MAX_TURNS = 6;
+
+    const runTool = async (name: string, args: unknown): Promise<string> => {
+      toolLog.push({ name });
+      try {
+        return JSON.stringify(await this.tools.execute(userId, name, args));
+      } catch (e) {
+        return JSON.stringify({ שגיאה: (e as Error).message });
+      }
+    };
+
+    try {
+      if (provider === 'anthropic') {
+        const client = new Anthropic({ apiKey });
+        const tools: Anthropic.Tool[] = toolDefs.map((d) => ({
+          name: d.name,
+          description: d.description,
+          input_schema: d.schema as Anthropic.Tool.InputSchema,
+        }));
+        const msgs: Anthropic.MessageParam[] = messages.map((m) => ({
+          role: m.role,
+          content: m.content,
+        }));
+        for (let turn = 0; turn < MAX_TURNS; turn++) {
+          const resp = await client.messages.create({
+            model,
+            max_tokens: 4000,
+            system: CHAT_SYSTEM_PROMPT,
+            tools,
+            messages: msgs,
+          });
+          if (resp.stop_reason === 'tool_use') {
+            msgs.push({ role: 'assistant', content: resp.content });
+            const results: Anthropic.ToolResultBlockParam[] = [];
+            for (const block of resp.content) {
+              if (block.type === 'tool_use') {
+                results.push({
+                  type: 'tool_result',
+                  tool_use_id: block.id,
+                  content: await runTool(block.name, block.input),
+                });
+              }
+            }
+            msgs.push({ role: 'user', content: results });
+            continue;
+          }
+          const text = resp.content
+            .filter((b): b is Anthropic.TextBlock => b.type === 'text')
+            .map((b) => b.text)
+            .join('\n');
+          return { text, toolCalls: toolLog, provider, model: resp.model };
+        }
+        throw new Error('חריגה ממספר סבבי הכלים המרבי');
+      }
+
+      const client = new OpenAI({ apiKey });
+      const tools: OpenAI.Chat.ChatCompletionTool[] = toolDefs.map((d) => ({
+        type: 'function',
+        function: { name: d.name, description: d.description, parameters: d.schema },
+      }));
+      const msgs: OpenAI.Chat.ChatCompletionMessageParam[] = [
+        { role: 'developer', content: CHAT_SYSTEM_PROMPT },
+        ...messages.map((m) => ({ role: m.role, content: m.content })),
+      ];
+      for (let turn = 0; turn < MAX_TURNS; turn++) {
+        const resp = await client.chat.completions.create({
+          model,
+          max_completion_tokens: 4000,
+          tools,
+          messages: msgs,
+        });
+        const msg = resp.choices[0]?.message;
+        if (!msg) throw new Error('תשובה ריקה מהמודל');
+        if (msg.tool_calls?.length) {
+          msgs.push(msg);
+          for (const tc of msg.tool_calls) {
+            if (tc.type !== 'function') continue;
+            msgs.push({
+              role: 'tool',
+              tool_call_id: tc.id,
+              content: await runTool(
+                tc.function.name,
+                JSON.parse(tc.function.arguments || '{}'),
+              ),
+            });
+          }
+          continue;
+        }
+        return {
+          text: msg.content ?? '',
+          toolCalls: toolLog,
+          provider,
+          model: resp.model,
+        };
+      }
+      throw new Error('חריגה ממספר סבבי הכלים המרבי');
+    } catch (e) {
+      throw new BadRequestException(
+        `שיחת ה-AI נכשלה (${provider}/${model}): ${(e as Error).message}`,
       );
     }
   }

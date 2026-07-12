@@ -15,6 +15,8 @@ import type {
   AiProvider,
   AiSettingsView,
   AnalyzeResult,
+  ChatMessage,
+  ChatResult,
   LastAnalysis,
 } from './ai.service';
 
@@ -54,5 +56,14 @@ export class AiController {
   @Get('last')
   last(@Req() req: AuthedRequest): Promise<LastAnalysis | null> {
     return this.ai.getLastAnalysis(req.user.sub);
+  }
+
+  /** יועץ צ'אט עם Tool Use — המודל מפעיל את מנוע החישוב על התיק השמור */
+  @Post('chat')
+  chat(
+    @Req() req: AuthedRequest,
+    @Body() body: { messages: ChatMessage[] },
+  ): Promise<ChatResult> {
+    return this.ai.chat(req.user.sub, body.messages);
   }
 }

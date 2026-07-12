@@ -212,6 +212,25 @@ export function getLastAiAnalysis(): Promise<LastAnalysis | null> {
   return request<LastAnalysis | null>('GET', '/ai/last');
 }
 
+// ---------- יועץ צ'אט AI עם Tool Use ----------
+
+export interface ChatMessage {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
+export interface ChatResult {
+  text: string;
+  /** הכלים שהמודל הפעיל — לשקיפות */
+  toolCalls: { name: string }[];
+  provider: AiProvider;
+  model: string;
+}
+
+export function aiChat(messages: ChatMessage[]): Promise<ChatResult> {
+  return request<ChatResult>('POST', '/ai/chat', { messages });
+}
+
 export interface PortfolioInput {
   months: number;
   annualSalaryGrowthPct: number;
