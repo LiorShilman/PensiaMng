@@ -43,6 +43,7 @@ import { AuthScreen } from './AuthScreen';
 import { AiPanel } from './AiPanel';
 import { AiMarkdown } from './AiMarkdown';
 import { AiChat } from './AiChat';
+import { Glossary } from './Glossary';
 import { FanChart } from './FanChart';
 import { MoneyFlow } from './MoneyFlow';
 import { RightsFixation } from './RightsFixation';
@@ -361,6 +362,8 @@ function App() {
   const [eventOffsetYears, setEventOffsetYears] = useState(0);
   /** הגדרות מסלולי ההשקעה הסטנדרטיים — נטענות מהשרת */
   const [trackDefs, setTrackDefs] = useState<TrackDef[]>([]);
+  /** מרכז ידע */
+  const [glossaryOpen, setGlossaryOpen] = useState(false);
   /** מודול AI */
   const [aiOpen, setAiOpen] = useState(false);
   const [aiConfigured, setAiConfigured] = useState(false);
@@ -962,6 +965,18 @@ function App() {
           </div>
           <div className="user-bar">
             <button
+              className="ai-toggle"
+              onClick={() => {
+                setGlossaryOpen((v) => {
+                  if (!v) window.scrollTo({ top: 0, behavior: "smooth" });
+                  return !v;
+                });
+              }}
+              title="מרכז ידע — מילון מונחים"
+            >
+              📖 ידע
+            </button>
+            <button
               className={`ai-toggle ${aiConfigured ? 'configured' : ''}`}
               onClick={() => {
                 setAiOpen((v) => {
@@ -981,6 +996,8 @@ function App() {
         </div>
         <p className="subtitle">תכנון פנסיה מקצועי — בניית תיק, הקרנת צבירה ותחזית קצבה</p>
       </header>
+
+      {glossaryOpen && <Glossary onClose={() => setGlossaryOpen(false)} />}
 
       {aiOpen && (
         <AiPanel onConfigured={setAiConfigured} onClose={() => setAiOpen(false)} />

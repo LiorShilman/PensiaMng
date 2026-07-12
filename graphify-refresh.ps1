@@ -20,6 +20,17 @@
   tell-tale sign a build artifact slipped through - the script warns you
   so you can add it to .graphifyignore and re-run.
 
+  Finally, runs `graphify claude install` so Claude Code actually consults
+  the graph instead of raw grep/read on future sessions. This writes/merges
+  a "## graphify" section into CLAUDE.md and adds a PreToolUse hook to
+  .claude/settings.json (advisory only - it injects a reminder, it never
+  blocks a tool call; see graphify's own source for the fail-open guard).
+  Both operations are idempotent - re-running when already installed prints
+  "no change" and touches nothing. Skipped automatically if the current
+  directory isn't a git root (the most common way to install this into the
+  wrong CLAUDE.md - it must run from the same directory Claude Code treats
+  as the project root, not a subfolder).
+
 .PARAMETER Label
   Also name communities with an LLM (costs tokens; needs an API key
   configured for graphify). Default: off (--no-label, fully free).
@@ -27,9 +38,15 @@
 .PARAMETER NoOpen
   Skip auto-opening graph.html in the default browser when done.
 
+.PARAMETER NoClaudeInstall
+  Skip the `graphify claude install` step (CLAUDE.md section + PreToolUse
+  hook). Use this if you don't want Claude Code wired to the graph, or want
+  to review the graph output before opting in.
+
 .EXAMPLE
   .\graphify-refresh.ps1
-  Rebuilds the graph for the current directory and opens the result.
+  Rebuilds the graph for the current directory, wires up Claude Code, and
+  opens the result.
 
 .EXAMPLE
   .\graphify-refresh.ps1 -NoOpen
@@ -38,7 +55,8 @@
 [CmdletBinding()]
 param(
     [switch]$Label,
-    [switch]$NoOpen
+    [switch]$NoOpen,
+    [switch]$NoClaudeInstall
 )
 
 $ErrorActionPreference = 'Stop'
@@ -92,13 +110,13 @@ venv/
 
 # ---- Extract (local AST, no LLM, no API key) ----
 Write-Host ""
-Write-Host "[1/2] Extracting (local AST parsing)..." -ForegroundColor Cyan
+Write-Host "[1/3] Extracting (local AST parsing)..." -ForegroundColor Cyan
 & $graphifyExe extract . --code-only
 if ($LASTEXITCODE -ne 0) { Write-Error "graphify extract failed (exit $LASTEXITCODE)"; exit $LASTEXITCODE }
 
 # ---- Cluster + report + visualization ----
 Write-Host ""
-Write-Host "[2/2] Building report + visualization..." -ForegroundColor Cyan
+Write-Host "[2/3] Building report + visualization..." -ForegroundColor Cyan
 if ($Label) {
     & $graphifyExe cluster-only .
 } else {
@@ -125,6 +143,22 @@ if (Test-Path $reportPath) {
             Write-Host "  This usually means a build artifact or bundled/minified file got indexed." -ForegroundColor Yellow
             Write-Host "  Add its path to .graphifyignore and re-run this script." -ForegroundColor Yellow
         }
+    }
+}
+
+# ---- Wire up Claude Code: CLAUDE.md section + advisory PreToolUse hook ----
+# Idempotent (re-running prints "no change") so it's safe to do on every refresh.
+# Guarded by a git-root check: this must run from the same directory Claude Code
+# treats as the project root, or it writes a CLAUDE.md/.claude that never gets read.
+if (-not $NoClaudeInstall) {
+    Write-Host ""
+    if (Test-Path (Join-Path $root '.git')) {
+        Write-Host "[3/3] Wiring up Claude Code (CLAUDE.md + PreToolUse hook)..." -ForegroundColor Cyan
+        & $graphifyExe claude install
+        if ($LASTEXITCODE -ne 0) { Write-Warning "graphify claude install failed (exit $LASTEXITCODE) - continuing anyway" }
+    } else {
+        Write-Host "[3/3] Skipped Claude Code wiring: $root has no .git - this doesn't look like the project root." -ForegroundColor Yellow
+        Write-Host "  Run this script from the actual repo root, or pass -NoClaudeInstall to silence this." -ForegroundColor Yellow
     }
 }
 

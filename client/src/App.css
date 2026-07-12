@@ -1879,6 +1879,78 @@ dd.ni-sub {
   color: #7dd3fc;
 }
 
+/* ---------- Glossary (מרכז ידע) ---------- */
+
+.glossary-panel {
+  margin-bottom: 24px;
+}
+
+.glossary-search {
+  width: 100%;
+  padding: 11px 14px;
+  margin: 12px 0 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 0.92rem;
+  font-family: inherit;
+  color: var(--text-strong);
+  background: rgba(15, 15, 27, 0.6);
+}
+
+.glossary-search:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.18);
+}
+
+.glossary-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+  gap: 10px 16px;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.glossary-item {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px 14px;
+  background: rgba(15, 15, 27, 0.4);
+  height: fit-content;
+}
+
+.glossary-item summary {
+  cursor: pointer;
+  font-weight: 700;
+  color: var(--text-strong);
+  font-size: 0.95rem;
+}
+
+.glossary-item[open] summary {
+  color: var(--primary);
+  margin-bottom: 6px;
+}
+
+.glossary-def {
+  margin: 0 0 8px;
+  font-size: 0.86rem;
+  color: var(--text);
+  line-height: 1.6;
+}
+
+.glossary-why {
+  margin: 0;
+  font-size: 0.84rem;
+  color: var(--muted);
+  line-height: 1.6;
+  border-inline-start: 3px solid rgba(139, 92, 246, 0.4);
+  padding-inline-start: 10px;
+}
+
+.glossary-why strong {
+  color: #c4b5fd;
+}
+
 /* ---------- AI markdown tables (טבלאות בתשובות) ---------- */
 
 .ai-table-wrap {
