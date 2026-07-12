@@ -987,6 +987,65 @@ export function calcInsights(input: {
   return post<InsightsResult>('/calc/insights', input);
 }
 
+// ---------- סימולטור מסלול חיים ----------
+
+export type LifePathEventType =
+  | 'JOB_EXIT_WITHDRAW'
+  | 'UNEMPLOYMENT_GAP'
+  | 'PARENTAL_LEAVE'
+  | 'SALARY_CHANGE';
+
+export interface LifePathEvent {
+  id: string;
+  type: LifePathEventType;
+  /** חודשים מהיום שבו האירוע מתרחש (0 = היום) */
+  atMonth: number;
+  label?: string;
+  severanceWithdrawn?: number;
+  yearsOfServiceAtExit?: number;
+  lastMonthlySalaryAtExit?: number;
+  marginalTaxRatePct?: number;
+  durationMonths?: number;
+  depositDuringPct?: number;
+  newMonthlyDeposit?: number;
+}
+
+export interface LifePathEventOutcome {
+  id: string;
+  type: LifePathEventType;
+  label: string;
+  monthOccurred: number;
+  detail: string;
+  balanceImpact: number;
+}
+
+export interface LifePathResult {
+  series: SeriesPoint[];
+  baselineSeries: SeriesPoint[];
+  baselineFinalBalance: number;
+  finalBalance: number;
+  baselineMonthlyAnnuity: number;
+  finalMonthlyAnnuity: number;
+  totalImpact: number;
+  events: LifePathEventOutcome[];
+  warnings: string[];
+  trace: CalcTrace;
+}
+
+export function calcLifePath(input: {
+  currentBalance: number;
+  monthlyDeposit: number;
+  feeFromDepositPct: number;
+  feeFromBalancePct: number;
+  annualReturnPct: number;
+  annualSalaryGrowthPct: number;
+  months: number;
+  conversionFactor: number;
+  events: LifePathEvent[];
+}): Promise<LifePathResult> {
+  return post<LifePathResult>('/calc/life-path', input);
+}
+
 // ---------- קיבוע זכויות (סעיף 9א / טופס 161ד) ----------
 
 export interface PastGrant {

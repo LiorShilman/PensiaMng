@@ -32,6 +32,8 @@ import { calcDecumulation } from './decumulation';
 import type { DecumulationInput, DecumulationResult } from './decumulation';
 import { buildInsights } from './insights';
 import type { InsightsInput, InsightsResult } from './insights';
+import { calcLifePath } from './life-path';
+import type { LifePathInput, LifePathResult } from './life-path';
 import type {
   AnnuityInput,
   AnnuityResult,
@@ -183,6 +185,16 @@ export class CalcEngineController {
   insights(@Body() body: InsightsInput): InsightsResult {
     try {
       return buildInsights(body);
+    } catch (e) {
+      throw new BadRequestException((e as Error).message);
+    }
+  }
+
+  /** סימולטור מסלול חיים — הקרנת התיק האמיתי דרך רצף אירועי חיים שנבחרו */
+  @Post('life-path')
+  lifePath(@Body() body: LifePathInput): LifePathResult {
+    try {
+      return calcLifePath(body);
     } catch (e) {
       throw new BadRequestException((e as Error).message);
     }

@@ -75,6 +75,7 @@ import { TaxBenefits } from './TaxBenefits';
 import { SimulatedPension } from './SimulatedPension';
 import { JobExit } from './JobExit';
 import { Decumulation } from './Decumulation';
+import { LifePath } from './LifePath';
 import { ReportImport } from './ReportImport';
 
 // ---------- מטא-דאטה לסוגי מוצרים ----------
@@ -2157,6 +2158,41 @@ function App() {
           initialResult={decum ?? undefined}
         />
       )}
+
+      {result &&
+        retirement &&
+        (() => {
+          const annuityProducts = products.filter(
+            (p) => TYPE_META[p.type].isAnnuity && !p.frozen,
+          );
+          const totalBalance = annuityProducts.reduce((s, p) => s + p.currentBalance, 0);
+          const totalDeposit = annuityProducts.reduce((s, p) => s + p.monthlyDeposit, 0);
+          const avgFeeDeposit = annuityProducts.length
+            ? annuityProducts.reduce((s, p) => s + p.feeFromDepositPct, 0) /
+              annuityProducts.length
+            : 0;
+          const avgFeeBalance = annuityProducts.length
+            ? annuityProducts.reduce((s, p) => s + p.feeFromBalancePct, 0) /
+              annuityProducts.length
+            : 0;
+          const avgFactor = annuityProducts.length
+            ? annuityProducts.reduce((s, p) => s + (p.conversionFactor ?? 200), 0) /
+              annuityProducts.length
+            : 200;
+          return (
+            <LifePath
+              defaultBalance={totalBalance}
+              defaultMonthlyDeposit={totalDeposit}
+              feeFromDepositPct={avgFeeDeposit}
+              feeFromBalancePct={avgFeeBalance}
+              defaultReturnPct={assumptions.annualReturnPct}
+              defaultSalaryGrowthPct={assumptions.annualSalaryGrowthPct}
+              months={Math.max(1, retirement.monthsToRetirement)}
+              conversionFactor={avgFactor}
+              onUnauthorized={logout}
+            />
+          );
+        })()}
 
       {result && (
         <section className="results ai-section">

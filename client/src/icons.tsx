@@ -171,6 +171,19 @@ export const IconCompass = (
   </svg>
 );
 
+/** סימולטור מסלול חיים — ציר עם אבני דרך */
+export const IconMilestones = (
+  <svg {...base} width={15} height={15}>
+    <path d="M4 21V3" />
+    <circle cx="4" cy="7" r="1.5" fill="currentColor" stroke="none" />
+    <circle cx="4" cy="13" r="1.5" fill="currentColor" stroke="none" />
+    <circle cx="4" cy="19" r="1.5" fill="currentColor" stroke="none" />
+    <path d="M8 7h12" />
+    <path d="M8 13h9" />
+    <path d="M8 19h6" />
+  </svg>
+);
+
 /** מסך משפחה — מבט זוגי, שני אנשים */
 export const IconUsers = (
   <svg {...base} width={15} height={15}>
