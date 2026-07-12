@@ -5,6 +5,7 @@ import {
   calcRetirement,
   calcScenarios,
   clearSession,
+  DEMO_EMAIL,
   getStoredUser,
   getToken,
   loadPortfolio,
@@ -971,6 +972,12 @@ function App() {
   return (
     <div className="app">
       <div className="bg-glow" aria-hidden="true" />
+
+      {user.email === DEMO_EMAIL && (
+        <div className="demo-banner" role="status">
+          מצב הדגמה — כל הנתונים המוצגים בדיוניים לחלוטין, לצורך הצגת יכולות המערכת בלבד
+        </div>
+      )}
 
       <header className="header">
         <div className="header-top">

@@ -387,6 +387,9 @@ export function login(email: string, password: string): Promise<LoginResult> {
   return post<LoginResult>('/auth/login', { email, password });
 }
 
+/** האימייל הקבוע של חשבון ההדגמה — משמש לזיהוי "מצב הדגמה" בממשק */
+export const DEMO_EMAIL = 'demo@pensiamng.local';
+
 /**
  * כניסת דמו בלחיצה אחת — חשבון נפרד לגמרי מהמשתמשים הרשומים, מאופס
  * לתיק הדגמה מלא (כל סוגי המוצרים + מבט זוגי) בכל כניסה.

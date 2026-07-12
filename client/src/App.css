@@ -12,6 +12,16 @@
   z-index: -1;
 }
 
+.demo-banner {
+  margin: -32px -28px 24px;
+  padding: 10px 28px;
+  background: linear-gradient(90deg, #d97706, #f59e0b);
+  color: #1c1206;
+  font-weight: 700;
+  font-size: 0.85rem;
+  text-align: center;
+}
+
 /* ---------- Header ---------- */
 
 .header {

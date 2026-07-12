@@ -5,6 +5,10 @@ import type { SavedPortfolio } from '../portfolio/portfolio.service';
  * סוגי המוצרים והיכולות: כיסויים ביטוחיים, ניוד, מוטבים, מסלולי השקעה,
  * קרן מוקפאת, מטריה ביטוחית, ילדים מתחת/מעל גיל 21, ותיק בן/בת זוג
  * נפרד (מבט זוגי). נטען מחדש בכל כניסת דמו כדי שההדגמה תמיד תיראה שלמה.
+ *
+ * חשוב: שמות בדיוניים בלבד ("ישראל ישראלי", "קרן דוגמה") — לא שמות של
+ * גופים מוסדיים אמיתיים — כדי שיהיה חד-משמעי שזה תיק הדגמה ולא נתונים
+ * אמיתיים של מישהו.
  */
 
 export const DEMO_PRIMARY_PORTFOLIO: SavedPortfolio = {
@@ -13,20 +17,21 @@ export const DEMO_PRIMARY_PORTFOLIO: SavedPortfolio = {
     annualSalaryGrowthPct: 2,
   },
   profile: {
-    fullName: 'דמו — כל היכולות',
+    fullName: 'ישראל ישראלי (משתמש הדגמה)',
     gender: 'MALE',
-    birthDate: '1978-05-15',
+    birthDate: '1970-01-01', // תאריך עגול במכוון — לא תאריך לידה אמיתי
     maritalStatus: 'MARRIED',
     insuredMonthlySalary: 22000,
     children: [
-      { birthDate: '2012-03-10', name: 'נועה' }, // מתחת לגיל 21 — יתומה זכאית
-      { birthDate: '2001-07-01', name: 'איתי' }, // מעל גיל 21 — לא זכאי
+      { birthDate: '2010-01-01', name: 'ילד/ה לדוגמה א׳' }, // מתחת לגיל 21 — יתום/ה זכאי/ת
+      { birthDate: '2003-01-01', name: 'ילד/ה לדוגמה ב׳' }, // מעל גיל 21 — לא זכאי/ת
+      { birthDate: '2015-01-01', name: 'ילד/ה לדוגמה ג׳' }, // מתחת לגיל 21 — יתום/ה זכאי/ת
     ],
   },
   products: [
     {
       id: 'demo-p1',
-      name: 'מיטב דש — פנסיה מקיפה',
+      name: 'קרן פנסיה מקיפה (דוגמה)',
       type: 'PENSION_COMPREHENSIVE',
       currentBalance: 650_000,
       monthlyDeposit: 2_400,
@@ -44,7 +49,7 @@ export const DEMO_PRIMARY_PORTFOLIO: SavedPortfolio = {
     },
     {
       id: 'demo-p2',
-      name: 'הראל — פנסיה משלימה (ממעסיק קודם)',
+      name: 'קרן פנסיה משלימה — ממעסיק קודם (דוגמה)',
       type: 'PENSION_GENERAL',
       currentBalance: 120_000,
       monthlyDeposit: 0,
@@ -56,7 +61,7 @@ export const DEMO_PRIMARY_PORTFOLIO: SavedPortfolio = {
     },
     {
       id: 'demo-p3',
-      name: 'כלל — ביטוח מנהלים',
+      name: 'ביטוח מנהלים (דוגמה)',
       type: 'MANAGERS_INSURANCE',
       currentBalance: 300_000,
       monthlyDeposit: 1_200,
@@ -67,12 +72,12 @@ export const DEMO_PRIMARY_PORTFOLIO: SavedPortfolio = {
       deathBenefitAmount: 800_000,
       joinDate: '2018-04-01',
       beneficiaries: [
-        { name: 'מיכל כהן (בת הזוג)', pct: 70 },
-        { name: 'הילדים', pct: 30 },
+        { name: 'בן/בת הזוג (לדוגמה)', pct: 70 },
+        { name: 'הילדים (לדוגמה)', pct: 30 },
       ],
       transfers: [
         {
-          fromProvider: 'הפניקס',
+          fromProvider: 'גוף מנהל קודם (דוגמה)',
           fromType: 'ביטוח מנהלים',
           transferDate: '2018-04-01',
           note: 'איבוד מקדם המרה מובטח 200 ← 190 בעת הניוד',
@@ -81,7 +86,7 @@ export const DEMO_PRIMARY_PORTFOLIO: SavedPortfolio = {
     },
     {
       id: 'demo-p4',
-      name: 'אלטשולר שחם — קופת גמל',
+      name: 'קופת גמל (דוגמה)',
       type: 'PROVIDENT_FUND',
       currentBalance: 180_000,
       monthlyDeposit: 300,
@@ -93,7 +98,7 @@ export const DEMO_PRIMARY_PORTFOLIO: SavedPortfolio = {
     },
     {
       id: 'demo-p5',
-      name: 'מגדל — קופת גמל להשקעה',
+      name: 'קופת גמל להשקעה (דוגמה)',
       type: 'PROVIDENT_INVESTMENT',
       currentBalance: 95_000,
       monthlyDeposit: 800,
@@ -104,7 +109,7 @@ export const DEMO_PRIMARY_PORTFOLIO: SavedPortfolio = {
     },
     {
       id: 'demo-p6',
-      name: 'IRA בניהול אישי',
+      name: 'IRA בניהול אישי (דוגמה)',
       type: 'IRA',
       currentBalance: 60_000,
       monthlyDeposit: 0,
@@ -115,7 +120,7 @@ export const DEMO_PRIMARY_PORTFOLIO: SavedPortfolio = {
     },
     {
       id: 'demo-p7',
-      name: 'הפניקס — קרן השתלמות',
+      name: 'קרן השתלמות (דוגמה)',
       type: 'STUDY_FUND',
       currentBalance: 140_000,
       monthlyDeposit: 950,
@@ -126,7 +131,7 @@ export const DEMO_PRIMARY_PORTFOLIO: SavedPortfolio = {
     },
     {
       id: 'demo-p8',
-      name: 'מנורה — ביטוח אכ"ע פרטי (מטריה ביטוחית)',
+      name: 'ביטוח אכ"ע פרטי — מטריה ביטוחית (דוגמה)',
       type: 'DISABILITY_INSURANCE',
       currentBalance: 0,
       monthlyDeposit: 0,
@@ -138,7 +143,7 @@ export const DEMO_PRIMARY_PORTFOLIO: SavedPortfolio = {
     },
     {
       id: 'demo-p9',
-      name: 'הפניקס — ביטוח חיים פרטי (ריסק)',
+      name: 'ביטוח חיים פרטי — ריסק (דוגמה)',
       type: 'LIFE_INSURANCE',
       currentBalance: 0,
       monthlyDeposit: 0,
@@ -156,16 +161,16 @@ export const DEMO_SPOUSE_PORTFOLIO: SavedPortfolio = {
     annualSalaryGrowthPct: 2,
   },
   profile: {
-    fullName: 'מיכל כהן',
+    fullName: 'דנה ישראלי (בת זוג — הדגמה)',
     gender: 'FEMALE',
-    birthDate: '1980-11-02',
+    birthDate: '1972-01-01', // תאריך עגול במכוון — לא תאריך לידה אמיתי
     maritalStatus: 'MARRIED',
     insuredMonthlySalary: 15_000,
   },
   products: [
     {
       id: 'demo-s1',
-      name: 'מנורה — פנסיה מקיפה',
+      name: 'קרן פנסיה מקיפה (דוגמה)',
       type: 'PENSION_COMPREHENSIVE',
       currentBalance: 280_000,
       monthlyDeposit: 1_100,
@@ -179,7 +184,7 @@ export const DEMO_SPOUSE_PORTFOLIO: SavedPortfolio = {
     },
     {
       id: 'demo-s2',
-      name: 'קרן השתלמות',
+      name: 'קרן השתלמות (דוגמה)',
       type: 'STUDY_FUND',
       currentBalance: 60_000,
       monthlyDeposit: 600,
