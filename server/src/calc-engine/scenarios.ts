@@ -217,6 +217,15 @@ export function calcScenarios(input: ScenariosInput): ScenariosResult {
         'פוליסת ביטוח טהורה (אכ"ע) — אין רכיב חיסכון ואין תשלום במקרה מוות',
       );
     }
+    if (p.type === 'LIFE_INSURANCE') {
+      return lumpOutcome(
+        p,
+        p.deathBenefitAmount ?? 0,
+        p.deathBenefitAmount
+          ? 'ביטוח חיים פרטי (ריסק) — סכום הביטוח משולם למוטבים כסכום חד-פעמי'
+          : 'ביטוח חיים פרטי — לא הוזן סכום ביטוח',
+      );
+    }
     if (PENSION_TYPES.has(p.type)) {
       if (p.frozen) {
         return lumpOutcome(
@@ -326,7 +335,9 @@ export function calcScenarios(input: ScenariosInput): ScenariosResult {
       detail:
         p.type === 'MANAGERS_INSURANCE'
           ? 'כיסוי אכ"ע בביטוח מנהלים אינו נתמך עדיין בחישוב — בדוק בפוליסה'
-          : 'ללא כיסוי נכות במוצר זה',
+          : p.type === 'LIFE_INSURANCE'
+            ? 'ביטוח חיים בלבד — אין כיסוי אובדן כושר עבודה'
+            : 'ללא כיסוי נכות במוצר זה',
     };
   });
 

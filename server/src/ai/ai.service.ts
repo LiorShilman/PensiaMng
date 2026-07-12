@@ -47,6 +47,99 @@ export interface ChatResult {
   model: string;
 }
 
+/** מוצר שחולץ מדוח שנתי — טיוטה לאישור המשתמש לפני הוספה לתיק */
+export interface ExtractedProduct {
+  name: string;
+  type: string;
+  currentBalance: number;
+  monthlyDeposit?: number;
+  feeFromDepositPct?: number;
+  feeFromBalancePct?: number;
+  insuredMonthlySalary?: number;
+  joinDate?: string;
+  /** ביטוח חיים/מנהלים: סכום הביטוח למקרה מוות */
+  deathBenefitAmount?: number;
+  /** מוצרי ביטוח: פרמיה חודשית */
+  monthlyPremium?: number;
+  notes?: string;
+}
+
+export interface ExtractReportResult {
+  products: ExtractedProduct[];
+  reportYear?: number;
+  managingBody?: string;
+  notes: string[];
+  model: string;
+}
+
+/** סכמת החילוץ — Structured Output דרך כלי כפוי */
+const EXTRACT_TOOL: Anthropic.Tool = {
+  name: 'report_data',
+  description: 'הנתונים המובנים שחולצו מהדוח השנתי',
+  input_schema: {
+    type: 'object',
+    properties: {
+      reportYear: { type: 'number', description: 'שנת הדוח' },
+      managingBody: { type: 'string', description: 'הגוף המנהל (חברה)' },
+      products: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            name: {
+              type: 'string',
+              description: 'שם המוצר/הקופה כולל הגוף המנהל, למשל "קרן פנסיה מקיפה - מנורה"',
+            },
+            type: {
+              type: 'string',
+              enum: [
+                'PENSION_COMPREHENSIVE',
+                'PENSION_GENERAL',
+                'MANAGERS_INSURANCE',
+                'PROVIDENT_FUND',
+                'PROVIDENT_INVESTMENT',
+                'IRA',
+                'STUDY_FUND',
+                'LIFE_INSURANCE',
+                'DISABILITY_INSURANCE',
+              ],
+            },
+            currentBalance: {
+              type: 'number',
+              description: 'יתרה צבורה בסוף התקופה (₪); 0 למוצרי ביטוח טהורים',
+            },
+            monthlyDeposit: {
+              type: 'number',
+              description: 'הפקדה חודשית ממוצעת (סך שנתי ÷ 12) אם מופיעה',
+            },
+            feeFromDepositPct: { type: 'number', description: 'דמי ניהול מהפקדה (%)' },
+            feeFromBalancePct: { type: 'number', description: 'דמי ניהול מצבירה (% שנתי)' },
+            insuredMonthlySalary: { type: 'number', description: 'שכר מבוטח (₪) אם מופיע' },
+            joinDate: { type: 'string', description: 'תאריך הצטרפות (yyyy-mm-dd) אם מופיע' },
+            deathBenefitAmount: {
+              type: 'number',
+              description: 'סכום ביטוח למקרה מוות (₪) — בביטוח חיים/מנהלים',
+            },
+            monthlyPremium: {
+              type: 'number',
+              description:
+                'עלות כיסויים/פרמיה חודשית (₪). בקרן פנסיה: סכום השורות "עלות הביטוח לסיכוני נכות" + "עלות הביטוח לשאירים" (שנתי ÷ 12). לעולם לא "שחרור מתשלום הפקדות" ולא אחוז מההפקדות',
+            },
+            notes: { type: 'string', description: 'הערה חשובה שחולצה (מסלול, כיסויים)' },
+          },
+          required: ['name', 'type', 'currentBalance'],
+        },
+      },
+      notes: {
+        type: 'array',
+        items: { type: 'string' },
+        description: 'הערות: נתונים שלא נמצאו, אי-ודאויות, אזהרות',
+      },
+    },
+    required: ['products', 'notes'],
+  } as Anthropic.Tool.InputSchema,
+};
+
 /** ברירות מחדל — הדגמים המתקדמים בכל ספק */
 const DEFAULT_MODELS: Record<AiProvider, string> = {
   anthropic: 'claude-opus-4-8',
@@ -384,6 +477,75 @@ export class AiService {
     } catch (e) {
       throw new BadRequestException(
         `שיחת ה-AI נכשלה (${provider}/${model}): ${(e as Error).message}`,
+      );
+    }
+  }
+
+  /**
+   * קליטת דוח שנתי מ-PDF (מפרט 10א, שלב 3) — חילוץ מובנה של מוצרים,
+   * יתרות ודמי ניהול. התוצאה היא טיוטה בלבד — המשתמש מאשר לפני הוספה.
+   * נתמך כרגע עם ספק Anthropic (תמיכה מובנית ב-PDF).
+   */
+  async extractReport(userId: string, pdfBase64: string): Promise<ExtractReportResult> {
+    if (!pdfBase64?.trim()) throw new BadRequestException('לא התקבל קובץ');
+    // ~15MB בקידוד base64 — מגבלה שמכסה כל דוח שנתי סביר
+    if (pdfBase64.length > 20_000_000) {
+      throw new BadRequestException('הקובץ גדול מדי (עד ~15MB)');
+    }
+    const { provider, model, apiKey } = await this.clientFor(userId);
+    if (provider !== 'anthropic') {
+      throw new BadRequestException(
+        'קליטת דוח PDF זמינה כרגע עם ספק Claude (Anthropic) בלבד — החלף ספק בהגדרות ה-AI ונסה שוב',
+      );
+    }
+
+    try {
+      const client = new Anthropic({ apiKey });
+      const resp = await client.messages.create({
+        model,
+        max_tokens: 8000,
+        tools: [EXTRACT_TOOL],
+        tool_choice: { type: 'tool', name: 'report_data' },
+        messages: [
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'document',
+                source: {
+                  type: 'base64',
+                  media_type: 'application/pdf',
+                  data: pdfBase64,
+                },
+              },
+              {
+                type: 'text',
+                text: 'זהו דוח שנתי מגוף פנסיוני ישראלי (קרן פנסיה / קופת גמל / קרן השתלמות / ביטוח מנהלים). חלץ את הנתונים המובנים: כל מוצר עם יתרה צבורה, הפקדות, דמי ניהול (בדוק היטב אם באחוזים או בש"ח — המר לאחוזים לפי היתרה/ההפקדה), שכר מבוטח ותאריך הצטרפות. עלות כיסויים חודשית: חשב מהשורות "עלות הביטוח לסיכוני נכות" ו"עלות הביטוח לשאירים" (סכום שנתי חלקי 12) — אל תשתמש ב"שחרור מתשלום הפקדות" או באחוז ההפקדות לכיסוי. אל תמציא נתונים שאינם בדוח — השאר שדות חסרים ריקים וציין זאת בהערות.',
+              },
+            ],
+          },
+        ],
+      });
+      const toolUse = resp.content.find(
+        (b): b is Anthropic.ToolUseBlock => b.type === 'tool_use',
+      );
+      if (!toolUse) throw new Error('המודל לא החזיר נתונים מובנים');
+      const data = toolUse.input as {
+        products?: ExtractedProduct[];
+        reportYear?: number;
+        managingBody?: string;
+        notes?: string[];
+      };
+      return {
+        products: data.products ?? [],
+        reportYear: data.reportYear,
+        managingBody: data.managingBody,
+        notes: data.notes ?? [],
+        model: resp.model,
+      };
+    } catch (e) {
+      throw new BadRequestException(
+        `קליטת הדוח נכשלה (${provider}/${model}): ${(e as Error).message}`,
       );
     }
   }

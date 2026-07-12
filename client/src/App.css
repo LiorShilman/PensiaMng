@@ -1534,6 +1534,68 @@ td.fees {
   font-family: inherit;
 }
 
+/* ---------- Annual report import (קליטת דוח שנתי) ---------- */
+
+.report-import {
+  margin-bottom: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.import-review {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.import-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.import-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: rgba(15, 15, 27, 0.45);
+  cursor: pointer;
+}
+
+.import-item input[type='checkbox'] {
+  margin-top: 3px;
+  accent-color: var(--primary);
+}
+
+.import-item-body {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.import-item-body strong {
+  color: var(--text-strong);
+  font-size: 0.92rem;
+}
+
+.import-detail {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.import-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
 /* ---------- AI chat advisor (יועץ צ'אט) ---------- */
 
 .chat-card {
@@ -1809,11 +1871,68 @@ dd.ni-sub {
 /* ---------- Rights fixation (קיבוע זכויות) ---------- */
 
 .fixation-section {
-  margin-top: 40px;
+  margin-top: 14px;
 }
 
-.fixation-section .whatif-head {
-  margin-bottom: 16px;
+/* כותרת סקשן מקופל — כל השורה לחיצה (אקורדיון) עם חץ במקום כפתור */
+.acc-head {
+  margin-bottom: 0;
+  padding: 14px 20px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: rgba(22, 23, 42, 0.5);
+  cursor: pointer;
+  -webkit-user-select: none;
+  user-select: none;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.acc-head:hover,
+.acc-head:focus-visible {
+  border-color: rgba(139, 92, 246, 0.45);
+  background: rgba(139, 92, 246, 0.06);
+  outline: none;
+}
+
+.acc-head.open {
+  border-color: rgba(139, 92, 246, 0.45);
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.fixation-section .results-title {
+  margin: 0;
+  font-size: 1.02rem;
+}
+
+.acc-indicator {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  color: var(--muted);
+  font-size: 0.9rem;
+  background: rgba(148, 163, 184, 0.08);
+  transition: transform 0.2s, color 0.15s, background 0.15s;
+  flex-shrink: 0;
+}
+
+.acc-head:hover .acc-indicator {
+  color: var(--primary);
+  background: rgba(139, 92, 246, 0.15);
+}
+
+.acc-head.open .acc-indicator {
+  transform: rotate(180deg);
+  color: var(--primary);
+}
+
+.fixation-section .fixation-card {
+  margin-top: 0;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+  border-top: none;
 }
 
 .fixation-card {

@@ -66,7 +66,18 @@ export function SimulatedPension(props: Props) {
 
   return (
     <section className="results fixation-section">
-      <div className="whatif-head">
+      <div
+        className={`whatif-head acc-head ${open ? 'open' : ''}`}
+        role="button"
+        tabIndex={0}
+        onClick={() => setOpen(!open)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            setOpen(!open);
+          }
+        }}
+      >
         <h2 className="results-title">
           ⏳ פרישה מדומה — קצבה מגיל 60 תוך המשך עבודה
           <span
@@ -77,9 +88,9 @@ export function SimulatedPension(props: Props) {
             ⓘ
           </span>
         </h2>
-        <button className="calc-btn" onClick={() => setOpen(!open)}>
-          {open ? 'סגור' : 'פתח סימולציה'}
-        </button>
+        <span className="acc-indicator" aria-hidden="true">
+          ▾
+        </span>
       </div>
 
       {open && (

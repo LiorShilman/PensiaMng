@@ -519,3 +519,38 @@ describe('calcScenarios — ביטוח לאומי בתרחישים', () => {
     expect(r.death.niSurvivorsMonthly).toBe(0); // NI: עד 18
   });
 });
+
+describe('calcScenarios — ביטוח חיים פרטי (ריסק)', () => {
+  const life: ScenarioProductInput = {
+    id: 'p10',
+    name: 'ביטוח חיים - הפניקס',
+    type: 'LIFE_INSURANCE',
+    currentBalance: 0,
+    deathBenefitAmount: 1_500_000,
+    beneficiaries: [{ name: 'בת זוג', pct: 100 }],
+  };
+
+  it('מוות: סכום הביטוח למוטבים כסכום חד-פעמי', () => {
+    const r = calcScenarios(base({ products: [pension, life] }));
+    const out = r.death.products.find((p) => p.id === 'p10')!;
+    expect(out.lumpSum).toBe(1_500_000);
+    expect(out.lumpSumSplit).toEqual([{ name: 'בת זוג', amount: 1_500_000 }]);
+    expect(r.death.totalLumpSum).toBe(1_500_000);
+  });
+
+  it('נכות: אין כיסוי מביטוח חיים', () => {
+    const r = calcScenarios(base({ products: [pension, life] }));
+    const out = r.disability.products.find((p) => p.id === 'p10')!;
+    expect(out.disabilityMonthly).toBe(0);
+    expect(out.detail).toContain('אין כיסוי אובדן כושר');
+  });
+
+  it('ללא סכום ביטוח: 0 עם הסבר', () => {
+    const r = calcScenarios(
+      base({ products: [{ ...life, deathBenefitAmount: undefined }] }),
+    );
+    const out = r.death.products.find((p) => p.id === 'p10')!;
+    expect(out.lumpSum).toBe(0);
+    expect(out.detail).toContain('לא הוזן');
+  });
+});

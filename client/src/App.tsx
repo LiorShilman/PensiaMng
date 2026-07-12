@@ -24,6 +24,7 @@ import {
 } from './api';
 import {
   aiAnalyze,
+  getAiSettings,
   getLastAiAnalysis,
   calcHealthScore,
   type RightsFixationResult,
@@ -32,6 +33,7 @@ import {
   type FixationFormInput,
   type TaxFormInput,
   type SimulatedPensionResult,
+  type JobExitResult,
 } from './api';
 import { openReport } from './report';
 import { AuthScreen } from './AuthScreen';
@@ -43,6 +45,8 @@ import { MoneyFlow } from './MoneyFlow';
 import { RightsFixation } from './RightsFixation';
 import { TaxBenefits } from './TaxBenefits';
 import { SimulatedPension } from './SimulatedPension';
+import { JobExit } from './JobExit';
+import { ReportImport } from './ReportImport';
 
 // ---------- מטא-דאטה לסוגי מוצרים ----------
 
@@ -187,6 +191,17 @@ const TYPE_META: Record<ProductType, TypeMeta> = {
     insuranceOnly: true,
     defaults: { feeFromDepositPct: 0, feeFromBalancePct: 0, monthlyCoverageCost: 0 },
   },
+  LIFE_INSURANCE: {
+    label: 'ביטוח חיים פרטי (ריסק)',
+    short: 'ביטוח חיים',
+    isAnnuity: false,
+    hasCoverage: false,
+    maxDepositFee: 0,
+    icon: 'shield',
+    accent: ['#e11d48', '#fb7185'],
+    insuranceOnly: true,
+    defaults: { feeFromDepositPct: 0, feeFromBalancePct: 0, monthlyCoverageCost: 0 },
+  },
 };
 
 const TYPE_ORDER: ProductType[] = [
@@ -198,6 +213,7 @@ const TYPE_ORDER: ProductType[] = [
   'IRA',
   'STUDY_FUND',
   'DISABILITY_INSURANCE',
+  'LIFE_INSURANCE',
 ];
 
 // ---------- עזרים ----------
@@ -245,6 +261,9 @@ function newProduct(type: ProductType): PortfolioProductInput {
       : {}),
     ...(type === 'DISABILITY_INSURANCE'
       ? { currentBalance: 0, monthlyDeposit: 0, disabilityPct: 75, umbrella: false }
+      : {}),
+    ...(type === 'LIFE_INSURANCE'
+      ? { currentBalance: 0, monthlyDeposit: 0, deathBenefitAmount: 0 }
       : {}),
   };
 }
@@ -357,6 +376,8 @@ function App() {
   const [taxBenefits, setTaxBenefits] = useState<TaxBenefitsResult | null>(null);
   /** תוצאת סימולציית הפרישה המדומה האחרונה — לניתוח ה-AI */
   const [simPension, setSimPension] = useState<SimulatedPensionResult | null>(null);
+  /** תוצאת סימולציית עזיבת העבודה האחרונה — לניתוח ה-AI */
+  const [jobExit, setJobExit] = useState<JobExitResult | null>(null);
   /** קלטי הסימולטורים — נטענים ונשמרים עם התיק */
   const [fixationForm, setFixationForm] = useState<FixationFormInput | null>(null);
   const [taxForm, setTaxForm] = useState<TaxFormInput | null>(null);
@@ -364,6 +385,10 @@ function App() {
   useEffect(() => {
     if (!user) return;
     getTracks().then(setTrackDefs).catch(() => {});
+    // הגדרות ה-AI נטענות בכניסה — כפתורי ה-AI יודעים מיד שיש מפתח שמור
+    getAiSettings()
+      .then((s) => setAiConfigured(!!s?.hasKey))
+      .catch(() => {});
     // הניתוח האחרון שנשמר — כדי לא לנתח מחדש בכל כניסה
     getLastAiAnalysis()
       .then((last) => {
@@ -666,6 +691,9 @@ function App() {
                 כוללת_מטריה_ביטוחית: p.umbrella ?? false,
               }
             : {}),
+          ...(p.type === 'LIFE_INSURANCE'
+            ? { סכום_ביטוח_חיים: p.deathBenefitAmount ?? 0 }
+            : {}),
           מוטבים:
             (p.beneficiaries ?? []).length > 0
               ? p.beneficiaries
@@ -717,6 +745,14 @@ function App() {
               פער: scenarios.disability.gapMonthly,
             },
             אזהרות_המערכת: scenarios.warnings,
+          }
+        : null,
+      עזיבת_עבודה: jobExit
+        ? {
+            נטו_במשיכה_היום: jobExit.netToday,
+            מס_על_החלק_החייב: jobExit.taxOnTaxable,
+            קצבה_חודשית_שנמחקת: jobExit.monthlyAnnuityLoss,
+            פגיעה_בהון_הפטור_בקיבוע: jobExit.kibuaExemptCapitalLoss,
           }
         : null,
       פרישה_מדומה: simPension
@@ -845,7 +881,12 @@ function App() {
           <div className="user-bar">
             <button
               className={`ai-toggle ${aiConfigured ? 'configured' : ''}`}
-              onClick={() => setAiOpen((v) => !v)}
+              onClick={() => {
+                setAiOpen((v) => {
+                  if (!v) window.scrollTo({ top: 0, behavior: "smooth" });
+                  return !v;
+                });
+              }}
               title="הגדרות AI"
             >
               🤖 AI
@@ -1056,6 +1097,39 @@ function App() {
         <div className="section-head">
           <h2>התיק הפנסיוני שלי <span className="count-badge">{products.length}</span></h2>
         </div>
+
+        <ReportImport
+          aiConfigured={aiConfigured}
+          onUnauthorized={logout}
+          onAdd={(items) =>
+            setProducts((ps) => [
+              ...ps,
+              ...items.map((x) => {
+                const type = (
+                  x.type in TYPE_META ? x.type : 'PROVIDENT_FUND'
+                ) as ProductType;
+                const meta = TYPE_META[type];
+                return {
+                  id: nextId(),
+                  name: x.name,
+                  type,
+                  currentBalance: x.currentBalance,
+                  monthlyDeposit: x.monthlyDeposit ?? 0,
+                  feeFromDepositPct:
+                    x.feeFromDepositPct ?? meta.defaults.feeFromDepositPct,
+                  feeFromBalancePct:
+                    x.feeFromBalancePct ?? meta.defaults.feeFromBalancePct,
+                  monthlyCoverageCost:
+                    x.monthlyPremium ?? meta.defaults.monthlyCoverageCost,
+                  conversionFactor: meta.defaults.conversionFactor,
+                  insuredMonthlySalary: x.insuredMonthlySalary,
+                  deathBenefitAmount: x.deathBenefitAmount,
+                  joinDate: x.joinDate,
+                } satisfies PortfolioProductInput;
+              }),
+            ])
+          }
+        />
 
         {products.length > 0 && (
           <div className="summary-strip">
@@ -1491,6 +1565,16 @@ function App() {
           );
         })()}
 
+      {result && retirement && (
+        <JobExit
+          defaultSalary={profile.insuredMonthlySalary ?? 0}
+          yearsToRetirement={Math.max(1, Math.round(retirement.monthsToRetirement / 12))}
+          defaultReturnPct={assumptions.annualReturnPct}
+          onUnauthorized={logout}
+          onResult={setJobExit}
+        />
+      )}
+
       {result && (
         <section className="results ai-section">
           <div className="whatif-head">
@@ -1663,7 +1747,22 @@ function ProductCard(props: {
       />
 
       <div className="product-fields">
-        {meta.insuranceOnly ? (
+        {p.type === 'LIFE_INSURANCE' ? (
+          <>
+            <MoneyField
+              label="סכום ביטוח למקרה מוות"
+              value={p.deathBenefitAmount ?? 0}
+              onChange={(v) => onChange({ deathBenefitAmount: v === 0 ? undefined : v })}
+              tooltip="הסכום החד-פעמי שישולם למוטבים במקרה מוות. איפה למצוא: דף פרטי הביטוח של הפוליסה או 'הר הביטוח'."
+            />
+            <MoneyField
+              label="פרמיה חודשית"
+              value={p.monthlyCoverageCost}
+              onChange={(v) => onChange({ monthlyCoverageCost: v })}
+              tooltip="עלות הפוליסה בחודש — לידיעה ולניתוח כדאיות; אינה משפיעה על תחזית הצבירה."
+            />
+          </>
+        ) : meta.insuranceOnly ? (
           <>
             <MoneyField
               label="שכר מבוטח בפוליסה"
@@ -1788,7 +1887,7 @@ function ProductCard(props: {
           />
         )}
       </div>
-      {!meta.insuranceOnly && (
+      {(!meta.insuranceOnly || p.type === 'LIFE_INSURANCE') && (
       <div className="bens">
         <span className="bens-label">
           מסלולי השקעה
@@ -1870,7 +1969,7 @@ function ProductCard(props: {
       </div>
       )}
 
-      {!meta.insuranceOnly && (
+      {(!meta.insuranceOnly || p.type === 'LIFE_INSURANCE') && (
       <div className="bens">
         <span className="bens-label">
           מוטבים
@@ -1937,7 +2036,7 @@ function ProductCard(props: {
       </div>
       )}
 
-      {meta.insuranceOnly && (
+      {p.type === 'DISABILITY_INSURANCE' && (
         <label className="waiver-row">
           <input
             type="checkbox"

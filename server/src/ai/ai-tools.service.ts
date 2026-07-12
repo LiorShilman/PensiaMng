@@ -10,6 +10,8 @@ import { calcTaxBenefits } from '../calc-engine/tax-benefits';
 import type { TaxBenefitsInput } from '../calc-engine/tax-benefits';
 import { calcSimulatedPension } from '../calc-engine/simulated-pension';
 import type { SimulatedPensionInput } from '../calc-engine/simulated-pension';
+import { calcJobExit } from '../calc-engine/job-exit';
+import type { JobExitInput } from '../calc-engine/job-exit';
 import { RightsFixationService } from '../calc-engine/rights-fixation.service';
 import type { RightsFixationInput } from '../calc-engine/rights-fixation';
 import type { ProductType } from '../calc-engine/types';
@@ -27,7 +29,10 @@ export interface AiToolDef {
 }
 
 /** מוצרי ביטוח טהורים — לא נכללים בתחזית הצבירה */
-const INSURANCE_ONLY: ReadonlySet<ProductType> = new Set(['DISABILITY_INSURANCE']);
+const INSURANCE_ONLY: ReadonlySet<ProductType> = new Set([
+  'DISABILITY_INSURANCE',
+  'LIFE_INSURANCE',
+]);
 
 const AGE_MS = 365.25 * 24 * 3600 * 1000;
 
@@ -135,6 +140,33 @@ export class AiToolsService {
         },
       },
       {
+        name: 'calc_job_exit',
+        description:
+          'עזיבת עבודה: משיכת רכיב הפיצויים היום (פטור עד תקרה, מס שולי על היתרה, פגיעה עתידית בקיבוע ×1.35) מול השארתו ברצף קצבה (תוספת קצבה בפרישה).',
+        schema: {
+          type: 'object',
+          properties: {
+            severanceBalance: { type: 'number', description: 'יתרת רכיב הפיצויים (₪)' },
+            yearsOfService: { type: 'number' },
+            lastMonthlySalary: { type: 'number' },
+            yearsToRetirement: { type: 'number' },
+            annualReturnPct: { type: 'number' },
+            conversionFactor: { type: 'number' },
+            marginalTaxRatePct: { type: 'number' },
+          },
+          required: [
+            'severanceBalance',
+            'yearsOfService',
+            'lastMonthlySalary',
+            'yearsToRetirement',
+            'annualReturnPct',
+            'conversionFactor',
+            'marginalTaxRatePct',
+          ],
+          additionalProperties: false,
+        },
+      },
+      {
         name: 'calc_tax_benefits',
         description:
           'הטבות מס בהפקדה (סעיף 45א): כמה מס נחסך השנה וכמה תקרה נותרה לניצול. שכיר: זיכוי 35% עד 7% מההכנסה המזכה; עצמאי: זיכוי + ניכוי.',
@@ -173,6 +205,8 @@ export class AiToolsService {
         return this.rightsFixation.calc(a as unknown as RightsFixationInput);
       case 'calc_simulated_pension':
         return calcSimulatedPension(a as unknown as SimulatedPensionInput);
+      case 'calc_job_exit':
+        return calcJobExit(a as unknown as JobExitInput);
       case 'calc_tax_benefits':
         return calcTaxBenefits(a as unknown as TaxBenefitsInput);
       default:

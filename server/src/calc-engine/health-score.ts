@@ -117,7 +117,7 @@ export function calcHealthScore(input: HealthScoreInput): HealthScoreResult {
   {
     const max = 20;
     const savings = input.products.filter(
-      (p) => p.type !== 'DISABILITY_INSURANCE',
+      (p) => p.type !== 'DISABILITY_INSURANCE' && p.type !== 'LIFE_INSURANCE',
     );
     const totalBalance = savings.reduce((s, p) => s + p.currentBalance, 0);
     const wAvgBalanceFee =

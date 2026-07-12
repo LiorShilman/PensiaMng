@@ -45,6 +45,7 @@ enum ProductType {
   OLD_PENSION_FUND // קרן ותיקה
   BUDGETARY_PENSION // פנסיה תקציבית
   DISABILITY_INSURANCE // ביטוח אכ"ע פרטי / מטריה ביטוחית — ביטוח טהור ללא חיסכון
+  LIFE_INSURANCE // ביטוח חיים פרטי (ריסק) — סכום למקרה מוות בלבד, ללא חיסכון
 }
 
 enum ProductStatus {

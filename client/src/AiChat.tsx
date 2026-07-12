@@ -37,10 +37,13 @@ export function AiChat(props: Props) {
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
 
+  // גלילה בתוך תיבת ההודעות בלבד — scrollIntoView גולל את כל הדף (באג)
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (messages.length === 0) return;
+    const el = listRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
   }, [messages, busy]);
 
   async function send(text: string) {
@@ -92,7 +95,7 @@ export function AiChat(props: Props) {
         )}
       </div>
 
-      <div className="chat-messages">
+      <div className="chat-messages" ref={listRef}>
         {messages.length === 0 && (
           <div className="chat-suggestions">
             <p className="hint">היועץ עובד על התיק השמור — שמור את התיק לפני שאלות. נסה למשל:</p>
@@ -125,7 +128,6 @@ export function AiChat(props: Props) {
           </div>
         )}
         {error && <div className="error">{error}</div>}
-        <div ref={bottomRef} />
       </div>
 
       <div className="chat-input-row">

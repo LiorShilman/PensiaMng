@@ -22,6 +22,8 @@ import type {
   SimulatedPensionInput,
   SimulatedPensionResult,
 } from './simulated-pension';
+import { calcJobExit } from './job-exit';
+import type { JobExitInput, JobExitResult } from './job-exit';
 import type {
   AnnuityInput,
   AnnuityResult,
@@ -123,6 +125,16 @@ export class CalcEngineController {
   simulatedPension(@Body() body: SimulatedPensionInput): SimulatedPensionResult {
     try {
       return calcSimulatedPension(body);
+    } catch (e) {
+      throw new BadRequestException((e as Error).message);
+    }
+  }
+
+  /** עזיבת עבודה (מפרט 5.4) — משיכת פיצויים מול רצף קצבה */
+  @Post('job-exit')
+  jobExit(@Body() body: JobExitInput): JobExitResult {
+    try {
+      return calcJobExit(body);
     } catch (e) {
       throw new BadRequestException((e as Error).message);
     }

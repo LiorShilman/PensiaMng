@@ -34,6 +34,7 @@ const FEE_CAPS: Record<ProductType, { deposit: number; balance: number }> = {
   STUDY_FUND: { deposit: 0, balance: 2 },
   // ביטוח טהור — אין צבירה ואין דמי ניהול; נכלל רק בתרחישי ביטוח
   DISABILITY_INSURANCE: { deposit: 0, balance: 0 },
+  LIFE_INSURANCE: { deposit: 0, balance: 0 },
 };
 
 /**

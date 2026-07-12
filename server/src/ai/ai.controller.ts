@@ -17,6 +17,7 @@ import type {
   AnalyzeResult,
   ChatMessage,
   ChatResult,
+  ExtractReportResult,
   LastAnalysis,
 } from './ai.service';
 
@@ -65,5 +66,14 @@ export class AiController {
     @Body() body: { messages: ChatMessage[] },
   ): Promise<ChatResult> {
     return this.ai.chat(req.user.sub, body.messages);
+  }
+
+  /** קליטת דוח שנתי מ-PDF — חילוץ מובנה לאישור המשתמש (נשלח בהסכמה מפורשת) */
+  @Post('extract-report')
+  extractReport(
+    @Req() req: AuthedRequest,
+    @Body() body: { pdfBase64: string },
+  ): Promise<ExtractReportResult> {
+    return this.ai.extractReport(req.user.sub, body.pdfBase64);
   }
 }

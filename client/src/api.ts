@@ -92,7 +92,8 @@ export type ProductType =
   | 'PROVIDENT_INVESTMENT'
   | 'IRA'
   | 'STUDY_FUND'
-  | 'DISABILITY_INSURANCE';
+  | 'DISABILITY_INSURANCE'
+  | 'LIFE_INSURANCE';
 
 export interface PortfolioProductInput {
   id: string;
@@ -587,6 +588,65 @@ export function calcSimulatedPension(
   input: SimulatedPensionInput,
 ): Promise<SimulatedPensionResult> {
   return post<SimulatedPensionResult>('/calc/simulated-pension', input);
+}
+
+// ---------- עזיבת עבודה (מפרט 5.4) ----------
+
+export interface JobExitInput {
+  severanceBalance: number;
+  yearsOfService: number;
+  lastMonthlySalary: number;
+  yearsToRetirement: number;
+  annualReturnPct: number;
+  conversionFactor: number;
+  marginalTaxRatePct: number;
+}
+
+export interface JobExitResult {
+  exemptAmount: number;
+  taxableAmount: number;
+  taxOnTaxable: number;
+  netToday: number;
+  balanceAtRetirement: number;
+  monthlyAnnuityLoss: number;
+  kibuaExemptCapitalLoss: number;
+  kibuaMonthlyExemptionLoss: number;
+  warnings: string[];
+  trace: CalcTrace;
+}
+
+export function calcJobExit(input: JobExitInput): Promise<JobExitResult> {
+  return post<JobExitResult>('/calc/job-exit', input);
+}
+
+// ---------- קליטת דוח שנתי מ-PDF ----------
+
+export interface ExtractedProduct {
+  name: string;
+  type: string;
+  currentBalance: number;
+  monthlyDeposit?: number;
+  feeFromDepositPct?: number;
+  feeFromBalancePct?: number;
+  insuredMonthlySalary?: number;
+  joinDate?: string;
+  /** ביטוח חיים/מנהלים: סכום ביטוח למקרה מוות */
+  deathBenefitAmount?: number;
+  /** מוצרי ביטוח: פרמיה חודשית */
+  monthlyPremium?: number;
+  notes?: string;
+}
+
+export interface ExtractReportResult {
+  products: ExtractedProduct[];
+  reportYear?: number;
+  managingBody?: string;
+  notes: string[];
+  model: string;
+}
+
+export function aiExtractReport(pdfBase64: string): Promise<ExtractReportResult> {
+  return request<ExtractReportResult>('POST', '/ai/extract-report', { pdfBase64 });
 }
 
 // ---------- קיבוע זכויות (סעיף 9א / טופס 161ד) ----------
