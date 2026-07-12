@@ -30,6 +30,8 @@ import { calcFeeComparison } from './fee-comparison';
 import type { FeeComparisonInput, FeeComparisonResult } from './fee-comparison';
 import { calcDecumulation } from './decumulation';
 import type { DecumulationInput, DecumulationResult } from './decumulation';
+import { buildInsights } from './insights';
+import type { InsightsInput, InsightsResult } from './insights';
 import type {
   AnnuityInput,
   AnnuityResult,
@@ -171,6 +173,16 @@ export class CalcEngineController {
   feeComparison(@Body() body: FeeComparisonInput): FeeComparisonResult {
     try {
       return calcFeeComparison(body);
+    } catch (e) {
+      throw new BadRequestException((e as Error).message);
+    }
+  }
+
+  /** מנוע תובנות (מפרט 7.3) — מרכז ומדרג אותות שכבר חושבו, לא מחשב מחדש */
+  @Post('insights')
+  insights(@Body() body: InsightsInput): InsightsResult {
+    try {
+      return buildInsights(body);
     } catch (e) {
       throw new BadRequestException((e as Error).message);
     }

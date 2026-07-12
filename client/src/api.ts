@@ -914,6 +914,40 @@ export function calcFeeComparison(input: {
   return post<FeeComparisonResult>('/calc/fee-comparison', input);
 }
 
+// ---------- מנוע תובנות (מפרט 7.3) ----------
+
+export type InsightSeverity = 'critical' | 'warning' | 'info';
+export type InsightCategory =
+  | 'coverage'
+  | 'fees'
+  | 'tax'
+  | 'hygiene'
+  | 'track_fit'
+  | 'replacement';
+
+export interface Insight {
+  id: string;
+  severity: InsightSeverity;
+  category: InsightCategory;
+  title: string;
+  detail: string;
+  estimatedAnnualImpact?: number;
+}
+
+export interface InsightsResult {
+  insights: Insight[];
+  trace: CalcTrace;
+}
+
+export function calcInsights(input: {
+  scenarios?: ScenariosResult | null;
+  healthScore?: HealthScoreResult | null;
+  feeComparison?: FeeComparisonResult | null;
+  taxBenefits?: TaxBenefitsResult | null;
+}): Promise<InsightsResult> {
+  return post<InsightsResult>('/calc/insights', input);
+}
+
 // ---------- קיבוע זכויות (סעיף 9א / טופס 161ד) ----------
 
 export interface PastGrant {

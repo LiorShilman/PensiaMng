@@ -38,6 +38,9 @@ import {
   calcFeeComparison,
   type FeeComparisonResult,
   type DecumulationResult,
+  calcInsights,
+  type InsightsResult,
+  type Insight,
 } from './api';
 import { openReport } from './report';
 import { exportPortfolioExcel } from './exportExcel';
@@ -403,6 +406,8 @@ function App() {
   const [health, setHealth] = useState<HealthScoreResult | null>(null);
   /** השוואת דמי ניהול לשוק */
   const [feeComp, setFeeComp] = useState<FeeComparisonResult | null>(null);
+  /** מנוע תובנות — מרכז אותות מ-scenarios/health/feeComp/taxBenefits */
+  const [insights, setInsights] = useState<InsightsResult | null>(null);
   /** מטריצת גילאים לתרחישי הביטוח */
   const [matrix, setMatrix] = useState<{ offset: number; r: ScenariosResult }[] | null>(null);
   const [matrixBusy, setMatrixBusy] = useState(false);
@@ -723,6 +728,18 @@ function App() {
       .catch(() => setHealth(null));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [result, scenarios]);
+
+  // מנוע תובנות — מרכז אותות מכל המנועים שכבר חושבו, בלי לחשב מחדש
+  useEffect(() => {
+    if (!scenarios && !health && !feeComp && !taxBenefits) {
+      setInsights(null);
+      return;
+    }
+    calcInsights({ scenarios, healthScore: health, feeComparison: feeComp, taxBenefits })
+      .then(setInsights)
+      .catch(() => setInsights(null));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scenarios, health, feeComp, taxBenefits]);
 
   /** בניית הקשר אנונימי לניתוח AI — בלי שם, אימייל או ת"ז; ילדים כגילאים בלבד */
   function buildAiContext() {
@@ -1575,6 +1592,8 @@ function App() {
           <h2 className="results-title">תחזית לפרישה — התיק המלא</h2>
 
           {health && <HealthScoreCard h={health} />}
+
+          {insights && insights.insights.length > 0 && <InsightsPanel data={insights} />}
 
           <div className="totals-grid">
             {(['pessimistic', 'central', 'optimistic'] as ScenarioKey[]).map((key) => (
@@ -2760,6 +2779,43 @@ function HealthScoreCard({ h }: { h: HealthScoreResult }) {
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+// ---------- מנוע תובנות ----------
+
+const INSIGHT_SEVERITY_LABEL: Record<Insight['severity'], string> = {
+  critical: 'קריטי',
+  warning: 'לתשומת לב',
+  info: 'הזדמנות',
+};
+
+function InsightsPanel({ data }: { data: InsightsResult }) {
+  return (
+    <div className="card insights-card">
+      <h3 className="results-title" style={{ fontSize: '1rem' }}>
+        {IconSparkles} תובנות ואיתור בעיות ({data.insights.length})
+      </h3>
+      <ul className="insights-list">
+        {data.insights.map((ins) => (
+          <li key={ins.id} className={`insight-item ${ins.severity}`}>
+            <span
+              className="insight-severity-badge"
+              title={INSIGHT_SEVERITY_LABEL[ins.severity]}
+            >
+              {INSIGHT_SEVERITY_LABEL[ins.severity]}
+            </span>
+            <div className="insight-body">
+              <div className="insight-title">{ins.title}</div>
+              <div className="insight-detail">{ins.detail}</div>
+            </div>
+            {ins.estimatedAnnualImpact !== undefined && ins.estimatedAnnualImpact > 0 && (
+              <span className="insight-impact">{nis(ins.estimatedAnnualImpact)}/שנה</span>
+            )}
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

@@ -2903,3 +2903,93 @@ button .t-icon {
   display: flex;
   gap: 8px;
 }
+
+/* ---------- מנוע תובנות ---------- */
+
+.insights-card {
+  margin: 16px 0 0;
+  padding: 20px 22px;
+}
+
+.insights-list {
+  list-style: none;
+  margin: 14px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.insight-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  border-inline-start: 3px solid transparent;
+  background: rgba(148, 163, 184, 0.05);
+}
+
+.insight-item.critical {
+  border-inline-start-color: var(--danger);
+}
+
+.insight-item.warning {
+  border-inline-start-color: var(--warn);
+}
+
+.insight-item.info {
+  border-inline-start-color: var(--primary);
+}
+
+.insight-severity-badge {
+  flex-shrink: 0;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  white-space: nowrap;
+  margin-top: 2px;
+}
+
+.insight-item.critical .insight-severity-badge {
+  background: rgba(240, 133, 125, 0.15);
+  color: var(--danger);
+}
+
+.insight-item.warning .insight-severity-badge {
+  background: rgba(242, 196, 100, 0.15);
+  color: var(--warn);
+}
+
+.insight-item.info .insight-severity-badge {
+  background: rgba(167, 139, 250, 0.15);
+  color: var(--primary);
+}
+
+.insight-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.insight-title {
+  font-weight: 600;
+  font-size: 0.88rem;
+  color: var(--text-strong);
+}
+
+.insight-detail {
+  font-size: 0.82rem;
+  color: var(--muted);
+  margin-top: 2px;
+  line-height: 1.5;
+}
+
+.insight-impact {
+  flex-shrink: 0;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--danger);
+  white-space: nowrap;
+  direction: ltr;
+}
