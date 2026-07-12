@@ -6,6 +6,7 @@ import {
   type PastGrant,
   type RightsFixationResult,
 } from './api';
+import { IconClipboard } from './icons';
 
 /**
  * מסך קיבוע זכויות (סעיף 9א / טופס 161ד) — סימולציית ניצול ההון הפטור.
@@ -86,7 +87,8 @@ export function RightsFixation(props: Props) {
         }}
       >
         <h2 className="results-title">
-          📋 קיבוע זכויות — תכנון הפטור ממס בפרישה
+          {IconClipboard}
+          קיבוע זכויות — תכנון הפטור ממס בפרישה
           <span
             className="tip"
             data-tip="בגיל הזכאות (פרישה + התחלת קצבה) בוחרים בטופס 161ד איך לנצל את 'ההון הפטור': פטור על הקצבה החודשית, משיכת הון פטורה (היוון), או שילוב. הבחירה חד-פעמית וכמעט בלתי-הפיכה — הסימולציה כאן ממחישה את החלופות לפני הפגישה עם יועץ המס."

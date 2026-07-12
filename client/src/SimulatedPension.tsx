@@ -4,6 +4,7 @@ import {
   UnauthorizedError,
   type SimulatedPensionResult,
 } from './api';
+import { IconHourglass } from './icons';
 
 /**
  * פרישה מדומה — הפעלת קצבה מגיל 60 תוך המשך עבודה.
@@ -79,7 +80,8 @@ export function SimulatedPension(props: Props) {
         }}
       >
         <h2 className="results-title">
-          ⏳ פרישה מדומה — קצבה מגיל 60 תוך המשך עבודה
+          {IconHourglass}
+          פרישה מדומה — קצבה מגיל 60 תוך המשך עבודה
           <span
             className="tip"
             data-tip="מגיל 60 ניתן להפעיל קצבה מהחיסכון הפנסיוני גם בלי להפסיק לעבוד. הקצבה מתווספת לשכר וחייבת במס שולי, אבל פטורה מדמי ביטוח לאומי. המחיר: מקדם המרה גרוע יותר וקצבה קטנה יותר לכל החיים. הסימולציה משווה ומחשבת את גיל נקודת האיזון."

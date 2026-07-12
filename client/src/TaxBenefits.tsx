@@ -5,6 +5,7 @@ import {
   type TaxBenefitsResult,
   type TaxFormInput,
 } from './api';
+import { IconCoins } from './icons';
 
 /**
  * הטבות מס בהפקדה (מפרט 6.1) — "כמה מס חסכת השנה וכמה נשאר לנצל".
@@ -80,7 +81,8 @@ export function TaxBenefits(props: Props) {
         }}
       >
         <h2 className="results-title">
-          💰 הטבות מס בהפקדה — כמה חסכת השנה?
+          {IconCoins}
+          הטבות מס בהפקדה — כמה חסכת השנה?
           <span
             className="tip"
             data-tip="הפקדות לפנסיה מזכות בהטבות מס: שכיר מקבל זיכוי של 35% על הפקדותיו (עד 7% מההכנסה המזכה); עצמאי משלב זיכוי וניכוי. המחשבון מראה כמה חסכת וכמה עוד אפשר לנצל עד סוף שנת המס."

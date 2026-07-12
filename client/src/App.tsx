@@ -43,7 +43,8 @@ import { AuthScreen } from './AuthScreen';
 import { AiPanel } from './AiPanel';
 import { AiMarkdown } from './AiMarkdown';
 import { AiChat } from './AiChat';
-import { Glossary, BookIcon } from './Glossary';
+import { Glossary } from './Glossary';
+import { IconBook, IconBot, IconPrinter, IconSparkles } from './icons';
 import { FanChart } from './FanChart';
 import { MoneyFlow } from './MoneyFlow';
 import { RightsFixation } from './RightsFixation';
@@ -981,7 +982,7 @@ function App() {
               }}
               title="מרכז ידע — מילון מונחים"
             >
-              {BookIcon}
+              {IconBook}
               ידע
             </button>
             <button
@@ -994,7 +995,8 @@ function App() {
               }}
               title="הגדרות AI"
             >
-              🤖 AI
+              {IconBot}
+              AI
             </button>
             <span className="user-name">{user.fullName}</span>
             <button className="logout-btn" onClick={logout}>
@@ -1296,53 +1298,52 @@ function App() {
           ))}
         </div>
 
-        <div className="calc-row">
-          <button
-            className="calc-btn"
-            onClick={onCalculate}
-            disabled={loading || products.length === 0}
-          >
-            {loading ? 'מחשב את התיק…' : 'חשב תחזית לתיק'}
-          </button>
-          <button
-            className="save-btn"
-            onClick={onSave}
-            disabled={saveState === 'saving'}
-          >
-            {saveState === 'saving'
-              ? 'שומר…'
-              : saveState === 'saved'
-                ? '✓ נשמר'
-                : 'שמור תיק'}
-          </button>
-          {result && (
-            <button
-              className="report-btn"
-              onClick={() =>
-                openReport({
-                  userName: user.fullName,
-                  profile,
-                  products,
-                  result,
-                  scenarios,
-                  retirement,
-                  fixation,
-                  health,
-                  simPension,
-                  taxBenefits,
-                  aiText,
-                  aiMeta,
-                  typeLabel: (t) => TYPE_META[t].label,
-                })
-              }
-              title="דוח מעוצב להדפסה או שמירה כ-PDF, כולל ניתוח ה-AI אם הופק"
-            >
-              🖨 הפק דוח
-            </button>
-          )}
-          {error && <div className="error">{error}</div>}
-        </div>
+        {error && <div className="error">{error}</div>}
       </section>
+
+      {/* סרגל פעולות צף — נגיש מכל נקודה בדף הארוך, ללא גלילה */}
+      <div className="action-dock" role="toolbar" aria-label="פעולות התיק">
+        <button
+          className="calc-btn"
+          onClick={onCalculate}
+          disabled={loading || products.length === 0}
+        >
+          {loading ? 'מחשב…' : 'חשב תחזית לתיק'}
+        </button>
+        <button className="save-btn" onClick={onSave} disabled={saveState === 'saving'}>
+          {saveState === 'saving'
+            ? 'שומר…'
+            : saveState === 'saved'
+              ? '✓ נשמר'
+              : 'שמור תיק'}
+        </button>
+        {result && (
+          <button
+            className="report-btn"
+            onClick={() =>
+              openReport({
+                userName: user.fullName,
+                profile,
+                products,
+                result,
+                scenarios,
+                retirement,
+                fixation,
+                health,
+                simPension,
+                taxBenefits,
+                aiText,
+                aiMeta,
+                typeLabel: (t) => TYPE_META[t].label,
+              })
+            }
+            title="דוח מעוצב להדפסה או שמירה כ-PDF, כולל ניתוח ה-AI אם הופק"
+          >
+            {IconPrinter}
+            הפק דוח
+          </button>
+        )}
+      </div>
 
       {result && (
         <section className={`results ${stale ? 'stale' : ''}`}>
@@ -1838,7 +1839,7 @@ function App() {
       {result && (
         <section className="results ai-section">
           <div className="whatif-head">
-            <h2 className="results-title">🤖 ניתוח והמלצות AI</h2>
+            <h2 className="results-title">{IconSparkles} ניתוח והמלצות AI</h2>
             <button
               className="calc-btn ai-analyze-btn"
               onClick={aiConfigured ? onAiAnalyze : () => setAiOpen(true)}

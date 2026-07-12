@@ -1787,6 +1787,9 @@ td.fees {
 .health-max {
   font-size: 0.72rem;
   color: var(--muted);
+  /* "100/" במקום "/100" — הסלאש מתהפך בהקשר RTL */
+  direction: ltr;
+  unicode-bidi: isolate;
 }
 
 .health-info {
@@ -1877,6 +1880,127 @@ dd.ni-sub {
 
 .stat-value.ni {
   color: #7dd3fc;
+}
+
+/* ---------- Calm forms — רענון עיצוב: פחות רעש ויזואלי ---------- */
+
+/* שדות "רפאים": מילוי עדין בלבד; המסגרת מתגלה במעבר עכבר ובפוקוס */
+.field input,
+.field select,
+.field-select,
+.type-select {
+  background: rgba(148, 163, 184, 0.055);
+  border-color: transparent;
+}
+
+.field input:hover,
+.field select:hover,
+.field-select:hover,
+.type-select:hover {
+  background: rgba(148, 163, 184, 0.1);
+  border-color: rgba(148, 163, 184, 0.22);
+}
+
+.field input:focus,
+.field select:focus,
+.field-select:focus,
+.type-select:focus {
+  background: rgba(15, 15, 27, 0.6);
+}
+
+/* שם המוצר — נראה ככותרת, לא כשדה טופס */
+.name-input {
+  background: transparent;
+  border-color: transparent;
+  font-weight: 600;
+  font-size: 1.05rem;
+}
+
+.name-input:hover {
+  background: rgba(148, 163, 184, 0.07);
+  border-color: rgba(148, 163, 184, 0.2);
+}
+
+/* אייקוני ההסבר בשדות — שקטים עד שמרחפים על השדה (בכותרות נשארים גלויים) */
+.field-label .tip,
+.bens-label .tip,
+.children-label .tip {
+  opacity: 0.3;
+  transition: opacity 0.15s, background 0.15s, border-color 0.15s;
+}
+
+.field:hover .field-label .tip,
+.field:focus-within .field-label .tip,
+.bens:hover .bens-label .tip,
+.children-row:hover .children-label .tip,
+.field-label .tip:hover,
+.field-label .tip:focus,
+.bens-label .tip:hover,
+.children-label .tip:hover {
+  opacity: 1;
+}
+
+/* מפרידים רכים יותר בתוך הכרטיסים */
+.bens,
+.product-card .tracks {
+  border-top-color: rgba(148, 163, 184, 0.1);
+}
+
+/* ---------- System icons (SVG) ---------- */
+
+.t-icon {
+  vertical-align: -3px;
+  margin-inline-end: 8px;
+  color: var(--primary);
+  flex-shrink: 0;
+}
+
+button .t-icon {
+  color: currentColor;
+  margin-inline-end: 6px;
+}
+
+.tool-chip .t-icon {
+  color: currentColor;
+  margin-inline-end: 4px;
+  vertical-align: -2px;
+}
+
+/* ---------- Floating action dock (סרגל פעולות צף) ---------- */
+
+.action-dock {
+  position: fixed;
+  left: 20px;
+  bottom: 24px;
+  z-index: 70;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: stretch;
+  min-width: 170px;
+}
+
+.action-dock .calc-btn,
+.action-dock .save-btn,
+.action-dock .report-btn {
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(139, 92, 246, 0.12);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+
+/* במסכים צרים הסרגל הופך לשורה תחתונה כדי לא להסתיר תוכן */
+@media (max-width: 900px) {
+  .action-dock {
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+    flex-direction: row;
+    min-width: 0;
+  }
+
+  .action-dock > button {
+    flex: 1;
+  }
 }
 
 /* ---------- Glossary (מרכז ידע) ---------- */
@@ -2144,7 +2268,8 @@ dd.ni-sub {
 
 /* אייקון ההסבר בכותרות — ריווח מהטקסט (בכותרות אין flex-gap כמו בשדות) */
 .results-title .tip,
-.card-title .tip {
+.card-title .tip,
+.health-title .tip {
   margin-inline-start: 8px;
 }
 

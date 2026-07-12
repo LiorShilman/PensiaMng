@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { aiChat, UnauthorizedError, type ChatMessage } from './api';
 import { AiMarkdown } from './AiMarkdown';
+import { IconMessage, IconWrench } from './icons';
 
 /**
  * יועץ צ'אט AI עם Tool Use (מפרט 10א) — המודל מפעיל את מנוע החישוב
@@ -79,7 +80,8 @@ export function AiChat(props: Props) {
     <div className="card chat-card">
       <div className="chat-head">
         <h3 className="card-title">
-          💬 שאל את היועץ
+          {IconMessage}
+          שאל את היועץ
           <span
             className="tip"
             data-tip="שאלות חופשיות על התיק השמור שלך. המודל לא מחשב בעצמו — הוא מפעיל את מנוע החישוב של המערכת (תחזית, תרחישים, קיבוע, מס) ומפרש את התוצאות. ההיסטוריה נשמרת רק בדפדפן ונמחקת ברענון."
@@ -111,7 +113,7 @@ export function AiChat(props: Props) {
             {m.tools && m.tools.length > 0 && (
               <div className="chat-tools">
                 {[...new Set(m.tools)].map((t) => (
-                  <span key={t} className="tool-chip">🔧 {t}</span>
+                  <span key={t} className="tool-chip">{IconWrench} {t}</span>
                 ))}
               </div>
             )}

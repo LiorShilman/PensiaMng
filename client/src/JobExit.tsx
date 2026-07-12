@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { calcJobExit, UnauthorizedError, type JobExitResult } from './api';
+import { IconDoorOpen } from './icons';
 
 /**
  * עזיבת עבודה (מפרט 5.4) — משיכת רכיב הפיצויים היום מול השארתו
@@ -66,7 +67,8 @@ export function JobExit(props: Props) {
         }}
       >
         <h2 className="results-title">
-          🚪 עזיבת עבודה — למשוך פיצויים או להשאיר?
+          {IconDoorOpen}
+          עזיבת עבודה — למשוך פיצויים או להשאיר?
           <span
             className="tip"
             data-tip="בעזיבת עבודה מתפנה רכיב הפיצויים. משיכה נותנת כסף נזיל היום — אבל עולה שלושה מחירים: מס על החלק שמעל התקרה, אובדן עד ~40% מהקצבה העתידית, ופגיעה בפטור ממס בפרישה (נוסחת הקיזוז ×1.35). רצף קצבה (ברירת המחדל) שומר הכל."

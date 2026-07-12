@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { calcDecumulation, UnauthorizedError, type DecumulationResult } from './api';
+import { IconSunset } from './icons';
 
 /**
  * משיכה הדרגתית בפרישה (Decumulation) — ניהול ההון הנזיל לצד הקצבה:
@@ -62,7 +63,8 @@ export function Decumulation(props: Props) {
         }}
       >
         <h2 className="results-title">
-          🏖️ משיכה הדרגתית בפרישה — כמה זמן יחזיק ההון הנזיל?
+          {IconSunset}
+          משיכה הדרגתית בפרישה — כמה זמן יחזיק ההון הנזיל?
           <span
             className="tip"
             data-tip="ההון הנזיל (השתלמות, גמל להשקעה, IRA) משלים את הקצבה בפרישה. המחשבון מראה כמה אפשר למשוך בכל חודש כך שההון יחזיק עד גיל היעד — ומתי הוא אוזל אם מושכים יותר."

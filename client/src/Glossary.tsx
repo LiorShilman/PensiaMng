@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { IconBook } from './icons';
 
 /**
  * מרכז ידע — מילון מונחים פנסיוניים (מפרט §14).
@@ -129,24 +130,7 @@ const TERMS: Term[] = [
   },
 ];
 
-/** אייקון ספר — SVG שיורש צבע (אימוג'י מרונדר חיוור על רקע כהה) */
-export const BookIcon = (
-  <svg
-    width="15"
-    height="15"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    aria-hidden="true"
-    style={{ verticalAlign: '-2px', marginInlineEnd: 6 }}
-  >
-    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-  </svg>
-);
+
 
 interface Props {
   onClose: () => void;
@@ -162,7 +146,7 @@ export function Glossary(props: Props) {
   return (
     <section className="card glossary-panel">
       <div className="ai-panel-head">
-        <h2 className="card-title">{BookIcon} מרכז ידע — מילון המונחים הפנסיוני</h2>
+        <h2 className="card-title">{IconBook} מרכז ידע — מילון המונחים הפנסיוני</h2>
         <button className="remove-btn" onClick={props.onClose} title="סגור">
           ✕
         </button>
