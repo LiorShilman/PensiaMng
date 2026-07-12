@@ -387,6 +387,14 @@ export function login(email: string, password: string): Promise<LoginResult> {
   return post<LoginResult>('/auth/login', { email, password });
 }
 
+/**
+ * כניסת דמו בלחיצה אחת — חשבון נפרד לגמרי מהמשתמשים הרשומים, מאופס
+ * לתיק הדגמה מלא (כל סוגי המוצרים + מבט זוגי) בכל כניסה.
+ */
+export function demoLogin(): Promise<AuthResult> {
+  return post<AuthResult>('/auth/demo-login', {});
+}
+
 // ---------- אימות דו-שלבי (2FA) ויומן גישה (מפרט §11) ----------
 
 export interface TwoFaSetup {

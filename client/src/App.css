@@ -2541,6 +2541,28 @@ button .t-icon {
   margin: 16px auto 0;
 }
 
+.auth-demo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin-top: 22px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+  text-align: center;
+}
+
+.auth-demo-label {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.auth-demo .save-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
 /* ---------- Header user bar ---------- */
 
 .header-top {

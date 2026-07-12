@@ -8,6 +8,7 @@ import { AuditModule } from './audit/audit.module';
 import { AuthModule } from './auth/auth.module';
 import { PortfolioModule } from './portfolio/portfolio.module';
 import { AiModule } from './ai/ai.module';
+import { DemoModule } from './demo/demo.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { AiModule } from './ai/ai.module';
     PortfolioModule,
     AiModule,
     CalcEngineModule,
+    DemoModule,
   ],
   controllers: [AppController],
   providers: [AppService],

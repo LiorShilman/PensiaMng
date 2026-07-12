@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import {
+  demoLogin,
   login,
   register,
   storeSession,
   twoFaVerify,
   type AuthUser,
 } from './api';
-import { IconLock } from './icons';
+import { IconLock, IconSparkles } from './icons';
 
 export function AuthScreen(props: { onAuthed: (user: AuthUser) => void }) {
   const [mode, setMode] = useState<'login' | 'register'>('login');
@@ -15,6 +16,7 @@ export function AuthScreen(props: { onAuthed: (user: AuthUser) => void }) {
   const [fullName, setFullName] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [demoLoading, setDemoLoading] = useState(false);
   const [tempToken, setTempToken] = useState<string | null>(null);
   const [code, setCode] = useState('');
 
@@ -37,6 +39,20 @@ export function AuthScreen(props: { onAuthed: (user: AuthUser) => void }) {
       setError((err as Error).message);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function onDemo() {
+    setDemoLoading(true);
+    setError(null);
+    try {
+      const result = await demoLogin();
+      storeSession(result.token, result.user);
+      props.onAuthed(result.user);
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setDemoLoading(false);
     }
   }
 
@@ -169,6 +185,14 @@ export function AuthScreen(props: { onAuthed: (user: AuthUser) => void }) {
         >
           {mode === 'login' ? 'אין לך חשבון? הירשם כאן' : 'כבר רשום? התחבר כאן'}
         </button>
+
+        <div className="auth-demo">
+          <span className="auth-demo-label">רוצה לראות את המערכת לפני שנרשמים?</span>
+          <button className="save-btn" onClick={onDemo} disabled={demoLoading}>
+            {IconSparkles}
+            {demoLoading ? 'טוען הדגמה…' : 'כניסת דמו — כל היכולות בלחיצה אחת'}
+          </button>
+        </div>
       </div>
 
       <p className="footer">הנתונים נשמרים במסד נתונים מקומי במחשב שלך בלבד.</p>

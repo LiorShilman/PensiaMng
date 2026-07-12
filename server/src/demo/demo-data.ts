@@ -1,0 +1,192 @@
+import type { SavedPortfolio } from '../portfolio/portfolio.service';
+
+/**
+ * תמונת מצב קנונית להדגמה — משתמש "דמו" עם תיק עשיר שמכסה כמעט את כל
+ * סוגי המוצרים והיכולות: כיסויים ביטוחיים, ניוד, מוטבים, מסלולי השקעה,
+ * קרן מוקפאת, מטריה ביטוחית, ילדים מתחת/מעל גיל 21, ותיק בן/בת זוג
+ * נפרד (מבט זוגי). נטען מחדש בכל כניסת דמו כדי שההדגמה תמיד תיראה שלמה.
+ */
+
+export const DEMO_PRIMARY_PORTFOLIO: SavedPortfolio = {
+  assumptions: {
+    annualReturnPct: 4,
+    annualSalaryGrowthPct: 2,
+  },
+  profile: {
+    fullName: 'דמו — כל היכולות',
+    gender: 'MALE',
+    birthDate: '1978-05-15',
+    maritalStatus: 'MARRIED',
+    insuredMonthlySalary: 22000,
+    children: [
+      { birthDate: '2012-03-10', name: 'נועה' }, // מתחת לגיל 21 — יתומה זכאית
+      { birthDate: '2001-07-01', name: 'איתי' }, // מעל גיל 21 — לא זכאי
+    ],
+  },
+  products: [
+    {
+      id: 'demo-p1',
+      name: 'מיטב דש — פנסיה מקיפה',
+      type: 'PENSION_COMPREHENSIVE',
+      currentBalance: 650_000,
+      monthlyDeposit: 2_400,
+      feeFromDepositPct: 1.0,
+      feeFromBalancePct: 0.19,
+      monthlyCoverageCost: 180,
+      conversionFactor: 200,
+      survivorsPct: 100,
+      disabilityPct: 75,
+      joinDate: '2010-01-01',
+      tracks: [
+        { category: 'EQUITY', pct: 60 },
+        { category: 'BONDS', pct: 40 },
+      ],
+    },
+    {
+      id: 'demo-p2',
+      name: 'הראל — פנסיה משלימה (ממעסיק קודם)',
+      type: 'PENSION_GENERAL',
+      currentBalance: 120_000,
+      monthlyDeposit: 0,
+      feeFromDepositPct: 0,
+      feeFromBalancePct: 0.3,
+      monthlyCoverageCost: 0,
+      frozen: true,
+      joinDate: '2005-03-01',
+    },
+    {
+      id: 'demo-p3',
+      name: 'כלל — ביטוח מנהלים',
+      type: 'MANAGERS_INSURANCE',
+      currentBalance: 300_000,
+      monthlyDeposit: 1_200,
+      feeFromDepositPct: 2.5,
+      feeFromBalancePct: 1.0,
+      monthlyCoverageCost: 150,
+      conversionFactor: 190,
+      deathBenefitAmount: 800_000,
+      joinDate: '2018-04-01',
+      beneficiaries: [
+        { name: 'מיכל כהן (בת הזוג)', pct: 70 },
+        { name: 'הילדים', pct: 30 },
+      ],
+      transfers: [
+        {
+          fromProvider: 'הפניקס',
+          fromType: 'ביטוח מנהלים',
+          transferDate: '2018-04-01',
+          note: 'איבוד מקדם המרה מובטח 200 ← 190 בעת הניוד',
+        },
+      ],
+    },
+    {
+      id: 'demo-p4',
+      name: 'אלטשולר שחם — קופת גמל',
+      type: 'PROVIDENT_FUND',
+      currentBalance: 180_000,
+      monthlyDeposit: 300,
+      feeFromDepositPct: 0,
+      feeFromBalancePct: 0.6,
+      monthlyCoverageCost: 0,
+      conversionFactor: 200,
+      joinDate: '2012-01-01',
+    },
+    {
+      id: 'demo-p5',
+      name: 'מגדל — קופת גמל להשקעה',
+      type: 'PROVIDENT_INVESTMENT',
+      currentBalance: 95_000,
+      monthlyDeposit: 800,
+      feeFromDepositPct: 0,
+      feeFromBalancePct: 0.7,
+      monthlyCoverageCost: 0,
+      joinDate: '2020-06-01',
+    },
+    {
+      id: 'demo-p6',
+      name: 'IRA בניהול אישי',
+      type: 'IRA',
+      currentBalance: 60_000,
+      monthlyDeposit: 0,
+      feeFromDepositPct: 0,
+      feeFromBalancePct: 0.3,
+      monthlyCoverageCost: 0,
+      joinDate: '2015-01-01',
+    },
+    {
+      id: 'demo-p7',
+      name: 'הפניקס — קרן השתלמות',
+      type: 'STUDY_FUND',
+      currentBalance: 140_000,
+      monthlyDeposit: 950,
+      feeFromDepositPct: 0,
+      feeFromBalancePct: 0.6,
+      monthlyCoverageCost: 0,
+      joinDate: '2016-01-01',
+    },
+    {
+      id: 'demo-p8',
+      name: 'מנורה — ביטוח אכ"ע פרטי (מטריה ביטוחית)',
+      type: 'DISABILITY_INSURANCE',
+      currentBalance: 0,
+      monthlyDeposit: 0,
+      feeFromDepositPct: 0,
+      feeFromBalancePct: 0,
+      monthlyCoverageCost: 120,
+      disabilityPct: 25,
+      umbrella: true,
+    },
+    {
+      id: 'demo-p9',
+      name: 'הפניקס — ביטוח חיים פרטי (ריסק)',
+      type: 'LIFE_INSURANCE',
+      currentBalance: 0,
+      monthlyDeposit: 0,
+      feeFromDepositPct: 0,
+      feeFromBalancePct: 0,
+      monthlyCoverageCost: 85,
+      deathBenefitAmount: 500_000,
+    },
+  ],
+};
+
+export const DEMO_SPOUSE_PORTFOLIO: SavedPortfolio = {
+  assumptions: {
+    annualReturnPct: 4,
+    annualSalaryGrowthPct: 2,
+  },
+  profile: {
+    fullName: 'מיכל כהן',
+    gender: 'FEMALE',
+    birthDate: '1980-11-02',
+    maritalStatus: 'MARRIED',
+    insuredMonthlySalary: 15_000,
+  },
+  products: [
+    {
+      id: 'demo-s1',
+      name: 'מנורה — פנסיה מקיפה',
+      type: 'PENSION_COMPREHENSIVE',
+      currentBalance: 280_000,
+      monthlyDeposit: 1_100,
+      feeFromDepositPct: 1.0,
+      feeFromBalancePct: 0.2,
+      monthlyCoverageCost: 90,
+      conversionFactor: 200,
+      survivorsPct: 100,
+      disabilityPct: 75,
+      joinDate: '2011-01-01',
+    },
+    {
+      id: 'demo-s2',
+      name: 'קרן השתלמות',
+      type: 'STUDY_FUND',
+      currentBalance: 60_000,
+      monthlyDeposit: 600,
+      feeFromDepositPct: 0,
+      feeFromBalancePct: 0.6,
+      monthlyCoverageCost: 0,
+      joinDate: '2017-01-01',
+    },
+  ],
+};
