@@ -198,9 +198,11 @@ export function FamilyView(props: { onClose: () => void; onUnauthorized: () => v
             כמה מכניסה בפועל נשארת למשפחה — השכר הממשיך של הנותר/ת בחיים + קצבת
             השארים והסכום החד-פעמי מתיק הנפטר/ת.
           </p>
-          <button className="calc-btn" onClick={onActivate} disabled={busy}>
-            הפעל מבט זוגי
-          </button>
+          <div className="ai-panel-actions">
+            <button className="calc-btn" onClick={onActivate} disabled={busy}>
+              הפעל מבט זוגי
+            </button>
+          </div>
         </>
       ) : (
         <>
@@ -335,9 +337,11 @@ export function FamilyView(props: { onClose: () => void; onUnauthorized: () => v
               </button>
             </div>
           ))}
-          <button className="save-btn" onClick={addProduct} disabled={busy}>
-            + הוסף מוצר
-          </button>
+          <div className="ai-panel-actions">
+            <button className="save-btn" onClick={addProduct} disabled={busy}>
+              + הוסף מוצר
+            </button>
+          </div>
 
           <div className="ai-panel-actions" style={{ marginTop: 16 }}>
             <button className="calc-btn" onClick={onCalculate} disabled={busy}>
