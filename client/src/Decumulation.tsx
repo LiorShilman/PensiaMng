@@ -20,7 +20,8 @@ const nis = (n: number) => `₪${n.toLocaleString('he-IL', { maximumFractionDigi
 export function Decumulation(props: Props) {
   const [open, setOpen] = useState(false);
   const [capital, setCapital] = useState(Math.round(props.defaultCapital));
-  const [withdrawal, setWithdrawal] = useState(0);
+  // ברירת מחדל: כלל 4% (משיכה שנתית בטוחה מקובלת), מחולק ל-12 — נקודת פתיחה, ניתנת לעריכה
+  const [withdrawal, setWithdrawal] = useState(Math.round((props.defaultCapital * 0.04) / 12));
   const [targetAge, setTargetAge] = useState(90);
   const [returnPct, setReturnPct] = useState(2.5);
   const [result, setResult] = useState<DecumulationResult | null>(null);
@@ -102,7 +103,7 @@ export function Decumulation(props: Props) {
                 משיכה חודשית מבוקשת
                 <span
                   className="tip"
-                  data-tip="ריק = בדוק את המשיכה בת-הקיימא (זו שמחזיקה בדיוק עד גיל היעד)."
+                  data-tip="מתחיל עם הערכה לפי כלל 4% (משיכה שנתית בטוחה מקובלת) — ניתן לעריכה. ריקון השדה בודק את המשיכה בת-הקיימא המדויקת (זו שמחזיקה בדיוק עד גיל היעד)."
                   tabIndex={0}
                 >
                   ⓘ
