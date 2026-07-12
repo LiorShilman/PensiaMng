@@ -73,7 +73,7 @@ export function RightsFixation(props: Props) {
     setGrants(grants.map((g, ii) => (ii === i ? { ...g, ...patch } : g)));
 
   return (
-    <section className="results fixation-section">
+    <section className="results fixation-section" data-tour="fixation-section">
       <div
         className={`whatif-head acc-head ${open ? 'open' : ''}`}
         role="button"

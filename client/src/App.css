@@ -2825,3 +2825,77 @@ button .t-icon {
     font-size: 1.6rem;
   }
 }
+
+/* ---------- Guided tour ---------- */
+
+.tour-root {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+}
+
+.tour-mask {
+  position: fixed;
+  background: rgba(8, 8, 16, 0.72);
+  transition: all 0.2s ease;
+}
+
+.tour-highlight {
+  position: fixed;
+  border-radius: 14px;
+  border: 2px solid var(--primary);
+  box-shadow: 0 0 0 4px rgba(167, 139, 250, 0.22), 0 0 30px rgba(167, 139, 250, 0.35);
+  pointer-events: none;
+  transition: all 0.2s ease;
+}
+
+.tour-tooltip {
+  position: fixed;
+  width: 340px;
+  max-width: calc(100vw - 32px);
+  background: var(--card-solid);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-card);
+  padding: 16px 18px;
+  z-index: 10000;
+}
+
+.tour-tooltip-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.tour-step-count {
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.tour-title {
+  margin: 0 0 6px;
+  font-size: 1rem;
+  color: var(--text-strong);
+}
+
+.tour-body {
+  margin: 0;
+  color: var(--text);
+  font-size: 0.85rem;
+  line-height: 1.6;
+}
+
+.tour-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 14px;
+  gap: 10px;
+}
+
+.tour-nav {
+  display: flex;
+  gap: 8px;
+}

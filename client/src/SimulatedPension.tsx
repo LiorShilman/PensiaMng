@@ -66,7 +66,7 @@ export function SimulatedPension(props: Props) {
   }
 
   return (
-    <section className="results fixation-section">
+    <section className="results fixation-section" data-tour="simpension-section">
       <div
         className={`whatif-head acc-head ${open ? 'open' : ''}`}
         role="button"

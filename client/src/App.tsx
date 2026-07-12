@@ -46,9 +46,20 @@ import { AiPanel } from './AiPanel';
 import { AiMarkdown } from './AiMarkdown';
 import { AiChat } from './AiChat';
 import { Glossary } from './Glossary';
-import { IconBook, IconBot, IconPrinter, IconShield, IconSheet, IconSparkles, IconUsers } from './icons';
+import {
+  IconBook,
+  IconBot,
+  IconCompass,
+  IconPrinter,
+  IconShield,
+  IconSheet,
+  IconSparkles,
+  IconUsers,
+} from './icons';
 import { SecurityPanel } from './SecurityPanel';
 import { FamilyView } from './FamilyView';
+import { Tour } from './Tour';
+import type { TourStep } from './Tour';
 import { FanChart } from './FanChart';
 import { MoneyFlow } from './MoneyFlow';
 import { RightsFixation } from './RightsFixation';
@@ -373,6 +384,8 @@ function App() {
   const [securityOpen, setSecurityOpen] = useState(false);
   /** מסך משפחה — מבט זוגי */
   const [familyOpen, setFamilyOpen] = useState(false);
+  /** סיור מודרך בכל יכולות המערכת */
+  const [tourActive, setTourActive] = useState(false);
   /** מודול AI */
   const [aiOpen, setAiOpen] = useState(false);
   const [aiConfigured, setAiConfigured] = useState(false);
@@ -969,6 +982,117 @@ function App() {
     return <AuthScreen onAuthed={setUser} />;
   }
 
+  /** עוזר: פותח אקורדיון "results fixation-section" רק אם הוא סגור (פעולה בטוחה והפיכה) */
+  const openAccordion = (dataTour: string) => {
+    const section = document.querySelector<HTMLElement>(`[data-tour="${dataTour}"]`);
+    const head = section?.querySelector<HTMLElement>('.acc-head');
+    if (head && !head.classList.contains('open')) head.click();
+  };
+
+  const q = (selector: string) => () => document.querySelector<HTMLElement>(selector);
+
+  const TOUR_STEPS: TourStep[] = [
+    {
+      title: 'ברוכים הבאים ל-PensiaMng',
+      body: 'סיור קצר על כל מה שהמערכת יודעת לעשות — בניית תיק, תרחישי ביטוח, AI, מבט זוגי ועוד. אפשר לצאת בכל שלב עם Esc או "דלג על הסיור".',
+      find: q('.logo-row'),
+    },
+    {
+      title: 'מרכז ידע',
+      body: 'מילון מונחים פנסיוניים עם הסברים בעברית פשוטה — נגיש מכל מקום במערכת.',
+      find: q('[data-tour="btn-glossary"]'),
+      beforeShow: () => {
+        setSecurityOpen(false);
+        setFamilyOpen(false);
+        setAiOpen(false);
+      },
+    },
+    {
+      title: 'הגדרות AI',
+      body: 'מחברים מפתח API של Claude או ChatGPT כדי לקבל ניתוח חכם של התיק, יועץ צ\'אט עם גישה למנוע החישוב, וקליטת דוחות שנתיים מ-PDF.',
+      find: q('[data-tour="btn-ai"]'),
+    },
+    {
+      title: 'אבטחה',
+      body: 'הפעלת אימות דו-שלבי (2FA) וצפייה ביומן הגישה והפעולות בחשבון.',
+      find: q('[data-tour="btn-security"]'),
+    },
+    {
+      title: 'מסך משפחה — מבט זוגי',
+      body: 'בונים תיק נפרד לבן/בת הזוג ורואים תמונה הדדית: אם אחד/ת מבני הזוג נפטר/ת, כמה הכנסה נשארת בפועל למשפחה.',
+      find: q('[data-tour="btn-family"]'),
+    },
+    {
+      title: 'הנחות התכנון',
+      body: 'פרטים אישיים, מצב משפחתי, שכר מבוטח, ביטוח לאומי וילדים — הבסיס לכל החישובים בתיק.',
+      find: q('[data-tour="assumptions-section"]'),
+      beforeShow: () => setGlossaryOpen(false),
+    },
+    {
+      title: 'קליטת דוח שנתי מ-PDF',
+      body: 'מעלים דוח שנתי מהקרן וה-AI מחלץ אוטומטית יתרות, דמי ניהול ומסלולים — לאישורכם לפני שמירה. חוסך הזנה ידנית.',
+      find: q('[data-tour="report-import"]'),
+    },
+    {
+      title: 'הוספת מוצר לתיק',
+      body: 'קרן פנסיה, ביטוח מנהלים, קופת גמל, קרן השתלמות, ביטוחי אכ"ע וחיים — כל סוגי המוצרים הפנסיוניים במקום אחד.',
+      find: q('[data-tour="add-row"]'),
+    },
+    {
+      title: 'חישוב תחזית',
+      body: 'מריץ הקרנת צבירה עתידית, קצבה צפויה ותרחישי ביטוח — עם עקבות חישוב מלאים לשקיפות.',
+      find: q('[data-tour="btn-calc"]'),
+    },
+    {
+      title: 'שמירת התיק',
+      body: 'שומר את התיק במסד הנתונים כדי לחזור אליו בכל כניסה.',
+      find: q('[data-tour="btn-save"]'),
+    },
+    {
+      title: 'ציון בריאות פנסיוני',
+      body: 'ציון 0–100 המשוקלל משיעור תחלופה, עלויות מול השוק, כיסויי שארים ונכות, התאמת מסלול והיגיינת התיק — עם המלצות שיפור מדורגות.',
+      find: q('.health-card'),
+      optional: true,
+    },
+    {
+      title: 'תרחיש מוות',
+      body: 'כמה מקבלת המשפחה אם קורה האסון — קצבת שארים, סכומים חד-פעמיים וביטוח לאומי, מול יעד הכנסה.',
+      find: q('.scenario-card.death'),
+      optional: true,
+    },
+    {
+      title: 'תרחיש אובדן כושר עבודה',
+      body: 'כיסוי נכות מהקרנות, זיהוי כפל ביטוחי וקיזוזי ביטוח לאומי.',
+      find: q('.scenario-card.disability'),
+      optional: true,
+    },
+    {
+      title: 'ניתוח AI',
+      body: 'ה-AI מסביר את התוצאות בשפה פשוטה, ומזהה בעיות כמו כפל ביטוחי או דמי ניהול חריגים.',
+      find: q('.ai-section'),
+      optional: true,
+    },
+    {
+      title: 'קיבוע זכויות',
+      body: 'סימולטור מלא לניצול הפטור ממס בפרישה בין קצבה פטורה, היוון פטור ופיצויים פטורים.',
+      find: q('[data-tour="fixation-section"]'),
+      beforeShow: () => openAccordion('fixation-section'),
+      optional: true,
+    },
+    {
+      title: 'הטבות מס בהפקדה',
+      body: 'כמה מס חסכתם השנה מהפקדות לפנסיה, וכמה עוד נשאר לנצל עד סוף השנה.',
+      find: q('[data-tour="taxbenefits-section"]'),
+      beforeShow: () => openAccordion('taxbenefits-section'),
+      optional: true,
+    },
+    {
+      title: 'זהו!',
+      body: 'זה רק חלק מהיכולות — יש גם פרישה מדומה, עזיבת עבודה, משיכה הדרגתית בפרישה, ייצוא לאקסל ועוד. אפשר לפתוח את הסיור הזה שוב בכל רגע מכפתור "סיור" בכותרת.',
+      find: q('.footer'),
+    },
+  ];
+
   return (
     <div className="app">
       <div className="bg-glow" aria-hidden="true" />
@@ -977,6 +1101,10 @@ function App() {
         <div className="demo-banner" role="status">
           מצב הדגמה — כל הנתונים המוצגים בדיוניים לחלוטין, לצורך הצגת יכולות המערכת בלבד
         </div>
+      )}
+
+      {tourActive && (
+        <Tour steps={TOUR_STEPS} onFinish={() => setTourActive(false)} />
       )}
 
       <header className="header">
@@ -988,6 +1116,7 @@ function App() {
           <div className="user-bar">
             <button
               className="ai-toggle"
+              data-tour="btn-glossary"
               onClick={() => {
                 setGlossaryOpen((v) => {
                   if (!v) window.scrollTo({ top: 0, behavior: "smooth" });
@@ -1001,6 +1130,7 @@ function App() {
             </button>
             <button
               className={`ai-toggle ${aiConfigured ? 'configured' : ''}`}
+              data-tour="btn-ai"
               onClick={() => {
                 setAiOpen((v) => {
                   if (!v) window.scrollTo({ top: 0, behavior: "smooth" });
@@ -1014,6 +1144,7 @@ function App() {
             </button>
             <button
               className="ai-toggle"
+              data-tour="btn-security"
               onClick={() => {
                 setSecurityOpen((v) => {
                   if (!v) window.scrollTo({ top: 0, behavior: "smooth" });
@@ -1027,6 +1158,7 @@ function App() {
             </button>
             <button
               className="ai-toggle"
+              data-tour="btn-family"
               onClick={() => {
                 setFamilyOpen((v) => {
                   if (!v) window.scrollTo({ top: 0, behavior: "smooth" });
@@ -1037,6 +1169,15 @@ function App() {
             >
               {IconUsers}
               משפחה
+            </button>
+            <button
+              className="ai-toggle"
+              data-tour="btn-tour"
+              onClick={() => setTourActive(true)}
+              title="סיור מודרך בכל יכולות המערכת"
+            >
+              {IconCompass}
+              סיור
             </button>
             <span className="user-name">{user.fullName}</span>
             <button className="logout-btn" onClick={logout}>
@@ -1064,7 +1205,7 @@ function App() {
         <AiPanel onConfigured={setAiConfigured} onClose={() => setAiOpen(false)} />
       )}
 
-      <section className="card assumptions">
+      <section className="card assumptions" data-tour="assumptions-section">
         <h2 className="card-title">הנחות התכנון</h2>
         <div className="assumptions-grid">
           <label className="field">
@@ -1340,7 +1481,7 @@ function App() {
           </div>
         )}
 
-        <div className="add-row">
+        <div className="add-row" data-tour="add-row">
           <span className="add-label">הוסף מוצר:</span>
           {TYPE_ORDER.map((t) => (
             <button key={t} className="add-chip" onClick={() => addProduct(t)}>
@@ -1356,12 +1497,18 @@ function App() {
       <div className="action-dock" role="toolbar" aria-label="פעולות התיק">
         <button
           className="calc-btn"
+          data-tour="btn-calc"
           onClick={onCalculate}
           disabled={loading || products.length === 0}
         >
           {loading ? 'מחשב…' : 'חשב תחזית לתיק'}
         </button>
-        <button className="save-btn" onClick={onSave} disabled={saveState === 'saving'}>
+        <button
+          className="save-btn"
+          data-tour="btn-save"
+          onClick={onSave}
+          disabled={saveState === 'saving'}
+        >
           {saveState === 'saving'
             ? 'שומר…'
             : saveState === 'saved'

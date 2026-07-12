@@ -163,6 +163,14 @@ export const IconLock = (
   </svg>
 );
 
+/** סיור מודרך — מצפן */
+export const IconCompass = (
+  <svg {...base} width={15} height={15}>
+    <circle cx="12" cy="12" r="10" />
+    <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" />
+  </svg>
+);
+
 /** מסך משפחה — מבט זוגי, שני אנשים */
 export const IconUsers = (
   <svg {...base} width={15} height={15}>

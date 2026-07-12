@@ -77,7 +77,7 @@ export function ReportImport(props: Props) {
   }
 
   return (
-    <div className="report-import">
+    <div className="report-import" data-tour="report-import">
       <input
         ref={fileRef}
         type="file"

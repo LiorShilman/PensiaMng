@@ -67,7 +67,7 @@ export function TaxBenefits(props: Props) {
   }
 
   return (
-    <section className="results fixation-section">
+    <section className="results fixation-section" data-tour="taxbenefits-section">
       <div
         className={`whatif-head acc-head ${open ? 'open' : ''}`}
         role="button"
