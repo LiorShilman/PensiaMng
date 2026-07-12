@@ -46,6 +46,7 @@ export const DEMO_PRIMARY_PORTFOLIO: SavedPortfolio = {
         { category: 'EQUITY', pct: 60 },
         { category: 'BONDS', pct: 40 },
       ],
+      beneficiaries: [{ name: 'בן/בת הזוג (לדוגמה)', pct: 100 }],
     },
     {
       id: 'demo-p2',
@@ -72,6 +73,11 @@ export const DEMO_PRIMARY_PORTFOLIO: SavedPortfolio = {
       conversionFactor: 190,
       deathBenefitAmount: 800_000,
       joinDate: '2018-04-01',
+      tracks: [
+        { category: 'SP500', pct: 40 },
+        { category: 'BONDS', pct: 30 },
+        { category: 'MONEY_MARKET', pct: 30 },
+      ],
       beneficiaries: [
         { name: 'בן/בת הזוג (לדוגמה)', pct: 70 },
         { name: 'הילדים (לדוגמה)', pct: 30 },
@@ -96,6 +102,11 @@ export const DEMO_PRIMARY_PORTFOLIO: SavedPortfolio = {
       monthlyCoverageCost: 0,
       conversionFactor: 200,
       joinDate: '2012-01-01',
+      tracks: [{ category: 'AGE_DEPENDENT', pct: 100 }],
+      beneficiaries: [
+        { name: 'בן/בת הזוג (לדוגמה)', pct: 60 },
+        { name: 'הילדים (לדוגמה)', pct: 40 },
+      ],
     },
     {
       id: 'demo-p5',
@@ -107,13 +118,18 @@ export const DEMO_PRIMARY_PORTFOLIO: SavedPortfolio = {
       feeFromBalancePct: 0.7,
       monthlyCoverageCost: 0,
       joinDate: '2020-06-01',
+      tracks: [
+        { category: 'EQUITY', pct: 80 },
+        { category: 'BONDS', pct: 20 },
+      ],
+      beneficiaries: [{ name: 'בן/בת הזוג (לדוגמה)', pct: 100 }],
     },
     {
       id: 'demo-p6',
       name: 'IRA בניהול אישי (דוגמה)',
       type: 'IRA',
       currentBalance: 60_000,
-      monthlyDeposit: 0,
+      monthlyDeposit: 350,
       feeFromDepositPct: 0,
       feeFromBalancePct: 0.3,
       monthlyCoverageCost: 0,
@@ -129,6 +145,10 @@ export const DEMO_PRIMARY_PORTFOLIO: SavedPortfolio = {
       feeFromBalancePct: 0.6,
       monthlyCoverageCost: 0,
       joinDate: '2016-01-01',
+      tracks: [
+        { category: 'EQUITY', pct: 50 },
+        { category: 'BONDS', pct: 50 },
+      ],
     },
     {
       id: 'demo-p8',
@@ -182,6 +202,11 @@ export const DEMO_SPOUSE_PORTFOLIO: SavedPortfolio = {
       survivorsPct: 100,
       disabilityPct: 75,
       joinDate: '2011-01-01',
+      tracks: [
+        { category: 'GENERAL', pct: 70 },
+        { category: 'EQUITY', pct: 30 },
+      ],
+      beneficiaries: [{ name: 'בן/בת הזוג (לדוגמה)', pct: 100 }],
     },
     {
       id: 'demo-s2',
