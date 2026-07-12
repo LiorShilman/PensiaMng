@@ -333,7 +333,7 @@ export function FamilyView(props: { onClose: () => void; onUnauthorized: () => v
                 </>
               )}
               <button className="remove-btn" onClick={() => removeProduct(p.id)} title="מחק מוצר">
-                ✕ הסר
+                ✕
               </button>
             </div>
           ))}
@@ -347,7 +347,7 @@ export function FamilyView(props: { onClose: () => void; onUnauthorized: () => v
             <button className="calc-btn" onClick={onCalculate} disabled={busy}>
               שמור וחשב תרחישים הדדיים
             </button>
-            <button className="remove-btn" onClick={onDeactivate} disabled={busy}>
+            <button className="danger-btn" onClick={onDeactivate} disabled={busy}>
               בטל מבט זוגי
             </button>
           </div>

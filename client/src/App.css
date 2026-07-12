@@ -2605,6 +2605,29 @@ button .t-icon {
   cursor: wait;
 }
 
+.danger-btn {
+  padding: 12px 28px;
+  border: 1px solid rgba(240, 133, 125, 0.4);
+  border-radius: 12px;
+  background: rgba(240, 133, 125, 0.08);
+  color: var(--danger);
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.danger-btn:hover:not(:disabled) {
+  background: rgba(240, 133, 125, 0.16);
+  box-shadow: 0 0 18px rgba(240, 133, 125, 0.2);
+}
+
+.danger-btn:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
 .report-btn {
   padding: 12px 24px;
   border: 1px solid var(--border-strong);
