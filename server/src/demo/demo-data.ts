@@ -15,6 +15,13 @@ export const DEMO_PRIMARY_PORTFOLIO: SavedPortfolio = {
   assumptions: {
     annualReturnPct: 4,
     annualSalaryGrowthPct: 2,
+    // מידע אישי היפותטי (בקשת היוון + מענקי עבר) — קיים רק כדי שהדגמה תראה
+    // את תרחיש "השילוב" השלישי ואת קיזוז המענקים; משתמשים אמיתיים מתחילים
+    // ריק, כי אלה נתונים אישיים שאי אפשר לנחש
+    fixationInput: {
+      lumpSum: 300_000,
+      grants: [{ year: 2015, amount: 45_000, employer: 'מעסיק קודם (דוגמה)' }],
+    },
   },
   profile: {
     fullName: 'ישראל ישראלי (משתמש הדגמה)',

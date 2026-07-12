@@ -14,6 +14,10 @@ export interface PlanAssumptions {
   plannedRetirementAge?: number;
   /** שדה מדור קודם — נשמר לתאימות עם תיקים שנשמרו לפני מעבר לתאריך לידה */
   yearsToRetirement?: number;
+  /** קלט שמור של סימולטור קיבוע הזכויות — blob אטום, נשמר ומוחזר כמות שהוא */
+  fixationInput?: unknown;
+  /** קלט שמור של מחשבון הטבות המס — blob אטום, נשמר ומוחזר כמות שהוא */
+  taxInput?: unknown;
 }
 
 /** פרופיל אישי — נשמר על רשומת הלקוח עצמה */
