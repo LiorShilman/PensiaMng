@@ -21,9 +21,9 @@ describe('calcTaxBenefits — שכיר (זיכוי 35%)', () => {
       monthlyIncome: 12_000,
       annualOwnDeposits: 10_000,
     });
-    expect(r.qualifyingIncomeAnnual).toBe(112_800); // 9,400 × 12
-    expect(r.benefitedDeposits).toBe(7_896);
-    expect(r.taxCredit).toBe(2763.6);
+    expect(r.qualifyingIncomeAnnual).toBe(116_400); // 9,700 × 12
+    expect(r.benefitedDeposits).toBe(8_148);
+    expect(r.taxCredit).toBe(2851.8);
     expect(r.remainingDepositAllowance).toBe(0);
     expect(r.warnings.some((w) => w.includes('גבוה מההכנסה המזכה'))).toBe(true);
   });
@@ -48,10 +48,10 @@ describe('calcTaxBenefits — עצמאי (זיכוי + ניכוי)', () => {
       annualOwnDeposits: 20_000,
       marginalTaxRatePct: 35,
     });
-    expect(r.qualifyingIncomeAnnual).toBe(225_600);
-    expect(r.maxBenefitedDeposits).toBe(37_224); // 5.5% + 11%
-    expect(r.taxCredit).toBe(4342.8); // 35% × 12,408
-    expect(r.deductionValue).toBe(2657.2); // 7,592 × 35%
+    expect(r.qualifyingIncomeAnnual).toBe(232_800);
+    expect(r.maxBenefitedDeposits).toBe(38_412); // 5.5% + 11%
+    expect(r.taxCredit).toBe(4481.4); // 35% × 12,804
+    expect(r.deductionValue).toBe(2518.6); // 7,196 × 35%
     expect(r.totalAnnualSaving).toBe(7_000);
   });
 

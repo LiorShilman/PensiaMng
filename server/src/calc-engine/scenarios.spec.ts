@@ -447,37 +447,37 @@ describe('calcScenarios — ביטוח לאומי בתרחישים', () => {
     expect(r.disability.niOffsetReduction).toBe(0);
   });
 
-  it('מוות עם NI: אלמנה + 2 ילדים מתחת ל-18 → 1,795 + 2×902', () => {
+  it('מוות עם NI: אלמנה + 2 ילדים מתחת ל-18 → 1,838 + 2×862', () => {
     const r = calcScenarios(
       base({ nationalInsurance: { include: true, spouseAge: 45 } }),
     );
     // ילדים ילידי 2015/2018 → מתחת ל-18 ב-2026; אלמנה צעירה עם ילדים → קצבה מלאה
-    expect(r.death.niSurvivorsMonthly).toBe(3599);
+    expect(r.death.niSurvivorsMonthly).toBe(3562);
     // הפער קטן בהתאם
     const rOff = calcScenarios(base());
     expect(r.death.gapMonthly).toBeLessThanOrEqual(rOff.death.gapMonthly);
   });
 
   it('נכות עם NI ללא חריגה מהשכר: אין קיזוז', () => {
-    // קרן 75% × 20,000 = 15,000 ; NI 4,291 ; סה"כ 19,291 < 20,000
+    // קרן 75% × 20,000 = 15,000 ; NI 4,771 ; סה"כ 19,771 < 20,000
     const r = calcScenarios(
       base({ nationalInsurance: { include: true } }),
     );
-    expect(r.disability.niDisabilityMonthly).toBe(4291);
+    expect(r.disability.niDisabilityMonthly).toBe(4771);
     expect(r.disability.niOffsetReduction).toBe(0);
     expect(r.disability.totalDisabilityMonthly).toBe(15_000);
   });
 
   it('נכות עם NI וחריגה מהשכר: הקרן מקזזת את העודף', () => {
-    // שכר 10,000: קרן 7,500 + NI 4,291 = 11,791 → קיזוז 1,791
+    // שכר 10,000: קרן 7,500 + NI 4,771 = 12,271 → קיזוז 2,271
     const r = calcScenarios(
       base({
         insuredMonthlySalary: 10_000,
         nationalInsurance: { include: true },
       }),
     );
-    expect(r.disability.niOffsetReduction).toBe(1791);
-    expect(r.disability.totalDisabilityMonthly).toBe(5709);
+    expect(r.disability.niOffsetReduction).toBe(2271);
+    expect(r.disability.totalDisabilityMonthly).toBe(5229);
     expect(r.warnings.some((w) => w.includes('קיזוז ביטוח לאומי'))).toBe(true);
   });
 
@@ -502,10 +502,10 @@ describe('calcScenarios — ביטוח לאומי בתרחישים', () => {
         nationalInsurance: { include: true },
       }),
     );
-    // קרן 3,750 + פוליסה 3,750 = 7,500 ; NI 4,291 → עודף 1,791
+    // קרן 3,750 + פוליסה 3,750 = 7,500 ; NI 4,771 → עודף 2,271
     // מוגן במטריה: 3,750 → ניתן לקזז רק מהקרן (3,750)
-    expect(r.disability.niOffsetReduction).toBe(1791);
-    expect(r.disability.totalDisabilityMonthly).toBe(5709);
+    expect(r.disability.niOffsetReduction).toBe(2271);
+    expect(r.disability.totalDisabilityMonthly).toBe(5229);
   });
 
   it('יתום מעל 18 אינו נספר ב-NI אך נספר בקרן (עד 21)', () => {

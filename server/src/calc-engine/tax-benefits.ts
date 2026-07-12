@@ -15,17 +15,17 @@ import type { CalcTrace } from './types';
  * מעסיק מעל התקרה, וקרן השתלמות — בשלב הבא.
  */
 
-// ---------- פרמטרים (2025 — לאימות) ----------
+// ---------- פרמטרים (2026 — אומת מול פרסומי רשות המסים) ----------
 
 export const TAX_PARAMS_2025 = {
   /** הכנסה מזכה חודשית לשכיר (סעיף 45א) */
-  qualifyingIncomeEmployeeMonthly: 9_400,
+  qualifyingIncomeEmployeeMonthly: 9_700,
   /** תקרת ההפקדה המזכה: % מההכנסה המזכה */
   employeeCreditDepositPct: 7,
   /** שיעור הזיכוי */
   creditRatePct: 35,
   /** הכנסה מזכה שנתית לעצמאי (כפל השכיר) */
-  qualifyingIncomeSelfAnnual: 225_600,
+  qualifyingIncomeSelfAnnual: 232_800,
   /** עצמאי: % לזיכוי */
   selfCreditPct: 5.5,
   /** עצמאי: % לניכוי */
@@ -81,7 +81,7 @@ export function calcTaxBenefits(input: TaxBenefitsInput): TaxBenefitsResult {
   const p: TaxParams = { ...TAX_PARAMS_2025, ...input.paramsOverride };
   const marginalRate = (input.marginalTaxRatePct ?? 35) / 100;
   const warnings: string[] = [
-    'ערכי 2025 בהנחות מפושטות (ללא סעיף 47 וזקיפת שווי) — לאימות מול רשות המסים / יועץ מס',
+    'ערכי 2026 בהנחות מפושטות (ללא סעיף 47 וזקיפת שווי) — לאימות מול רשות המסים / יועץ מס',
   ];
 
   let qualifyingIncomeAnnual: number;

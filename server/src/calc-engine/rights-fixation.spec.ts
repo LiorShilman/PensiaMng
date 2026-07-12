@@ -177,15 +177,15 @@ describe('defaultParamsFor — פריסת העלייה ל-67% (חוק ההסדר
     expect(defaultParamsFor(2025).exemptionPct).toBe(52);
   });
 
-  it('2026: 57% — פטור חודשי 5,375.1 ₪ (מאומת מול מקור מקצועי)', () => {
+  it('2026: 57.5% — פטור חודשי 5,422.25 ₪ (אומת מול הנחיות רשות המסים)', () => {
     const r = calcRightsFixation({
       eligibilityYear: 2026,
       expectedMonthlyPension: 8_000,
     });
-    // 9,430 × 57% = 5,375.1 לחודש
-    expect(r.exemptCapitalCeiling).toBe(967_518);
+    // 9,430 × 57.5% = 5,422.25 לחודש
+    expect(r.exemptCapitalCeiling).toBe(976_005);
     const full = r.scenarios.find((s) => s.key === 'full_pension')!;
-    expect(full.monthlyExemption).toBe(5375.1);
+    expect(full.monthlyExemption).toBe(5422.25);
   });
 
   it('2027: 62.5%', () => {

@@ -4,7 +4,7 @@ import type { CalcTrace } from './types';
  * קצבאות ביטוח לאומי — הרגל השלישית של התכנון הפנסיוני.
  *
  * שלוש קצבאות ממודלות: אזרח ותיק (פרישה), שאירים (מוות), נכות כללית (אכ"ע).
- * הערכים נכונים ל-2025 ומנוהלים כפרמטרים (RegulatoryParameter + ברירות
+ * הערכים נכונים ל-2026 ומנוהלים כפרמטרים (RegulatoryParameter + ברירות
  * מחדל מתועדות כאן) — לאימות מול פרסומי ביטוח לאומי לפני עלייה לאוויר.
  *
  * פישוטים מוצהרים (MVP):
@@ -14,35 +14,35 @@ import type { CalcTrace } from './types';
  * - נכות: מניחים דרגת אי-כושר מלאה (100%), קצבת יחיד ללא תוספות תלויים.
  */
 
-// ---------- פרמטרים (2025, ₪ לחודש — לאימות) ----------
+// ---------- פרמטרים (2026, ₪ לחודש — אומתו מול פרסומי הביטוח הלאומי; אלמן/ה 40–49 — לאימות) ----------
 
-export const NI_PARAMS_2025 = {
+export const NI_PARAMS_2026 = {
   /** קצבת אזרח ותיק בסיסית ליחיד (עד גיל 80) */
-  oldAgeIndividual: 1_795,
+  oldAgeIndividual: 1_838,
   /** תוספת בן/בת זוג (כשאינו/ה מקבל/ת קצבה בעצמו/ה) */
-  oldAgeSpouseSupplement: 902,
+  oldAgeSpouseSupplement: 924,
   /** תוספת ותק: % לשנת ביטוח */
   seniorityPctPerYear: 2,
   /** תקרת תוספת הוותק (%) */
   seniorityMaxPct: 50,
   /** קצבת שאירים לאלמן/ה בגיל 50+ */
-  survivorsWidow50Plus: 1_795,
+  survivorsWidow50Plus: 1_838,
   /** קצבת שאירים לאלמן/ה בגיל 40–49 */
   survivorsWidow40to49: 1_349,
   /** תוספת לכל יתום */
-  survivorsOrphanSupplement: 902,
+  survivorsOrphanSupplement: 862,
   /** גיל תום זכאות יתום בביטוח לאומי (שונה מ-21 בקרן פנסיה!) */
   orphanAgeLimit: 18,
   /** קצבת נכות כללית מלאה ליחיד (דרגת אי-כושר 100%) */
-  disabilityFullIndividual: 4_291,
+  disabilityFullIndividual: 4_771,
 } as const;
 
-export type NiParams = { -readonly [K in keyof typeof NI_PARAMS_2025]: number };
+export type NiParams = { -readonly [K in keyof typeof NI_PARAMS_2026]: number };
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
 
 const withDefaults = (override?: Partial<NiParams>): NiParams => ({
-  ...NI_PARAMS_2025,
+  ...NI_PARAMS_2026,
   ...override,
 });
 
@@ -87,7 +87,7 @@ export function calcNiOldAge(input: NiOldAgeInput): NiOldAgeResult {
         spouseSupplement,
       },
       notes: [
-        'ערכי 2025 — לאימות מול ביטוח לאומי',
+        'ערכי 2026 — מעודכנים מפרסומי הביטוח הלאומי',
         'מבחן הכנסות עד גיל 70 ודחיית קצבה אינם ממודלים',
       ],
     },
@@ -116,7 +116,7 @@ export interface NiSurvivorsResult {
 
 export function calcNiSurvivors(input: NiSurvivorsInput): NiSurvivorsResult {
   const p = withDefaults(input.paramsOverride);
-  const notes: string[] = ['ערכי 2025 — לאימות מול ביטוח לאומי'];
+  const notes: string[] = ['ערכי 2026 — מעודכנים מפרסומי הביטוח הלאומי'];
 
   let widowMonthly = 0;
   if (input.hasSpouse) {
@@ -176,7 +176,7 @@ export function calcNiDisability(paramsOverride?: Partial<NiParams>): NiDisabili
       formula: 'monthly = disabilityFullIndividual (דרגת אי-כושר 100%)',
       inputs: { disabilityFullIndividual: p.disabilityFullIndividual },
       notes: [
-        'ערכי 2025 — לאימות מול ביטוח לאומי',
+        'ערכי 2026 — מעודכנים מפרסומי הביטוח הלאומי',
         'הונחה דרגת אי-כושר מלאה; תוספות תלויים אינן ממודלות',
         'קרן הפנסיה רשאית לקזז קצבת ביטוח לאומי כשהסך עולה על השכר — אלא אם קיימת מטריה ביטוחית עם ביטול קיזוז',
       ],
