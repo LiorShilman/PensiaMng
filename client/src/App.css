@@ -2185,6 +2185,23 @@ button .t-icon {
   line-height: 1.7;
 }
 
+.backup-codes {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  max-width: 320px;
+  margin-top: 10px;
+}
+
+.backup-codes code {
+  background: var(--surface-2, rgba(255, 255, 255, 0.06));
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 0.85rem;
+  text-align: center;
+  letter-spacing: 0.03em;
+}
+
 /* ---------- Fee comparison vs market (דמי ניהול מול השוק) ---------- */
 
 .fee-comp-card {

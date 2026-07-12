@@ -375,8 +375,63 @@ export function register(
   return post<AuthResult>('/auth/register', { email, password, fullName });
 }
 
-export function login(email: string, password: string): Promise<AuthResult> {
-  return post<AuthResult>('/auth/login', { email, password });
+/** אתגר 2FA — מוחזר במקום טוקן כש-2FA מופעל למשתמש; יש להשלים ב-verifyTwoFa */
+export interface TwoFaChallenge {
+  requires2fa: true;
+  tempToken: string;
+}
+
+export type LoginResult = AuthResult | TwoFaChallenge;
+
+export function login(email: string, password: string): Promise<LoginResult> {
+  return post<LoginResult>('/auth/login', { email, password });
+}
+
+// ---------- אימות דו-שלבי (2FA) ויומן גישה (מפרט §11) ----------
+
+export interface TwoFaSetup {
+  secret: string;
+  otpauthUrl: string;
+  qrDataUrl: string;
+}
+
+export interface TwoFaStatus {
+  enabled: boolean;
+  enabledAt: string | null;
+  backupCodesRemaining: number;
+}
+
+export interface AuditEntry {
+  action: string;
+  success: boolean;
+  ip: string | null;
+  detail: string | null;
+  createdAt: string;
+}
+
+export function twoFaStatus(): Promise<TwoFaStatus> {
+  return request<TwoFaStatus>('GET', '/auth/2fa/status');
+}
+
+export function twoFaSetup(): Promise<TwoFaSetup> {
+  return post<TwoFaSetup>('/auth/2fa/setup', {});
+}
+
+export function twoFaEnable(code: string): Promise<{ backupCodes: string[] }> {
+  return post('/auth/2fa/enable', { code });
+}
+
+export function twoFaDisable(code: string): Promise<{ ok: true }> {
+  return post('/auth/2fa/disable', { code });
+}
+
+/** שלב 3 של ההתחברות: משלים את האתגר עם קוד מהאפליקציה או קוד גיבוי */
+export function twoFaVerify(tempToken: string, code: string): Promise<AuthResult> {
+  return post<AuthResult>('/auth/2fa/verify', { tempToken, code });
+}
+
+export function getAuditLog(): Promise<AuditEntry[]> {
+  return request<AuditEntry[]>('GET', '/auth/audit-log');
 }
 
 /** קלט סימולטור קיבוע הזכויות — נשמר עם התיק */

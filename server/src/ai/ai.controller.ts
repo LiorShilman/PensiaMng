@@ -11,6 +11,7 @@ import {
 import type { Response } from 'express';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import type { AuthedRequest } from '../auth/jwt-auth.guard';
+import { AuditService } from '../audit/audit.service';
 import { AiService } from './ai.service';
 import type {
   AiModelInfo,
@@ -27,7 +28,10 @@ import type {
 @Controller('ai')
 @UseGuards(JwtAuthGuard)
 export class AiController {
-  constructor(private readonly ai: AiService) {}
+  constructor(
+    private readonly ai: AiService,
+    private readonly audit: AuditService,
+  ) {}
 
   @Get('settings')
   getSettings(@Req() req: AuthedRequest): Promise<AiSettingsView | null> {
@@ -35,7 +39,7 @@ export class AiController {
   }
 
   @Put('settings')
-  saveSettings(
+  async saveSettings(
     @Req() req: AuthedRequest,
     @Body()
     dto: {
@@ -45,7 +49,15 @@ export class AiController {
       monthlyBudgetUsd?: number | null;
     },
   ): Promise<AiSettingsView> {
-    return this.ai.saveSettings(req.user.sub, dto);
+    const saved = await this.ai.saveSettings(req.user.sub, dto);
+    await this.audit.log({
+      userId: req.user.sub,
+      action: 'AI_SETTINGS_SAVED',
+      detail: `${dto.provider}/${dto.model ?? saved.model}${dto.apiKey ? ' + מפתח עודכן' : ''}`,
+      ip: req.ip,
+      userAgent: req.headers['user-agent'],
+    });
+    return saved;
   }
 
   /** ניצול החודש + התקציב + יומן הקריאות האחרון (מפרט 10א) */

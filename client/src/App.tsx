@@ -45,7 +45,8 @@ import { AiPanel } from './AiPanel';
 import { AiMarkdown } from './AiMarkdown';
 import { AiChat } from './AiChat';
 import { Glossary } from './Glossary';
-import { IconBook, IconBot, IconPrinter, IconSheet, IconSparkles } from './icons';
+import { IconBook, IconBot, IconPrinter, IconShield, IconSheet, IconSparkles } from './icons';
+import { SecurityPanel } from './SecurityPanel';
 import { FanChart } from './FanChart';
 import { MoneyFlow } from './MoneyFlow';
 import { RightsFixation } from './RightsFixation';
@@ -366,6 +367,8 @@ function App() {
   const [trackDefs, setTrackDefs] = useState<TrackDef[]>([]);
   /** מרכז ידע */
   const [glossaryOpen, setGlossaryOpen] = useState(false);
+  /** אבטחה — 2FA ויומן גישה */
+  const [securityOpen, setSecurityOpen] = useState(false);
   /** מודול AI */
   const [aiOpen, setAiOpen] = useState(false);
   const [aiConfigured, setAiConfigured] = useState(false);
@@ -999,6 +1002,19 @@ function App() {
               {IconBot}
               AI
             </button>
+            <button
+              className="ai-toggle"
+              onClick={() => {
+                setSecurityOpen((v) => {
+                  if (!v) window.scrollTo({ top: 0, behavior: "smooth" });
+                  return !v;
+                });
+              }}
+              title="אבטחה — אימות דו-שלבי ויומן גישה"
+            >
+              {IconShield}
+              אבטחה
+            </button>
             <span className="user-name">{user.fullName}</span>
             <button className="logout-btn" onClick={logout}>
               התנתק
@@ -1009,6 +1025,13 @@ function App() {
       </header>
 
       {glossaryOpen && <Glossary onClose={() => setGlossaryOpen(false)} />}
+
+      {securityOpen && (
+        <SecurityPanel
+          onClose={() => setSecurityOpen(false)}
+          onUnauthorized={logout}
+        />
+      )}
 
       {aiOpen && (
         <AiPanel onConfigured={setAiConfigured} onClose={() => setAiOpen(false)} />

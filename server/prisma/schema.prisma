@@ -78,8 +78,30 @@ model User {
   fullName     String
   createdAt    DateTime @default(now())
 
+  // אימות דו-שלבי (2FA, מפרט §11) — סוד TOTP מוצפן, קודי גיבוי מגובבים
+  totpSecretEnc    String? // מוצפן AES-256-GCM (אותו מפתח נגזר מ-JWT_SECRET כמו ai)
+  totpPendingEnc   String? // סוד ממתין לאישור בזמן ההגדרה — עדיין לא הופעל
+  totpEnabled      Boolean  @default(false)
+  totpBackupCodes  String[] // קודי גיבוי חד-פעמיים, מגובבים ב-bcrypt
+  totpEnabledAt    DateTime?
+
   clients    Client[]
   aiSettings AiSettings?
+}
+
+// יומן גישה ופעולות (מפרט §11) — מי עשה מה ומתי, ללא תוכן רגיש
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String? // ריק באירועי כשל התחברות לפני זיהוי המשתמש
+  email     String? // לאירועים לפני/בלי userId (כשל התחברות)
+  action    String // LOGIN_SUCCESS / LOGIN_FAILED / REGISTER / TWOFA_ENABLED / ...
+  success   Boolean  @default(true)
+  ip        String?
+  userAgent String?
+  detail    String? // תיאור קצר, לא רגיש (למשל "provider changed to openai")
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
 }
 
 // הגדרות AI פר-משתמש (מפרט פרק 10א) — המפתח מוצפן AES-256-GCM
