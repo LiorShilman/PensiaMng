@@ -211,6 +211,53 @@ export function aiAnalyze(context: unknown): Promise<AnalyzeResult> {
   return request<AnalyzeResult>('POST', '/ai/analyze', { context });
 }
 
+/**
+ * ניתוח בזרימה: מקטעי הטקסט מגיעים דרך onDelta תוך כדי יצירה.
+ * מחזיר את המטא-נתונים (ספק/מודל) בסיום; זורק שגיאה אם השרת דיווח על כשל.
+ */
+export async function aiAnalyzeStream(
+  context: unknown,
+  onDelta: (text: string) => void,
+): Promise<{ provider: AiProvider; model: string }> {
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  const token = getToken();
+  if (token) headers.Authorization = `Bearer ${token}`;
+  const res = await fetch(`${API_BASE}/ai/analyze/stream`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ context }),
+  });
+  if (res.status === 401) throw new UnauthorizedError('נדרשת התחברות מחדש');
+  if (!res.ok || !res.body) throw new Error(`שגיאת שרת (${res.status})`);
+
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+  let meta: { provider: AiProvider; model: string } | null = null;
+
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    // אירועי SSE מופרדים בשורה ריקה
+    const events = buffer.split('\n\n');
+    buffer = events.pop() ?? '';
+    for (const raw of events) {
+      const lines = raw.split('\n');
+      const eventLine = lines.find((l) => l.startsWith('event: '));
+      const dataLine = lines.find((l) => l.startsWith('data: '));
+      if (!eventLine || !dataLine) continue;
+      const event = eventLine.slice(7).trim();
+      const data = JSON.parse(dataLine.slice(6));
+      if (event === 'delta') onDelta(data as string);
+      else if (event === 'done') meta = data as { provider: AiProvider; model: string };
+      else if (event === 'error') throw new Error((data as { message: string }).message);
+    }
+  }
+  if (!meta) throw new Error('הזרימה הסתיימה ללא אישור סיום');
+  return meta;
+}
+
 /** הניתוח האחרון שנשמר — נטען עם הכניסה כדי לא לנתח מחדש כל פעם */
 export function getLastAiAnalysis(): Promise<LastAnalysis | null> {
   return request<LastAnalysis | null>('GET', '/ai/last');

@@ -23,7 +23,7 @@ import {
   type TrackDef,
 } from './api';
 import {
-  aiAnalyze,
+  aiAnalyzeStream,
   getAiSettings,
   getLastAiAnalysis,
   calcHealthScore,
@@ -888,14 +888,21 @@ function App() {
   async function onAiAnalyze() {
     setAiBusy(true);
     setAiError(null);
+    setAiText('');
+    setAiMeta(null);
+    let acc = '';
     try {
-      const r = await aiAnalyze(buildAiContext());
-      setAiText(r.text);
-      setAiMeta(aiMetaLabel(r.provider, r.model));
+      // זרימה: הטקסט נבנה מקטע-מקטע על המסך תוך כדי יצירה
+      const meta = await aiAnalyzeStream(buildAiContext(), (delta) => {
+        acc += delta;
+        setAiText(acc);
+      });
+      setAiMeta(aiMetaLabel(meta.provider, meta.model));
       setAiAnalyzedAt(new Date().toISOString());
     } catch (e) {
       if (e instanceof UnauthorizedError) return logout();
       setAiError((e as Error).message);
+      if (!acc) setAiText(null);
     } finally {
       setAiBusy(false);
     }

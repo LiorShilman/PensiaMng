@@ -5,8 +5,10 @@ import {
   Post,
   Put,
   Req,
+  Res,
   UseGuards,
 } from '@nestjs/common';
+import type { Response } from 'express';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import type { AuthedRequest } from '../auth/jwt-auth.guard';
 import { AiService } from './ai.service';
@@ -50,6 +52,32 @@ export class AiController {
   @Get('usage')
   usage(@Req() req: AuthedRequest): Promise<AiUsageView> {
     return this.ai.getUsage(req.user.sub);
+  }
+
+  /** ניתוח בזרימה — מקטעי טקסט נשלחים כ-SSE תוך כדי יצירה */
+  @Post('analyze/stream')
+  async analyzeStream(
+    @Req() req: AuthedRequest,
+    @Body() body: { context: unknown },
+    @Res() res: Response,
+  ): Promise<void> {
+    res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.flushHeaders();
+    const send = (event: string, data: unknown) => {
+      res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+    };
+    try {
+      const result = await this.ai.analyzeStream(req.user.sub, body.context, (delta) =>
+        send('delta', delta),
+      );
+      send('done', { provider: result.provider, model: result.model });
+    } catch (e) {
+      send('error', { message: (e as Error).message });
+    } finally {
+      res.end();
+    }
   }
 
   /** רשימת מודלים מהספק — משמש גם כבדיקת חיבור */

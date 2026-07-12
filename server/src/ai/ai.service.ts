@@ -521,6 +521,84 @@ export class AiService {
   }
 
   /**
+   * ניתוח בזרימה (Streaming, מפרט 10א) — הטקסט נשלח לממשק תוך כדי יצירה.
+   * onDelta נקרא עם כל מקטע; בסיום נשמר הניתוח ונרשם ביומן כרגיל.
+   */
+  async analyzeStream(
+    userId: string,
+    context: unknown,
+    onDelta: (text: string) => void,
+  ): Promise<AnalyzeResult> {
+    await this.enforceBudget(userId);
+    const { provider, model, apiKey } = await this.clientFor(userId);
+    const userContent = `להלן נתוני התיק הפנסיוני (כולם חושבו במנוע הדטרמיניסטי של המערכת). נתח והמלץ:\n\n\`\`\`json\n${JSON.stringify(context, null, 1)}\n\`\`\``;
+
+    try {
+      let result: AnalyzeResult;
+      if (provider === 'anthropic') {
+        const client = new Anthropic({ apiKey });
+        const stream = client.messages.stream({
+          model,
+          max_tokens: 8000,
+          system: SYSTEM_PROMPT,
+          messages: [{ role: 'user', content: userContent }],
+        });
+        stream.on('text', (delta) => onDelta(delta));
+        const final = await stream.finalMessage();
+        const text = final.content
+          .filter((b): b is Anthropic.TextBlock => b.type === 'text')
+          .map((b) => b.text)
+          .join('\n');
+        await this.logUsage(
+          userId,
+          'analyze',
+          provider,
+          final.model,
+          final.usage.input_tokens,
+          final.usage.output_tokens,
+        );
+        result = { text, provider, model: final.model };
+      } else {
+        const client = new OpenAI({ apiKey });
+        const stream = await client.chat.completions.create({
+          model,
+          max_completion_tokens: 8000,
+          stream: true,
+          stream_options: { include_usage: true },
+          messages: [
+            { role: 'developer', content: SYSTEM_PROMPT },
+            { role: 'user', content: userContent },
+          ],
+        });
+        let text = '';
+        let inTok = 0;
+        let outTok = 0;
+        let respModel = model;
+        for await (const chunk of stream) {
+          const delta = chunk.choices[0]?.delta?.content;
+          if (delta) {
+            text += delta;
+            onDelta(delta);
+          }
+          if (chunk.model) respModel = chunk.model;
+          if (chunk.usage) {
+            inTok = chunk.usage.prompt_tokens ?? 0;
+            outTok = chunk.usage.completion_tokens ?? 0;
+          }
+        }
+        await this.logUsage(userId, 'analyze', provider, respModel, inTok, outTok);
+        result = { text, provider, model: respModel };
+      }
+      await this.saveLast(userId, result);
+      return result;
+    } catch (e) {
+      throw new BadRequestException(
+        `קריאת ה-AI נכשלה (${provider}/${model}): ${(e as Error).message}`,
+      );
+    }
+  }
+
+  /**
    * יועץ צ'אט עם Tool Use (מפרט 10א) — המודל מפעיל את מנוע החישוב
    * דרך כלים ולעולם לא מחשב בעצמו. לולאה עד 6 סבבי כלים.
    */
