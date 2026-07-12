@@ -21,12 +21,14 @@ interface Props {
   initial?: TaxFormInput;
   /** מדווח ל-App על שינוי קלט — נשמר עם התיק בלחיצת "שמור" */
   onInput?: (s: TaxFormInput) => void;
+  /** תוצאה שמורה מהחישוב האחרון — הפאנל נפתח אוטומטית ומציג אותה במקום להתחיל ריק */
+  initialResult?: TaxBenefitsResult;
 }
 
 const nis = (n: number) => `₪${n.toLocaleString('he-IL', { maximumFractionDigits: 0 })}`;
 
 export function TaxBenefits(props: Props) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(!!props.initialResult);
   const [status, setStatus] = useState<'EMPLOYEE' | 'SELF_EMPLOYED'>(
     props.initial?.status ?? 'EMPLOYEE',
   );
@@ -44,7 +46,7 @@ export function TaxBenefits(props: Props) {
     props.onInput?.({ status, income, deposits, taxRate });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status, income, deposits, taxRate]);
-  const [result, setResult] = useState<TaxBenefitsResult | null>(null);
+  const [result, setResult] = useState<TaxBenefitsResult | null>(props.initialResult ?? null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showSteps, setShowSteps] = useState(false);

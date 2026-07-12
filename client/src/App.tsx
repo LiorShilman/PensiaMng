@@ -42,6 +42,9 @@ import {
   type InsightsResult,
   type Insight,
   downloadReportPdf,
+  type SimPensionFormInput,
+  type JobExitFormInput,
+  type DecumFormInput,
 } from './api';
 import { openReport, buildReportHtml } from './report';
 import { exportPortfolioExcel } from './exportExcel';
@@ -425,6 +428,9 @@ function App() {
   /** קלטי הסימולטורים — נטענים ונשמרים עם התיק */
   const [fixationForm, setFixationForm] = useState<FixationFormInput | null>(null);
   const [taxForm, setTaxForm] = useState<TaxFormInput | null>(null);
+  const [simPensionForm, setSimPensionForm] = useState<SimPensionFormInput | null>(null);
+  const [jobExitForm, setJobExitForm] = useState<JobExitFormInput | null>(null);
+  const [decumForm, setDecumForm] = useState<DecumFormInput | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -455,9 +461,18 @@ function App() {
             annualSalaryGrowthPct: saved.assumptions.annualSalaryGrowthPct,
             plannedRetirementAge: saved.assumptions.plannedRetirementAge,
           });
-          // שחזור קלטי הסימולטורים שנשמרו עם התיק
+          // שחזור קלטי הסימולטורים ותוצאותיהם שנשמרו עם התיק — כדי שלא
+          // יתאפסו לריק בכל כניסה מחדש (מפרט 8: הדוח כולל אותם ממילא)
           setFixationForm(saved.assumptions.fixationInput ?? null);
+          setFixation(saved.assumptions.fixationResult ?? null);
           setTaxForm(saved.assumptions.taxInput ?? null);
+          setTaxBenefits(saved.assumptions.taxResult ?? null);
+          setSimPensionForm(saved.assumptions.simPensionInput ?? null);
+          setSimPension(saved.assumptions.simPensionResult ?? null);
+          setJobExitForm(saved.assumptions.jobExitInput ?? null);
+          setJobExit(saved.assumptions.jobExitResult ?? null);
+          setDecumForm(saved.assumptions.decumInput ?? null);
+          setDecum(saved.assumptions.decumResult ?? null);
         }
         if (saved.profile) setProfile(saved.profile);
         // תמיד משקפים את מה ששמור — גם תיק ריק נשאר ריק
@@ -514,7 +529,15 @@ function App() {
         assumptions: {
           ...assumptions,
           fixationInput: fixationForm ?? undefined,
+          fixationResult: fixation ?? undefined,
           taxInput: taxForm ?? undefined,
+          taxResult: taxBenefits ?? undefined,
+          simPensionInput: simPensionForm ?? undefined,
+          simPensionResult: simPension ?? undefined,
+          jobExitInput: jobExitForm ?? undefined,
+          jobExitResult: jobExit ?? undefined,
+          decumInput: decumForm ?? undefined,
+          decumResult: decum ?? undefined,
         },
         profile,
         products,
@@ -2060,6 +2083,7 @@ function App() {
           onResult={setFixation}
           initial={fixationForm ?? undefined}
           onInput={setFixationForm}
+          initialResult={fixation ?? undefined}
         />
       )}
 
@@ -2070,6 +2094,7 @@ function App() {
           onResult={setTaxBenefits}
           initial={taxForm ?? undefined}
           onInput={setTaxForm}
+          initialResult={taxBenefits ?? undefined}
         />
       )}
 
@@ -2099,6 +2124,9 @@ function App() {
               defaultReturnPct={assumptions.annualReturnPct}
               onUnauthorized={logout}
               onResult={setSimPension}
+              initial={simPensionForm ?? undefined}
+              onInput={setSimPensionForm}
+              initialResult={simPension ?? undefined}
             />
           );
         })()}
@@ -2110,6 +2138,9 @@ function App() {
           defaultReturnPct={assumptions.annualReturnPct}
           onUnauthorized={logout}
           onResult={setJobExit}
+          initial={jobExitForm ?? undefined}
+          onInput={setJobExitForm}
+          initialResult={jobExit ?? undefined}
         />
       )}
 
@@ -2121,6 +2152,9 @@ function App() {
           }
           onUnauthorized={logout}
           onResult={setDecum}
+          initial={decumForm ?? undefined}
+          onInput={setDecumForm}
+          initialResult={decum ?? undefined}
         />
       )}
 

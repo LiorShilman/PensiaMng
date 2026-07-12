@@ -1,5 +1,10 @@
-import { useState } from 'react';
-import { calcDecumulation, UnauthorizedError, type DecumulationResult } from './api';
+import { useEffect, useState } from 'react';
+import {
+  calcDecumulation,
+  UnauthorizedError,
+  type DecumFormInput,
+  type DecumulationResult,
+} from './api';
 import { IconSunset } from './icons';
 
 /**
@@ -13,18 +18,35 @@ interface Props {
   retirementAge: number;
   onUnauthorized: () => void;
   onResult?: (r: DecumulationResult) => void;
+  /** קלט שמור מהתיק — משחזר את הטופס אחרי התחברות מחדש */
+  initial?: DecumFormInput;
+  /** מדווח ל-App על שינוי קלט — נשמר עם התיק בלחיצת "שמור" */
+  onInput?: (s: DecumFormInput) => void;
+  /** תוצאה שמורה מהחישוב האחרון — הפאנל נפתח אוטומטית ומציג אותה במקום להתחיל ריק */
+  initialResult?: DecumulationResult;
 }
 
 const nis = (n: number) => `₪${n.toLocaleString('he-IL', { maximumFractionDigits: 0 })}`;
 
 export function Decumulation(props: Props) {
-  const [open, setOpen] = useState(false);
-  const [capital, setCapital] = useState(Math.round(props.defaultCapital));
+  const [open, setOpen] = useState(!!props.initialResult);
+  const [capital, setCapital] = useState(
+    props.initial?.capital ?? Math.round(props.defaultCapital),
+  );
   // ברירת מחדל: כלל 4% (משיכה שנתית בטוחה מקובלת), מחולק ל-12 — נקודת פתיחה, ניתנת לעריכה
-  const [withdrawal, setWithdrawal] = useState(Math.round((props.defaultCapital * 0.04) / 12));
-  const [targetAge, setTargetAge] = useState(90);
-  const [returnPct, setReturnPct] = useState(2.5);
-  const [result, setResult] = useState<DecumulationResult | null>(null);
+  const [withdrawal, setWithdrawal] = useState(
+    props.initial?.withdrawal ?? Math.round((props.defaultCapital * 0.04) / 12),
+  );
+  const [targetAge, setTargetAge] = useState(props.initial?.targetAge ?? 90);
+  const [returnPct, setReturnPct] = useState(props.initial?.returnPct ?? 2.5);
+
+  // דיווח קלט ל-App — נשמר עם התיק בלחיצת "שמור תיק"
+  useEffect(() => {
+    props.onInput?.({ capital, withdrawal, targetAge, returnPct });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [capital, withdrawal, targetAge, returnPct]);
+
+  const [result, setResult] = useState<DecumulationResult | null>(props.initialResult ?? null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 

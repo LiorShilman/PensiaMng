@@ -1,5 +1,10 @@
-import { useState } from 'react';
-import { calcJobExit, UnauthorizedError, type JobExitResult } from './api';
+import { useEffect, useState } from 'react';
+import {
+  calcJobExit,
+  UnauthorizedError,
+  type JobExitFormInput,
+  type JobExitResult,
+} from './api';
 import { IconDoorOpen } from './icons';
 
 /**
@@ -14,20 +19,35 @@ interface Props {
   defaultReturnPct: number;
   onUnauthorized: () => void;
   onResult?: (r: JobExitResult) => void;
+  /** קלט שמור מהתיק — משחזר את הטופס אחרי התחברות מחדש */
+  initial?: JobExitFormInput;
+  /** מדווח ל-App על שינוי קלט — נשמר עם התיק בלחיצת "שמור" */
+  onInput?: (s: JobExitFormInput) => void;
+  /** תוצאה שמורה מהחישוב האחרון — הפאנל נפתח אוטומטית ומציג אותה במקום להתחיל ריק */
+  initialResult?: JobExitResult;
 }
 
 const nis = (n: number) => `₪${n.toLocaleString('he-IL', { maximumFractionDigits: 0 })}`;
 
 export function JobExit(props: Props) {
   const DEFAULT_YEARS = 10;
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(!!props.initialResult);
   // ברירת מחדל: חודש שכר לכל שנת ותק — נוסחת הפיצויים הסטנדרטית (הערכה, ניתנת לעריכה)
-  const [severance, setSeverance] = useState(Math.round(props.defaultSalary * DEFAULT_YEARS));
-  const [years, setYears] = useState(DEFAULT_YEARS);
-  const [salary, setSalary] = useState(Math.round(props.defaultSalary));
-  const [factor, setFactor] = useState(200);
-  const [taxRate, setTaxRate] = useState(35);
-  const [result, setResult] = useState<JobExitResult | null>(null);
+  const [severance, setSeverance] = useState(
+    props.initial?.severance ?? Math.round(props.defaultSalary * DEFAULT_YEARS),
+  );
+  const [years, setYears] = useState(props.initial?.years ?? DEFAULT_YEARS);
+  const [salary, setSalary] = useState(props.initial?.salary ?? Math.round(props.defaultSalary));
+  const [factor, setFactor] = useState(props.initial?.factor ?? 200);
+  const [taxRate, setTaxRate] = useState(props.initial?.taxRate ?? 35);
+
+  // דיווח קלט ל-App — נשמר עם התיק בלחיצת "שמור תיק"
+  useEffect(() => {
+    props.onInput?.({ severance, years, salary, factor, taxRate });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [severance, years, salary, factor, taxRate]);
+
+  const [result, setResult] = useState<JobExitResult | null>(props.initialResult ?? null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 

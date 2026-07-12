@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   calcSimulatedPension,
   UnauthorizedError,
+  type SimPensionFormInput,
   type SimulatedPensionResult,
 } from './api';
 import { IconHourglass } from './icons';
@@ -24,19 +25,40 @@ interface Props {
   defaultReturnPct: number;
   onUnauthorized: () => void;
   onResult?: (r: SimulatedPensionResult) => void;
+  /** קלט שמור מהתיק — משחזר את הטופס אחרי התחברות מחדש */
+  initial?: SimPensionFormInput;
+  /** מדווח ל-App על שינוי קלט — נשמר עם התיק בלחיצת "שמור" */
+  onInput?: (s: SimPensionFormInput) => void;
+  /** תוצאה שמורה מהחישוב האחרון — הפאנל נפתח אוטומטית ומציג אותה במקום להתחיל ריק */
+  initialResult?: SimulatedPensionResult;
 }
 
 const nis = (n: number) => `₪${n.toLocaleString('he-IL', { maximumFractionDigits: 0 })}`;
 
 export function SimulatedPension(props: Props) {
-  const [open, setOpen] = useState(false);
-  const [startAge, setStartAge] = useState(Math.max(60, Math.ceil(props.currentAge)));
-  const [balance, setBalance] = useState(Math.round(props.defaultBalance));
-  const [deposit, setDeposit] = useState(Math.round(props.defaultMonthlyDeposit));
-  const [factorStart, setFactorStart] = useState(200);
-  const [factorLegal, setFactorLegal] = useState(185);
-  const [taxRate, setTaxRate] = useState(35);
-  const [result, setResult] = useState<SimulatedPensionResult | null>(null);
+  const [open, setOpen] = useState(!!props.initialResult);
+  const [startAge, setStartAge] = useState(
+    props.initial?.startAge ?? Math.max(60, Math.ceil(props.currentAge)),
+  );
+  const [balance, setBalance] = useState(
+    props.initial?.balance ?? Math.round(props.defaultBalance),
+  );
+  const [deposit, setDeposit] = useState(
+    props.initial?.deposit ?? Math.round(props.defaultMonthlyDeposit),
+  );
+  const [factorStart, setFactorStart] = useState(props.initial?.factorStart ?? 200);
+  const [factorLegal, setFactorLegal] = useState(props.initial?.factorLegal ?? 185);
+  const [taxRate, setTaxRate] = useState(props.initial?.taxRate ?? 35);
+
+  // דיווח קלט ל-App — נשמר עם התיק בלחיצת "שמור תיק"
+  useEffect(() => {
+    props.onInput?.({ startAge, balance, deposit, factorStart, factorLegal, taxRate });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [startAge, balance, deposit, factorStart, factorLegal, taxRate]);
+
+  const [result, setResult] = useState<SimulatedPensionResult | null>(
+    props.initialResult ?? null,
+  );
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 

@@ -462,6 +462,33 @@ export interface TaxFormInput {
   taxRate: number;
 }
 
+/** קלט סימולטור פרישה מדומה — נשמר עם התיק */
+export interface SimPensionFormInput {
+  startAge: number;
+  balance: number;
+  deposit: number;
+  factorStart: number;
+  factorLegal: number;
+  taxRate: number;
+}
+
+/** קלט סימולטור עזיבת עבודה — נשמר עם התיק */
+export interface JobExitFormInput {
+  severance: number;
+  years: number;
+  salary: number;
+  factor: number;
+  taxRate: number;
+}
+
+/** קלט תוכנית המשיכה ההדרגתית — נשמר עם התיק */
+export interface DecumFormInput {
+  capital: number;
+  withdrawal: number;
+  targetAge: number;
+  returnPct: number;
+}
+
 export interface PlanAssumptions {
   annualReturnPct: number;
   annualSalaryGrowthPct: number;
@@ -469,9 +496,21 @@ export interface PlanAssumptions {
   plannedRetirementAge?: number;
   /** שדה מדור קודם (תיקים ישנים) */
   yearsToRetirement?: number;
-  /** קלטי הסימולטורים — נשמרים כחלק מ-JSON ההנחות בשרת */
+  /**
+   * קלטי הסימולטורים ותוצאותיהם האחרונות — נשמרים כחלק מ-JSON ההנחות
+   * בשרת, כדי שהמחשבונים לא יתאפסו לריק בכל כניסה מחדש (הפאנל נפתח
+   * אוטומטית ומציג את התוצאה השמורה במקום לדרוש "חשב" מחדש).
+   */
   fixationInput?: FixationFormInput;
+  fixationResult?: RightsFixationResult;
   taxInput?: TaxFormInput;
+  taxResult?: TaxBenefitsResult;
+  simPensionInput?: SimPensionFormInput;
+  simPensionResult?: SimulatedPensionResult;
+  jobExitInput?: JobExitFormInput;
+  jobExitResult?: JobExitResult;
+  decumInput?: DecumFormInput;
+  decumResult?: DecumulationResult;
 }
 
 export type Gender = 'MALE' | 'FEMALE';

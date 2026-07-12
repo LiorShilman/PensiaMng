@@ -25,12 +25,14 @@ interface Props {
   initial?: FixationFormInput;
   /** מדווח ל-App על שינוי קלט — נשמר עם התיק בלחיצת "שמור" */
   onInput?: (s: FixationFormInput) => void;
+  /** תוצאה שמורה מהחישוב האחרון — הפאנל נפתח אוטומטית ומציג אותה במקום להתחיל ריק */
+  initialResult?: RightsFixationResult;
 }
 
 const nis = (n: number) => `₪${n.toLocaleString('he-IL', { maximumFractionDigits: 0 })}`;
 
 export function RightsFixation(props: Props) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(!!props.initialResult);
   const [year, setYear] = useState(props.initial?.year ?? props.defaultYear);
   const [pension, setPension] = useState(
     props.initial?.pension ?? Math.round(props.defaultMonthlyPension),
@@ -44,7 +46,9 @@ export function RightsFixation(props: Props) {
     props.onInput?.({ year, pension, taxRate, lumpSum, grants });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [year, pension, taxRate, lumpSum, grants]);
-  const [result, setResult] = useState<RightsFixationResult | null>(null);
+  const [result, setResult] = useState<RightsFixationResult | null>(
+    props.initialResult ?? null,
+  );
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
