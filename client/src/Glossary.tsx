@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { IconBook } from './icons';
+import { GUIDE_SECTIONS } from './guideContent';
 
 /**
  * מרכז ידע — מילון מונחים פנסיוניים (מפרט §14).
@@ -136,7 +137,10 @@ interface Props {
   onClose: () => void;
 }
 
+type Tab = 'guide' | 'glossary';
+
 export function Glossary(props: Props) {
+  const [tab, setTab] = useState<Tab>('guide');
   const [query, setQuery] = useState('');
   const q = query.trim();
   const filtered = q
@@ -146,32 +150,75 @@ export function Glossary(props: Props) {
   return (
     <section className="card glossary-panel">
       <div className="ai-panel-head">
-        <h2 className="card-title">{IconBook} מרכז ידע — מילון המונחים הפנסיוני</h2>
+        <h2 className="card-title">{IconBook} מרכז ידע</h2>
         <button className="remove-btn" onClick={props.onClose} title="סגור">
           ✕
         </button>
       </div>
-      <input
-        type="text"
-        className="glossary-search"
-        placeholder="חפש מונח… (למשל: מקדם, קיבוע, אכשרה)"
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-      />
-      <div className="glossary-list">
-        {filtered.map((t) => (
-          <details key={t.term} className="glossary-item" open={q.length > 0}>
-            <summary>{t.term}</summary>
-            <p className="glossary-def">{t.def}</p>
-            <p className="glossary-why">
-              <strong>למה זה משפיע עליי?</strong> {t.why}
-            </p>
-          </details>
-        ))}
-        {filtered.length === 0 && (
-          <p className="hint">לא נמצא מונח מתאים — נסה מילה אחרת.</p>
-        )}
+
+      <div className="scenario-switch guide-tabs">
+        <button
+          className={`scenario-tab ${tab === 'guide' ? 'active' : ''}`}
+          onClick={() => setTab('guide')}
+        >
+          מדריך מקיף
+        </button>
+        <button
+          className={`scenario-tab ${tab === 'glossary' ? 'active' : ''}`}
+          onClick={() => setTab('glossary')}
+        >
+          מילון מונחים
+        </button>
       </div>
+
+      {tab === 'guide' && (
+        <div className="guide-list">
+          {GUIDE_SECTIONS.map((s) => (
+            <details key={s.id} className="guide-item">
+              <summary>{s.title}</summary>
+              {s.body.split('\n').map(
+                (line, i) => line.trim() && <p key={i} className="guide-body">{line}</p>,
+              )}
+              {s.fillIn && s.fillIn.length > 0 && (
+                <div className="guide-fillin">
+                  <strong>מה למלא ואיפה למצוא</strong>
+                  <ul>
+                    {s.fillIn.map((f, i) => (
+                      <li key={i}>{f}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </details>
+          ))}
+        </div>
+      )}
+
+      {tab === 'glossary' && (
+        <>
+          <input
+            type="text"
+            className="glossary-search"
+            placeholder="חפש מונח… (למשל: מקדם, קיבוע, אכשרה)"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
+          <div className="glossary-list">
+            {filtered.map((t) => (
+              <details key={t.term} className="glossary-item" open={q.length > 0}>
+                <summary>{t.term}</summary>
+                <p className="glossary-def">{t.def}</p>
+                <p className="glossary-why">
+                  <strong>למה זה משפיע עליי?</strong> {t.why}
+                </p>
+              </details>
+            ))}
+            {filtered.length === 0 && (
+              <p className="hint">לא נמצא מונח מתאים — נסה מילה אחרת.</p>
+            )}
+          </div>
+        </>
+      )}
     </section>
   );
 }

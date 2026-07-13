@@ -976,6 +976,11 @@
   color: var(--warn);
 }
 
+.scenario-tab.active {
+  background: rgba(139, 92, 246, 0.16);
+  color: var(--primary);
+}
+
 .scenario-tab.active.central {
   background: rgba(139, 92, 246, 0.16);
   color: var(--primary);
@@ -1386,11 +1391,99 @@ td.fees {
 .ben-chip {
   display: inline-flex;
   align-items: center;
+  align-self: flex-start;
+  flex: 0 0 auto;
+  width: max-content;
   gap: 4px;
   padding: 3px 5px;
   border: 1px solid var(--border);
   border-radius: 10px;
   background: rgba(15, 15, 27, 0.45);
+}
+
+/* מוטבים — פריסת עמודות שוות, כמו יתר שדות הכרטיס (.product-fields) */
+.bens-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 10px;
+  width: 100%;
+  align-items: end;
+}
+
+.bens-remove-col {
+  min-width: 0;
+}
+
+.bens-remove {
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+
+.bens-remove:hover {
+  border-color: var(--danger);
+}
+
+/* שם המוטב הוא שדה טקסט חופשי — ביטול היפוך ה-LTR שנועד לשדות ₪/% */
+.bens-row input[type='text'] {
+  direction: rtl;
+  text-align: right;
+}
+
+/* פס חלוקת מוטבים (part-to-whole) */
+.bens-chart {
+  width: 100%;
+  margin: 2px 0 4px;
+}
+
+.bens-bar {
+  display: flex;
+  width: 100%;
+  height: 18px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: rgba(15, 15, 27, 0.6);
+}
+
+.bens-bar-seg {
+  height: 100%;
+  border-inline-end: 2px solid var(--card-solid);
+}
+
+.bens-bar-seg:last-child {
+  border-inline-end: none;
+}
+
+.bens-bar-rest {
+  background: rgba(130, 133, 166, 0.3);
+}
+
+.bens-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  margin-top: 8px;
+}
+
+.bens-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.bens-legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.bens-legend-dot-rest {
+  background: rgba(130, 133, 166, 0.5);
 }
 
 .ben-chip input[type='text'] {
@@ -2036,6 +2129,66 @@ button .t-icon {
 
 .glossary-panel {
   margin-bottom: 24px;
+}
+
+.guide-tabs {
+  margin: 12px 0 14px;
+}
+
+.guide-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.guide-item {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px 14px;
+  background: rgba(15, 15, 27, 0.4);
+}
+
+.guide-item summary {
+  cursor: pointer;
+  font-weight: 700;
+  color: var(--text-strong);
+  font-size: 0.95rem;
+}
+
+.guide-item[open] summary {
+  color: var(--primary);
+  margin-bottom: 6px;
+}
+
+.guide-body {
+  margin: 0 0 8px;
+  font-size: 0.86rem;
+  color: var(--text);
+  line-height: 1.6;
+}
+
+.guide-fillin {
+  margin-top: 8px;
+  font-size: 0.84rem;
+  color: var(--muted);
+  line-height: 1.6;
+  border-inline-start: 3px solid rgba(139, 92, 246, 0.4);
+  padding-inline-start: 10px;
+}
+
+.guide-fillin strong {
+  color: #c4b5fd;
+}
+
+.guide-fillin ul {
+  margin: 6px 0 0;
+  padding-inline-start: 18px;
+}
+
+.guide-fillin li {
+  margin-bottom: 4px;
 }
 
 .glossary-search {
