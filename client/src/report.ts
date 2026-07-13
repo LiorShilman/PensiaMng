@@ -336,11 +336,13 @@ export function buildReportHtml(d: ReportData): string {
   .stat .l { font-size: 11px; color: #64748b; margin-top: 2px; }
   .stat.hero { background: #eef2ff; border-color: #c7d2fe; }
   .stat.hero .v { color: #4338ca; }
-  table { width: 100%; border-collapse: collapse; margin-top: 6px; font-size: 12px; }
-  th { text-align: right; color: #64748b; font-weight: 600; padding: 7px 9px;
-    border-bottom: 2px solid #e2e8f0; }
-  td { padding: 7px 9px; border-bottom: 1px solid #f1f5f9; }
-  td.num { direction: ltr; text-align: right; font-variant-numeric: tabular-nums; }
+  table { width: 100%; border-collapse: collapse; margin-top: 6px; font-size: 12px;
+    table-layout: auto; }
+  th { text-align: right; color: #64748b; font-weight: 600; padding: 7px 8px;
+    border-bottom: 2px solid #e2e8f0; white-space: nowrap; }
+  td { padding: 7px 8px; border-bottom: 1px solid #f1f5f9; }
+  td.num { direction: ltr; text-align: right; font-variant-numeric: tabular-nums;
+    white-space: nowrap; }
   td.strong { font-weight: 700; }
   .tag { font-size: 10px; background: #f1f5f9; border: 1px solid #cbd5e1;
     border-radius: 99px; padding: 1px 8px; color: #64748b; }
@@ -374,8 +376,13 @@ export function buildReportHtml(d: ReportData): string {
   @media print {
     body { padding: 10mm 12mm; }
     .no-print { display: none; }
-    h2 { break-after: avoid; }
-    .box, .stat, .ai, table { break-inside: avoid; }
+    h2 { break-after: avoid; page-break-after: avoid; }
+    .box, .stat, .ai, .insight, .warnings, .kv, tr {
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+    table { font-size: 10.5px; }
+    th, td { padding: 5px 7px; }
   }
   .print-btn { position: fixed; top: 14px; left: 14px; padding: 10px 22px;
     background: #4f46e5; color: #fff; border: none; border-radius: 8px;
