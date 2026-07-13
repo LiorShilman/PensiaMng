@@ -1,4 +1,5 @@
 import type {
+  AnnuityTrackResult,
   ClientProfile,
   DecumulationResult,
   FeeComparisonResult,
@@ -32,6 +33,7 @@ interface ReportData {
   taxBenefits: TaxBenefitsResult | null;
   jobExit: JobExitResult | null;
   decum: DecumulationResult | null;
+  annuityTrack: AnnuityTrackResult | null;
   feeComparison: FeeComparisonResult | null;
   insights: InsightsResult | null;
   aiText: string | null;
@@ -264,6 +266,27 @@ export function buildReportHtml(d: ReportData): string {
     </div>`
     : '';
 
+  const annuityTrackBlock =
+    d.annuityTrack && d.annuityTrack.options.length > 0
+      ? `
+    <h2>בחירת מסלול קצבה — השוואת מסלולים</h2>
+    <table>
+      <thead><tr><th>מסלול</th><th>קצבה חודשית</th><th>קצבת שאיר</th><th>הבטחת תשלומים</th><th>נקודת איזון</th></tr></thead>
+      <tbody>${d.annuityTrack.options
+        .map(
+          (o) => `<tr>
+        <td class="strong">${esc(o.label)}</td>
+        <td class="num">${nis(o.monthlyAnnuity)}</td>
+        <td class="num">${o.survivorPct > 0 ? `${nis(o.survivorMonthly)} (${o.survivorPct}%)` : '—'}</td>
+        <td class="num">${o.guaranteedMonths === 0 ? 'ללא' : `${o.guaranteedMonths} ח׳`}</td>
+        <td>${o.breakEvenAge === undefined ? 'מסלול בסיס' : o.breakEvenAge === null ? 'אינו משתלם באופק הנבדק' : `מגיל ${Math.round(o.breakEvenAge)}`}</td>
+      </tr>`,
+        )
+        .join('')}</tbody>
+    </table>
+    <p class="disclaimer">ההשוואה מבוססת על תוחלות חיים משוערות שהוזנו (הנחה, לא תחזית) ואינה כוללת את מסלול "קצבה מוכרת" (תיקון 190).</p>`
+      : '';
+
   const feeComparisonBlock =
     d.feeComparison && d.feeComparison.products.length > 0
       ? `
@@ -427,6 +450,7 @@ export function buildReportHtml(d: ReportData): string {
   ${simPensionBlock}
   ${jobExitBlock}
   ${decumBlock}
+  ${annuityTrackBlock}
   ${taxBenefitsBlock}
   ${feeComparisonBlock}
   ${aiBlock}

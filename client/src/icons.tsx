@@ -193,3 +193,15 @@ export const IconUsers = (
     <path d="M16 3.13a4 4 0 0 1 0 7.75" />
   </svg>
 );
+
+/** בחירת מסלול קצבה — מאזניים (השוואת מסלולים) */
+export const IconScales = (
+  <svg {...base} width={15} height={15}>
+    <path d="M12 3v18" />
+    <path d="M5 8h6" />
+    <path d="M13 8h6" />
+    <path d="M5 8 2 15a3 3 0 0 0 6 0Z" />
+    <path d="M19 8l-3 7a3 3 0 0 0 6 0Z" />
+    <path d="M8 21h8" />
+  </svg>
+);

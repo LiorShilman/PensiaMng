@@ -34,6 +34,8 @@ import { buildInsights } from './insights';
 import type { InsightsInput, InsightsResult } from './insights';
 import { calcLifePath } from './life-path';
 import type { LifePathInput, LifePathResult } from './life-path';
+import { calcAnnuityTrackComparison } from './annuity-track';
+import type { AnnuityTrackInput, AnnuityTrackResult } from './annuity-track';
 import type {
   AnnuityInput,
   AnnuityResult,
@@ -195,6 +197,16 @@ export class CalcEngineController {
   lifePath(@Body() body: LifePathInput): LifePathResult {
     try {
       return calcLifePath(body);
+    } catch (e) {
+      throw new BadRequestException((e as Error).message);
+    }
+  }
+
+  /** בחירת מסלול קצבה (מפרט 4.3 + 5.2) — השוואת מסלולים ונקודת איזון */
+  @Post('annuity-track')
+  annuityTrack(@Body() body: AnnuityTrackInput): AnnuityTrackResult {
+    try {
+      return calcAnnuityTrackComparison(body);
     } catch (e) {
       throw new BadRequestException((e as Error).message);
     }

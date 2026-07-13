@@ -45,6 +45,8 @@ import {
   type SimPensionFormInput,
   type JobExitFormInput,
   type DecumFormInput,
+  type AnnuityTrackResult,
+  type AnnuityTrackFormInput,
 } from './api';
 import { openReport, buildReportHtml } from './report';
 import { exportPortfolioExcel } from './exportExcel';
@@ -76,6 +78,7 @@ import { SimulatedPension } from './SimulatedPension';
 import { JobExit } from './JobExit';
 import { Decumulation } from './Decumulation';
 import { LifePath } from './LifePath';
+import { AnnuityTrack } from './AnnuityTrack';
 import { ReportImport } from './ReportImport';
 
 // ---------- מטא-דאטה לסוגי מוצרים ----------
@@ -426,12 +429,15 @@ function App() {
   const [jobExit, setJobExit] = useState<JobExitResult | null>(null);
   /** תוצאת תוכנית המשיכה ההדרגתית — לניתוח ה-AI */
   const [decum, setDecum] = useState<DecumulationResult | null>(null);
+  /** תוצאת השוואת מסלולי קצבה האחרונה — לניתוח ה-AI */
+  const [annuityTrack, setAnnuityTrack] = useState<AnnuityTrackResult | null>(null);
   /** קלטי הסימולטורים — נטענים ונשמרים עם התיק */
   const [fixationForm, setFixationForm] = useState<FixationFormInput | null>(null);
   const [taxForm, setTaxForm] = useState<TaxFormInput | null>(null);
   const [simPensionForm, setSimPensionForm] = useState<SimPensionFormInput | null>(null);
   const [jobExitForm, setJobExitForm] = useState<JobExitFormInput | null>(null);
   const [decumForm, setDecumForm] = useState<DecumFormInput | null>(null);
+  const [annuityTrackForm, setAnnuityTrackForm] = useState<AnnuityTrackFormInput | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -474,6 +480,8 @@ function App() {
           setJobExit(saved.assumptions.jobExitResult ?? null);
           setDecumForm(saved.assumptions.decumInput ?? null);
           setDecum(saved.assumptions.decumResult ?? null);
+          setAnnuityTrackForm(saved.assumptions.annuityTrackInput ?? null);
+          setAnnuityTrack(saved.assumptions.annuityTrackResult ?? null);
         }
         if (saved.profile) setProfile(saved.profile);
         // תמיד משקפים את מה ששמור — גם תיק ריק נשאר ריק
@@ -539,6 +547,8 @@ function App() {
           jobExitResult: jobExit ?? undefined,
           decumInput: decumForm ?? undefined,
           decumResult: decum ?? undefined,
+          annuityTrackInput: annuityTrackForm ?? undefined,
+          annuityTrackResult: annuityTrack ?? undefined,
         },
         profile,
         products,
@@ -572,6 +582,7 @@ function App() {
         taxBenefits,
         jobExit,
         decum,
+        annuityTrack,
         feeComparison: feeComp,
         insights,
         aiText,
@@ -1201,7 +1212,7 @@ function App() {
                   return !v;
                 });
               }}
-              title="מרכז ידע — מילון מונחים"
+              title="מרכז ידע — מדריך מקיף ומילון מונחים"
             >
               {IconBook}
               ידע
@@ -1610,6 +1621,7 @@ function App() {
                 taxBenefits,
                 jobExit,
                 decum,
+                annuityTrack,
                 feeComparison: feeComp,
                 insights,
                 aiText,
@@ -2194,6 +2206,28 @@ function App() {
           );
         })()}
 
+      {result &&
+        retirement &&
+        (() => {
+          const annuityBalanceAtRetirement = result.products
+            .filter((p) => p.isAnnuity)
+            .reduce((s, p) => s + p.projection.central.finalBalance, 0);
+          return (
+            <AnnuityTrack
+              defaultBalance={annuityBalanceAtRetirement}
+              defaultRetirementAge={
+                Math.round((retirement.effectiveRetirementAgeMonths / 12) * 10) / 10
+              }
+              hasSpouse={hasSpouse(profile.maritalStatus)}
+              onUnauthorized={logout}
+              onResult={setAnnuityTrack}
+              initial={annuityTrackForm ?? undefined}
+              onInput={setAnnuityTrackForm}
+              initialResult={annuityTrack ?? undefined}
+            />
+          );
+        })()}
+
       {result && (
         <section className="results ai-section">
           <div className="whatif-head">
@@ -2601,47 +2635,58 @@ function ProductCard(props: {
           </span>
         </span>
         {(p.beneficiaries ?? []).map((b, i) => (
-          <span key={i} className="ben-chip">
-            <input
-              type="text"
-              placeholder="שם"
-              value={b.name}
-              onChange={(e) =>
-                onChange({
-                  beneficiaries: (p.beneficiaries ?? []).map((bb, ii) =>
-                    ii === i ? { ...bb, name: e.target.value } : bb,
-                  ),
-                })
-              }
-            />
-            <input
-              type="number"
-              className="ben-pct"
-              min={0}
-              max={100}
-              value={b.pct}
-              onChange={(e) =>
-                onChange({
-                  beneficiaries: (p.beneficiaries ?? []).map((bb, ii) =>
-                    ii === i ? { ...bb, pct: Number(e.target.value) } : bb,
-                  ),
-                })
-              }
-            />
-            <span className="ben-unit">%</span>
-            <button
-              className="chip-remove"
-              title="הסר מוטב"
-              onClick={() =>
-                onChange({
-                  beneficiaries: (p.beneficiaries ?? []).filter((_, ii) => ii !== i),
-                })
-              }
-            >
-              ✕
-            </button>
-          </span>
+          <div key={i} className="bens-row">
+            <label className="field">
+              <span className="field-label">שם מוטב</span>
+              <input
+                type="text"
+                placeholder="שם"
+                value={b.name}
+                onChange={(e) =>
+                  onChange({
+                    beneficiaries: (p.beneficiaries ?? []).map((bb, ii) =>
+                      ii === i ? { ...bb, name: e.target.value } : bb,
+                    ),
+                  })
+                }
+              />
+            </label>
+            <label className="field">
+              <span className="field-label">אחוז</span>
+              <div className="input-wrap has-unit">
+                <input
+                  type="number"
+                  min={0}
+                  max={100}
+                  value={b.pct}
+                  onChange={(e) =>
+                    onChange({
+                      beneficiaries: (p.beneficiaries ?? []).map((bb, ii) =>
+                        ii === i ? { ...bb, pct: Number(e.target.value) } : bb,
+                      ),
+                    })
+                  }
+                />
+                <span className="unit">%</span>
+              </div>
+            </label>
+            <div className="field bens-remove-col">
+              <span className="field-label">&nbsp;</span>
+              <button
+                className="chip-remove bens-remove"
+                title="הסר מוטב"
+                onClick={() =>
+                  onChange({
+                    beneficiaries: (p.beneficiaries ?? []).filter((_, ii) => ii !== i),
+                  })
+                }
+              >
+                ✕
+              </button>
+            </div>
+          </div>
         ))}
+        <BeneficiaryBar beneficiaries={p.beneficiaries ?? []} />
         <button
           className="add-chip small"
           onClick={() =>
@@ -3066,6 +3111,50 @@ function Field(props: {
         {props.unit && <span className="unit">{props.unit}</span>}
       </div>
     </label>
+  );
+}
+
+/** צבעים קטגוריאליים בסדר קבוע — לא מוגרלים, לא תלויי-נתונים (עקרון dataviz) */
+const BENEFICIARY_COLORS = ['#a78bfa', '#818cf8', '#f2c464', '#4ade80', '#f0857d', '#2dd4bf'];
+
+/** פס חלוקת מוטבים — part-to-whole קטן, עם מקרא (שם + %) מתחתיו */
+function BeneficiaryBar(props: { beneficiaries: { name: string; pct: number }[] }) {
+  const items = props.beneficiaries.filter((b) => b.pct > 0 && b.name.trim());
+  if (items.length === 0) return null;
+  const total = items.reduce((s, b) => s + b.pct, 0);
+  const remainder = Math.max(0, 100 - total);
+  return (
+    <div className="bens-chart">
+      <div className="bens-bar">
+        {items.map((b, i) => (
+          <div
+            key={i}
+            className="bens-bar-seg"
+            style={{ width: `${b.pct}%`, background: BENEFICIARY_COLORS[i % BENEFICIARY_COLORS.length] }}
+          />
+        ))}
+        {remainder > 0 && (
+          <div className="bens-bar-seg bens-bar-rest" style={{ width: `${remainder}%` }} />
+        )}
+      </div>
+      <div className="bens-legend">
+        {items.map((b, i) => (
+          <span key={i} className="bens-legend-item">
+            <span
+              className="bens-legend-dot"
+              style={{ background: BENEFICIARY_COLORS[i % BENEFICIARY_COLORS.length] }}
+            />
+            {b.name} {b.pct}%
+          </span>
+        ))}
+        {remainder > 0 && (
+          <span className="bens-legend-item">
+            <span className="bens-legend-dot bens-legend-dot-rest" />
+            יורשים על פי דין {remainder}%
+          </span>
+        )}
+      </div>
+    </div>
   );
 }
 

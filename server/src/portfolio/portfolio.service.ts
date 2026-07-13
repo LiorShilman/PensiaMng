@@ -18,6 +18,9 @@ export interface PlanAssumptions {
   fixationInput?: unknown;
   /** קלט שמור של מחשבון הטבות המס — blob אטום, נשמר ומוחזר כמות שהוא */
   taxInput?: unknown;
+  /** קלט ותוצאה שמורים של מחשבון השוואת מסלולי קצבה — blob אטום */
+  annuityTrackInput?: unknown;
+  annuityTrackResult?: unknown;
 }
 
 /** פרופיל אישי — נשמר על רשומת הלקוח עצמה */

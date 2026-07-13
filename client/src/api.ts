@@ -489,6 +489,17 @@ export interface DecumFormInput {
   returnPct: number;
 }
 
+/** קלט השוואת מסלולי קצבה — נשמר עם התיק */
+export interface AnnuityTrackFormInput {
+  balance: number;
+  retirementAge: number;
+  retireeLifeExpectancyAge: number;
+  hasSpouse: boolean;
+  spouseAgeAtRetirement: number;
+  spouseLifeExpectancyAge: number;
+  options: AnnuityTrackOption[];
+}
+
 export interface PlanAssumptions {
   annualReturnPct: number;
   annualSalaryGrowthPct: number;
@@ -511,6 +522,8 @@ export interface PlanAssumptions {
   jobExitResult?: JobExitResult;
   decumInput?: DecumFormInput;
   decumResult?: DecumulationResult;
+  annuityTrackInput?: AnnuityTrackFormInput;
+  annuityTrackResult?: AnnuityTrackResult;
 }
 
 export type Gender = 'MALE' | 'FEMALE';
@@ -1044,6 +1057,47 @@ export function calcLifePath(input: {
   events: LifePathEvent[];
 }): Promise<LifePathResult> {
   return post<LifePathResult>('/calc/life-path', input);
+}
+
+// ---------- בחירת מסלול קצבה (4.3 + 5.2) ----------
+
+export interface AnnuityTrackOption {
+  id: string;
+  label: string;
+  conversionFactor: number;
+  survivorPct: number;
+  guaranteedMonths: number;
+}
+
+export interface AnnuityTrackInput {
+  balanceAtRetirement: number;
+  options: AnnuityTrackOption[];
+  hasSpouse: boolean;
+  retirementAge: number;
+  retireeLifeExpectancyAge: number;
+  spouseAgeAtRetirement?: number;
+  spouseLifeExpectancyAge?: number;
+}
+
+export interface AnnuityTrackOutcome {
+  id: string;
+  label: string;
+  monthlyAnnuity: number;
+  survivorMonthly: number;
+  survivorPct: number;
+  guaranteedMonths: number;
+  totalExpectedPayout: number;
+  breakEvenAge?: number | null;
+}
+
+export interface AnnuityTrackResult {
+  options: AnnuityTrackOutcome[];
+  warnings: string[];
+  trace: CalcTrace;
+}
+
+export function calcAnnuityTrack(input: AnnuityTrackInput): Promise<AnnuityTrackResult> {
+  return post<AnnuityTrackResult>('/calc/annuity-track', input);
 }
 
 // ---------- קיבוע זכויות (סעיף 9א / טופס 161ד) ----------
