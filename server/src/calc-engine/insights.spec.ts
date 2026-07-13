@@ -34,6 +34,21 @@ describe('buildInsights', () => {
     expect(r.insights[0].severity).toBe('critical'); // gap 15/20 = 0.75 > 0.5
   });
 
+  it('skips the health-score hygiene component — its two findings (missing beneficiaries, frozen funds) already arrive with more detail from scenarios.warnings', () => {
+    const health = healthScoreWith([
+      {
+        key: 'hygiene',
+        label: 'היגיינה פנסיונית',
+        score: 3,
+        max: 5,
+        detail: '2 מוצרים הוניים ללא מוטבים מוגדרים',
+        recommendation: 'עדכן מוטבים בכל המוצרים ההוניים ושקול איחוד קופות לא פעילות',
+      },
+    ]);
+    const r = buildInsights({ healthScore: health });
+    expect(r.insights).toEqual([]);
+  });
+
   it('flags a large scenario coverage gap as critical when it mentions כפל ביטוחי', () => {
     const scenarios = {
       warnings: ['כפל ביטוחי בנכות: משלם על כיסוי עודף'],

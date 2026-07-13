@@ -423,6 +423,32 @@ describe('calcScenarios — warnings & validation', () => {
     expect(r.warnings.some((w) => w.includes('כפל'))).toBe(true);
   });
 
+  it('warns about undefined beneficiaries on lump-sum products', () => {
+    const r = calcScenarios(base());
+    expect(r.warnings.some((w) => w.includes('מוטבים לא מוגדרים'))).toBe(true);
+    const w = r.warnings.find((x) => x.includes('מוטבים לא מוגדרים'))!;
+    expect(w).toContain('ביטוח מנהלים');
+    expect(w).toContain('השתלמות');
+  });
+
+  it('does not warn about beneficiaries when they are fully defined', () => {
+    const managersWithBens: ScenarioProductInput = {
+      ...managers,
+      beneficiaries: [{ name: 'בת הזוג', pct: 100 }],
+    };
+    const studyWithBens: ScenarioProductInput = {
+      ...study,
+      beneficiaries: [{ name: 'הילדים', pct: 100 }],
+    };
+    const r = calcScenarios(base({ products: [pension, managersWithBens, studyWithBens] }));
+    expect(r.warnings.some((w) => w.includes('מוטבים לא מוגדרים'))).toBe(false);
+  });
+
+  it('does not warn about beneficiaries for a pension fund covered by a spouse (not a lump sum)', () => {
+    const r = calcScenarios(base({ products: [pension] }));
+    expect(r.warnings.some((w) => w.includes('מוטבים לא מוגדרים'))).toBe(false);
+  });
+
   it('rejects negative salary and bad child birth date', () => {
     expect(() => calcScenarios(base({ insuredMonthlySalary: -1 }))).toThrow();
     expect(() =>

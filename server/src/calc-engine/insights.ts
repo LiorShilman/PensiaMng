@@ -61,6 +61,10 @@ export function buildInsights(input: InsightsInput): InsightsResult {
   if (input.healthScore) {
     for (const c of input.healthScore.components) {
       if (!c.recommendation) continue;
+      // רכיב ההיגיינה תמיד מסכם בדיוק את אותם שני ממצאים (מוטבים חסרים / קרנות
+      // מוקפאות) שכבר מוזרמים בנפרד ובפירוט רב יותר (שמות מוצרים) מ-scenarios.warnings
+      // למטה — הכללתו כאן תיצור כפילות בפאנל התובנות. הניקוד עצמו (0–100) לא מושפע.
+      if (c.key === 'hygiene') continue;
       const gapRatio = c.max > 0 ? (c.max - c.score) / c.max : 0;
       const severity: InsightSeverity =
         gapRatio > 0.5 ? 'critical' : gapRatio > 0.2 ? 'warning' : 'info';
@@ -76,11 +80,12 @@ export function buildInsights(input: InsightsInput): InsightsResult {
 
   if (input.scenarios) {
     for (const w of input.scenarios.warnings) {
+      const isCritical = w.includes('כפל ביטוחי') || w.includes('מוטבים לא מוגדרים');
       insights.push({
         id: nextId(),
-        severity: w.includes('כפל ביטוחי') ? 'critical' : 'warning',
-        category: 'coverage',
-        title: 'תרחישי ביטוח',
+        severity: isCritical ? 'critical' : 'warning',
+        category: w.includes('מוטבים לא מוגדרים') ? 'hygiene' : 'coverage',
+        title: w.includes('מוטבים לא מוגדרים') ? 'מוטבים לא מוגדרים' : 'תרחישי ביטוח',
         detail: w,
       });
     }

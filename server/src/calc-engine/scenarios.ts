@@ -420,6 +420,16 @@ export function calcScenarios(input: ScenariosInput): ScenariosResult {
       'יש בתיק קרן לא פעילה — שקול איחוד לקרן הפעילה: חוסך דמי ניהול ומרכז את הצבירה (בדוק תנאים לפני ניוד)',
     );
   }
+  const undefinedBeneficiaryProducts = input.products.filter((p) => {
+    const outcome = deathProducts.find((d) => d.id === p.id);
+    if (!outcome || outcome.lumpSum <= 0) return false;
+    return (p.beneficiaries ?? []).filter((b) => b.pct > 0 && b.name.trim()).length === 0;
+  });
+  if (undefinedBeneficiaryProducts.length > 0) {
+    warnings.push(
+      `מוטבים לא מוגדרים ב-${undefinedBeneficiaryProducts.length} מוצר/ים (${undefinedBeneficiaryProducts.map((p) => p.name).join(', ')}) — במקרה מוות הכספים יחולקו ליורשים על פי דין ולא בהכרח לפי רצונך; מומלץ להגדיר מוטבים בכל מוצר`,
+    );
+  }
   if (
     input.family.hasSpouse === false &&
     eligibleChildren === 0 &&
