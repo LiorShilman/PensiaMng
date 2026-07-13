@@ -612,6 +612,17 @@ export class AiService {
     let totalIn = 0;
     let totalOut = 0;
 
+    // תמצית התיק האנונימית נשלחת תמיד מראש (כמו שהמפרט מבקש), בנוסף
+    // לכלים — כדי שהמודל לא יתחיל "עיוור" ותלוי בהחלטתו-שלו אם לקרוא
+    // ל-get_portfolio_summary. הכלי עדיין זמין להעמקה/עדכון תוך כדי שיחה.
+    let systemPrompt = CHAT_SYSTEM_PROMPT;
+    try {
+      const summary = await this.tools.execute(userId, 'get_portfolio_summary', {});
+      systemPrompt += `\n\nתמונת המצב הנוכחית של התיק (לשימושך — אין צורך לקרוא שוב ל-get_portfolio_summary אלא אם השתנה משהו באמצע השיחה):\n${JSON.stringify(summary)}`;
+    } catch {
+      // אין עדיין תיק שמור — השיחה ממשיכה, המודל יסתמך על הכלים בעת הצורך
+    }
+
     const runTool = async (name: string, args: unknown): Promise<string> => {
       toolLog.push({ name });
       try {
@@ -637,7 +648,7 @@ export class AiService {
           const resp = await client.messages.create({
             model,
             max_tokens: 4000,
-            system: CHAT_SYSTEM_PROMPT,
+            system: systemPrompt,
             tools,
             messages: msgs,
           });
@@ -674,7 +685,7 @@ export class AiService {
         function: { name: d.name, description: d.description, parameters: d.schema },
       }));
       const msgs: OpenAI.Chat.ChatCompletionMessageParam[] = [
-        { role: 'developer', content: CHAT_SYSTEM_PROMPT },
+        { role: 'developer', content: systemPrompt },
         ...messages.map((m) => ({ role: m.role, content: m.content })),
       ];
       for (let turn = 0; turn < MAX_TURNS; turn++) {
