@@ -32,10 +32,23 @@ const nis = (n: number) => `₪${n.toLocaleString('he-IL', { maximumFractionDigi
 let idCounter = 0;
 const nextId = () => `track-${++idCounter}-${Date.now()}`;
 
+/**
+ * שמות מסלול נפוצים — נבחרים מרשימה, לא מוקצים אוטומטית לפי המספר הסידורי.
+ * בחירת שם מציבה גם את % קצבת השאיר התואם (ניתן עדיין לערוך ידנית אחרי הבחירה).
+ */
+const NAME_PRESET_SURVIVOR_PCT: Record<string, number> = {
+  'ללא שאירים / מקסימום קצבה': 0,
+  '50% קצבת שאיר': 50,
+  '60% קצבת שאיר': 60,
+  '75% קצבת שאיר': 75,
+  '100% קצבת שאירים': 100,
+};
+const NAME_PRESETS = Object.keys(NAME_PRESET_SURVIVOR_PCT);
+
 function defaultOptions(): AnnuityTrackOption[] {
   return [
-    { id: nextId(), label: 'ללא שאירים / מינימום הבטחה', conversionFactor: 200, survivorPct: 0, guaranteedMonths: 60 },
-    { id: nextId(), label: '100% שאירים', conversionFactor: 225, survivorPct: 100, guaranteedMonths: 60 },
+    { id: nextId(), label: NAME_PRESETS[0], conversionFactor: 200, survivorPct: 0, guaranteedMonths: 60 },
+    { id: nextId(), label: NAME_PRESETS[4], conversionFactor: 225, survivorPct: 100, guaranteedMonths: 60 },
   ];
 }
 
@@ -81,14 +94,14 @@ export function AnnuityTrack(props: Props) {
   function addOption() {
     setOptions((os) => [
       ...os,
-      { id: nextId(), label: `מסלול ${os.length + 1}`, conversionFactor: 200, survivorPct: 60, guaranteedMonths: 60 },
+      { id: nextId(), label: NAME_PRESETS[2], conversionFactor: 200, survivorPct: 60, guaranteedMonths: 60 },
     ]);
   }
   function updateOption(id: string, patch: Partial<AnnuityTrackOption>) {
     setOptions((os) => os.map((o) => (o.id === id ? { ...o, ...patch } : o)));
   }
   function removeOption(id: string) {
-    setOptions((os) => (os.length > 1 ? os.filter((o) => o.id !== id) : os));
+    setOptions((os) => os.filter((o) => o.id !== id));
   }
 
   async function onCalc() {
@@ -222,6 +235,10 @@ export function AnnuityTrack(props: Props) {
             </div>
           )}
 
+          {options.length === 0 && (
+            <p className="hint">אין עדיין מסלולים להשוואה. הוסיפו לפחות אחד מהכפתור למטה.</p>
+          )}
+
           {options.map((o, i) => (
             <div key={o.id} className="transfer-card" style={{ marginBottom: 10 }}>
               <div className="transfer-card-head">
@@ -229,20 +246,40 @@ export function AnnuityTrack(props: Props) {
                   {o.label || `מסלול ${i + 1}`}
                   {i === 0 && ' (בסיס להשוואה)'}
                 </span>
-                {options.length > 1 && (
-                  <button className="remove-btn" onClick={() => removeOption(o.id)} title="הסר מסלול">
-                    ✕
-                  </button>
-                )}
+                <button className="remove-btn" onClick={() => removeOption(o.id)} title="הסר מסלול">
+                  ✕
+                </button>
               </div>
               <div className="fixation-form">
                 <label className="field">
                   <span className="field-label">שם המסלול (מהטבלה שקיבלת מהקרן)</span>
-                  <input
-                    type="text"
-                    value={o.label}
-                    onChange={(e) => updateOption(o.id, { label: e.target.value })}
-                  />
+                  <select
+                    value={NAME_PRESETS.includes(o.label) ? o.label : 'custom'}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val === 'custom') {
+                        updateOption(o.id, { label: '' });
+                      } else {
+                        updateOption(o.id, { label: val, survivorPct: NAME_PRESET_SURVIVOR_PCT[val] });
+                      }
+                    }}
+                  >
+                    {NAME_PRESETS.map((p) => (
+                      <option key={p} value={p}>
+                        {p}
+                      </option>
+                    ))}
+                    <option value="custom">מותאם אישית…</option>
+                  </select>
+                  {!NAME_PRESETS.includes(o.label) && (
+                    <input
+                      type="text"
+                      placeholder="שם מותאם אישית"
+                      value={o.label}
+                      onChange={(e) => updateOption(o.id, { label: e.target.value })}
+                      style={{ marginTop: 6 }}
+                    />
+                  )}
                 </label>
                 <label className="field">
                   <span className="field-label">מקדם המרה</span>
@@ -290,7 +327,11 @@ export function AnnuityTrack(props: Props) {
             </button>
           </div>
 
-          <button className="calc-btn fixation-calc" onClick={onCalc} disabled={busy}>
+          <button
+            className="calc-btn fixation-calc"
+            onClick={onCalc}
+            disabled={busy || options.length === 0}
+          >
             {busy ? 'משווה מסלולים…' : 'השווה מסלולים'}
           </button>
           {error && <div className="error">{error}</div>}
