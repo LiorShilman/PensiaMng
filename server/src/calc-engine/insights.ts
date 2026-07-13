@@ -80,12 +80,25 @@ export function buildInsights(input: InsightsInput): InsightsResult {
 
   if (input.scenarios) {
     for (const w of input.scenarios.warnings) {
-      const isCritical = w.includes('כפל ביטוחי') || w.includes('מוטבים לא מוגדרים');
+      const isUndefinedBens = w.includes('מוטבים לא מוגדרים');
+      const isInvalidWaiver = w.includes('ויתור על כיסוי שאירים מסומן');
+      const isExpiredWaiver = w.includes('ויתור על כיסוי שאירים פג תוקף');
+      const isUndatedWaiver = w.includes('לא נרשם תאריך חתימה לוויתור');
+      const isHygiene = isUndefinedBens || isInvalidWaiver || isExpiredWaiver || isUndatedWaiver;
+      const isCritical = w.includes('כפל ביטוחי') || isUndefinedBens || isInvalidWaiver || isExpiredWaiver;
       insights.push({
         id: nextId(),
-        severity: isCritical ? 'critical' : 'warning',
-        category: w.includes('מוטבים לא מוגדרים') ? 'hygiene' : 'coverage',
-        title: w.includes('מוטבים לא מוגדרים') ? 'מוטבים לא מוגדרים' : 'תרחישי ביטוח',
+        severity: isCritical ? 'critical' : isUndatedWaiver ? 'info' : 'warning',
+        category: isHygiene ? 'hygiene' : 'coverage',
+        title: isUndefinedBens
+          ? 'מוטבים לא מוגדרים'
+          : isInvalidWaiver
+            ? 'ויתור שאירים לא תקף'
+            : isExpiredWaiver
+              ? 'ויתור שאירים פג תוקף'
+              : isUndatedWaiver
+                ? 'תאריך ויתור חסר'
+                : 'תרחישי ביטוח',
         detail: w,
       });
     }

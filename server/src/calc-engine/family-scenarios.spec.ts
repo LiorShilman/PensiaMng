@@ -81,12 +81,15 @@ describe('calcFamilyScenarios', () => {
           label: 'דנה',
           insuredMonthlySalary: 15_000,
           scenarios: scenariosOf(15_000, [
-            { ...spousePension, survivorsWaiver: true },
+            // frozen (no active coverage) — not a waiver, since the couple is
+            // married and the survivors waiver only ever applies when there's
+            // no current spouse
+            { ...spousePension, frozen: true },
           ]),
         },
       }),
     );
-    // spouse pension waived survivor coverage → lump sum only, no monthly benefit
+    // spouse pension is frozen → lump sum only, no monthly benefit
     expect(r.ifSpouseDies.productsSurvivorMonthly).toBe(0);
     expect(r.ifSpouseDies.lumpSum).toBe(300_000);
     expect(r.ifSpouseDies.totalHouseholdMonthly).toBe(20_000);

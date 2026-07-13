@@ -340,6 +340,33 @@ const MARITAL_LABELS: Record<MaritalStatus, string> = {
 /** האם יש בן/בת זוג לצורך קצבת שאירים */
 const hasSpouse = (m?: MaritalStatus) => m === 'MARRIED' || m === 'COMMON_LAW';
 
+/** מספר ילדים זכאים (מתחת לגיל 21) — יתום זכאי לקצבת שאירים עד גיל זה */
+function eligibleChildrenCount(children?: { birthDate: string }[]): number {
+  const now = new Date();
+  return (children ?? []).filter((c) => {
+    const birth = new Date(c.birthDate);
+    if (isNaN(birth.getTime())) return false;
+    const ageYears = (now.getTime() - birth.getTime()) / (365.25 * 24 * 3600 * 1000);
+    return ageYears < 21;
+  }).length;
+}
+
+/**
+ * ויתור על כיסוי שאירים בתקנון חל *רק* על חלק בן/בת הזוג, וזמין רק כשאין
+ * בן/בת זוג בפועל — גם למי שיש לו/לה ילדים מתחת לגיל 21 (כיסוי הילדים
+ * אינו ניתן לוויתור בשום מצב וממשיך לחול תמיד). לכן זכאות הוויתור תלויה
+ * במצב הזוגי בלבד, לא במספר הילדים.
+ */
+
+/** ויתור על כיסוי שאירים תקף שנתיים ממועד החתימה — פג תוקף מעל 24 חודשים */
+function isWaiverExpired(dateIso: string): boolean {
+  const signed = new Date(dateIso);
+  if (isNaN(signed.getTime())) return false;
+  const now = new Date();
+  const monthsSince = (now.getFullYear() - signed.getFullYear()) * 12 + (now.getMonth() - signed.getMonth());
+  return monthsSince >= 24;
+}
+
 const aiMetaLabel = (provider: 'anthropic' | 'openai', model: string) =>
   `${provider === 'anthropic' ? 'Claude' : 'ChatGPT'} · ${model}`;
 
@@ -697,6 +724,7 @@ function App() {
           survivorsPct: p.survivorsPct,
           disabilityPct: p.disabilityPct,
           survivorsWaiver: p.survivorsWaiver,
+          survivorsWaiverDate: p.survivorsWaiverDate,
           deathBenefitAmount: p.deathBenefitAmount,
           beneficiaries: p.beneficiaries,
           umbrella: p.umbrella,
@@ -1563,6 +1591,8 @@ function App() {
                 product={p}
                 trackDefs={trackDefs}
                 globalReturnPct={assumptions.annualReturnPct}
+                hasCurrentSpouse={hasSpouse(profile.maritalStatus)}
+                eligibleChildren={eligibleChildrenCount(profile.children)}
                 onChange={(patch) => updateProduct(p.id, patch)}
                 onRemove={() => removeProduct(p.id)}
               />
@@ -2303,6 +2333,10 @@ function ProductCard(props: {
   product: PortfolioProductInput;
   trackDefs: TrackDef[];
   globalReturnPct: number;
+  /** האם יש בן/בת זוג כרגע — קובע זכאות לוויתור על חלק בן/בת הזוג בכיסוי שאירים */
+  hasCurrentSpouse: boolean;
+  /** מספר ילדים זכאים (מתחת לגיל 21) — כיסויים שלהם לא ניתנים לוויתור בשום מצב */
+  eligibleChildren: number;
   onChange: (patch: Partial<PortfolioProductInput>) => void;
   onRemove: () => void;
 }) {
@@ -2750,17 +2784,33 @@ function ProductCard(props: {
         </label>
       )}
       {INSURED_PENSION_TYPES.has(p.type) && !p.frozen && (
-        <label className="waiver-row">
+        <label className={`waiver-row ${props.hasCurrentSpouse ? 'disabled' : ''}`}>
           <input
             type="checkbox"
             checked={p.survivorsWaiver ?? false}
-            onChange={(e) => onChange({ survivorsWaiver: e.target.checked })}
+            disabled={props.hasCurrentSpouse}
+            onChange={(e) => {
+              const checked = e.target.checked;
+              onChange({
+                survivorsWaiver: checked,
+                survivorsWaiverDate:
+                  checked && !p.survivorsWaiverDate
+                    ? new Date().toISOString().slice(0, 10)
+                    : p.survivorsWaiverDate,
+              });
+            }}
           />
           <span>
-            ויתור על כיסוי שאירים
+            ויתור על כיסוי שאירים לבן/בת הזוג
             <span
               className="tip"
-              data-tip="רווק/ה ללא ילדים יכול/ה לוותר על כיסוי השאירים ולהגדיל את החיסכון. הוויתור תקף לשנתיים ודורש חידוש. במקרה מוות — הצבירה תשולם למוטבים כסכום חד-פעמי."
+              data-tip={
+                props.hasCurrentSpouse
+                  ? 'לא ניתן לוותר — יש בן/בת זוג כרגע. הוויתור בתקנון חל רק על חלק הכיסוי לבן/בת הזוג, וזמין רק כשאין בן/בת זוג בפועל.'
+                  : props.eligibleChildren > 0
+                    ? `אין בן/בת זוג כרגע — ניתן לוותר על חלק הכיסוי לבן/בת הזוג בלבד ולהוזיל עלויות. כיסוי ${props.eligibleChildren} הילדים הזכאים (מתחת לגיל 21) ימשיך לחול במלואו תמיד — לא ניתן לוותר עליו בשום מצב. הוויתור תקף לשנתיים בלבד ודורש חידוש.`
+                    : 'אין בן/בת זוג ואין ילדים מתחת לגיל 21 — ניתן לוותר על כיסוי השאירים ולהגדיל את החיסכון. הוויתור תקף לשנתיים בלבד וחייב חידוש בהצהרה חוזרת.'
+              }
               tabIndex={0}
             >
               ⓘ
@@ -2768,6 +2818,35 @@ function ProductCard(props: {
           </span>
         </label>
       )}
+      {INSURED_PENSION_TYPES.has(p.type) && !p.frozen && p.survivorsWaiver && !props.hasCurrentSpouse && (
+        <label className="field" style={{ marginTop: 8, maxWidth: 220 }}>
+          <span className="field-label">תאריך חתימת הוויתור</span>
+          <input
+            type="date"
+            value={p.survivorsWaiverDate ?? ''}
+            onChange={(e) => onChange({ survivorsWaiverDate: e.target.value })}
+          />
+        </label>
+      )}
+      {INSURED_PENSION_TYPES.has(p.type) &&
+        !p.frozen &&
+        p.survivorsWaiver &&
+        props.hasCurrentSpouse && (
+          <p className="warning-item" style={{ marginTop: 8 }}>
+            ⚠ מסומן ויתור על כיסוי שאירים למרות שיש בן/בת זוג כרגע — כדאי לבטל את הסימון, אחרת
+            במקרה מוות עלול להיפגע הכיסוי לבן/בת הזוג.
+          </p>
+        )}
+      {INSURED_PENSION_TYPES.has(p.type) &&
+        !p.frozen &&
+        p.survivorsWaiver &&
+        p.survivorsWaiverDate &&
+        isWaiverExpired(p.survivorsWaiverDate) && (
+          <p className="warning-item" style={{ marginTop: 8 }}>
+            ⚠ הוויתור על כיסוי שאירים נחתם לפני מעל שנתיים ({p.survivorsWaiverDate}) — פג תוקפו,
+            יש לחדש את ההצהרה מול הקרן.
+          </p>
+        )}
 
       <div className="bens transfers">
         <span className="bens-label">

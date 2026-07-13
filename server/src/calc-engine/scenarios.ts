@@ -40,6 +40,8 @@ export interface ScenarioProductInput {
   disabilityPct?: number;
   /** ויתור על כיסוי שאירים (רווק/ה) */
   survivorsWaiver?: boolean;
+  /** תאריך חתימת הוויתור (ISO) — תוקף שנתיים, מתחדש בהצהרה */
+  survivorsWaiverDate?: string;
   /** סכום ביטוח למקרה מוות — ביטוח מנהלים */
   deathBenefitAmount?: number;
   /** מוטבים לסכומים חד-פעמיים — ריק = "יורשים על פי דין" */
@@ -146,6 +148,9 @@ const ORPHAN_MAX_AGE = 21;
 const DEFAULT_RETIREMENT_SURVIVOR_PCT = 60;
 const DEFAULT_GUARANTEED_MONTHS = 240;
 
+/** תוקף ויתור על כיסוי שאירים — שנתיים, מתחדש בהצהרה */
+const WAIVER_VALIDITY_MONTHS = 24;
+
 export function calcScenarios(input: ScenariosInput): ScenariosResult {
   if (input.retirementPhase) {
     return calcRetirementPhase(input, input.retirementPhase.monthsSinceRetirement);
@@ -234,7 +239,11 @@ export function calcScenarios(input: ScenariosInput): ScenariosResult {
           'קרן לא פעילה (ללא הפקדות) — אין כיסוי שאירים מהשכר; הצבירה לשאירים/מוטבים',
         );
       }
-      if (p.survivorsWaiver || !hasSurvivors) {
+      // ויתור על כיסוי שאירים חל בתקנון רק על חלק בן/בת הזוג, ורק כשאין
+      // כרגע בן/בת זוג בפועל — כיסוי הילדים (יתומים) אינו ניתן לוויתור
+      // בשום מצב וממשיך לחול במלואו כל עוד יש ילד זכאי מתחת לגיל 21.
+      const legitimateWaiver = p.survivorsWaiver && !input.family.hasSpouse;
+      if (!hasSurvivors || (legitimateWaiver && eligibleChildren === 0)) {
         return lumpOutcome(
           p,
           p.currentBalance,
@@ -432,13 +441,44 @@ export function calcScenarios(input: ScenariosInput): ScenariosResult {
   }
   if (
     input.family.hasSpouse === false &&
-    eligibleChildren === 0 &&
     input.products.some(
       (p) => PENSION_TYPES.has(p.type) && !p.survivorsWaiver && !p.frozen,
     )
   ) {
     warnings.push(
-      'רווק/ה ללא ילדים: ניתן לחתום על ויתור כיסוי שאירים בקרן ולהוזיל עלויות — הוויתור תקף לשנתיים ודורש חידוש',
+      eligibleChildren === 0
+        ? 'רווק/ה, גרוש/ה או אלמן/ה ללא ילדים: ניתן לחתום על ויתור כיסוי שאירים בקרן ולהוזיל עלויות — הוויתור תקף לשנתיים ודורש חידוש'
+        : 'אין בן/בת זוג כרגע: ניתן לוותר על חלק הכיסוי לבן/בת הזוג בלבד ולהוזיל עלויות — כיסוי הילדים הזכאים ימשיך לחול במלואו ולא ניתן לוותר עליו. הוויתור תקף לשנתיים ודורש חידוש',
+    );
+  }
+  const invalidWaiverProducts = input.products.filter(
+    (p) => p.survivorsWaiver && input.family.hasSpouse && PENSION_TYPES.has(p.type) && !p.frozen,
+  );
+  if (invalidWaiverProducts.length > 0) {
+    warnings.push(
+      `ויתור על כיסוי שאירים מסומן ב-${invalidWaiverProducts.length} מוצר/ים (${invalidWaiverProducts.map((p) => p.name).join(', ')}) למרות שיש בן/בת זוג כרגע — הוויתור בתקנון חל רק על חלק בן/בת הזוג וזמין רק כשאין בן/בת זוג בפועל; יש לבטל את הסימון`,
+    );
+  }
+  const activeWaivers = input.products.filter(
+    (p) => p.survivorsWaiver && PENSION_TYPES.has(p.type) && !p.frozen,
+  );
+  const undatedWaivers = activeWaivers.filter((p) => !p.survivorsWaiverDate);
+  if (undatedWaivers.length > 0) {
+    warnings.push(
+      `לא נרשם תאריך חתימה לוויתור על כיסוי שאירים ב-${undatedWaivers.length} מוצר/ים (${undatedWaivers.map((p) => p.name).join(', ')}) — הוויתור תקף שנתיים בלבד; בלי תאריך אי אפשר לדעת מתי צריך לחדש`,
+    );
+  }
+  const expiredWaivers = activeWaivers.filter((p) => {
+    if (!p.survivorsWaiverDate) return false;
+    const signed = new Date(p.survivorsWaiverDate);
+    if (isNaN(signed.getTime())) return false;
+    const monthsSince =
+      (asOf.getFullYear() - signed.getFullYear()) * 12 + (asOf.getMonth() - signed.getMonth());
+    return monthsSince >= WAIVER_VALIDITY_MONTHS;
+  });
+  if (expiredWaivers.length > 0) {
+    warnings.push(
+      `ויתור על כיסוי שאירים פג תוקף (מעל שנתיים) ב-${expiredWaivers.length} מוצר/ים (${expiredWaivers.map((p) => p.name).join(', ')}) — יש לחדש את ההצהרה מול הקרן, אחרת הכיסוי עלול לחזור באופן חד-צדדי`,
     );
   }
 

@@ -56,6 +56,8 @@ export interface SavedProduct {
   survivorsPct?: number;
   disabilityPct?: number;
   survivorsWaiver?: boolean;
+  /** תאריך חתימת הוויתור — תוקף שנתיים, מתחדש בהצהרה (ISO yyyy-mm-dd) */
+  survivorsWaiverDate?: string;
   /** סכום ביטוח למקרה מוות (ביטוח מנהלים) */
   deathBenefitAmount?: number;
   /** מוטבים — ריק = יורשים על פי דין */
@@ -186,6 +188,9 @@ export class PortfolioService {
         survivorsPct: p.survivorsPct ? Number(p.survivorsPct) : undefined,
         disabilityPct: p.disabilityPct ? Number(p.disabilityPct) : undefined,
         survivorsWaiver: p.survivorsWaiver,
+        survivorsWaiverDate: p.survivorsWaiverDate
+          ? p.survivorsWaiverDate.toISOString().slice(0, 10)
+          : undefined,
         deathBenefitAmount: p.deathBenefitAmount
           ? Number(p.deathBenefitAmount)
           : undefined,
@@ -265,6 +270,9 @@ export class PortfolioService {
             survivorsPct: p.survivorsPct ?? null,
             disabilityPct: p.disabilityPct ?? null,
             survivorsWaiver: p.survivorsWaiver ?? false,
+            survivorsWaiverDate: p.survivorsWaiverDate
+              ? new Date(p.survivorsWaiverDate)
+              : null,
             deathBenefitAmount: p.deathBenefitAmount ?? null,
             beneficiaries: {
               create: (p.beneficiaries ?? [])

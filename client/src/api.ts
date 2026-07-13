@@ -114,6 +114,8 @@ export interface PortfolioProductInput {
   survivorsPct?: number;
   disabilityPct?: number;
   survivorsWaiver?: boolean;
+  /** תאריך חתימת הוויתור — תוקף שנתיים, מתחדש בהצהרה (ISO yyyy-mm-dd) */
+  survivorsWaiverDate?: string;
   /** סכום ביטוח למקרה מוות (ביטוח מנהלים) */
   deathBenefitAmount?: number;
   /** מוטבים — ריק = יורשים על פי דין */
@@ -603,6 +605,7 @@ export interface ScenariosInput {
     survivorsPct?: number;
     disabilityPct?: number;
     survivorsWaiver?: boolean;
+    survivorsWaiverDate?: string;
     deathBenefitAmount?: number;
     beneficiaries?: Beneficiary[];
     umbrella?: boolean;

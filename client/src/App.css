@@ -1186,6 +1186,15 @@ td.fees {
   gap: 6px;
 }
 
+.waiver-row.disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.waiver-row.disabled input[type='checkbox'] {
+  cursor: not-allowed;
+}
+
 /* ---------- Stale results ---------- */
 
 .results.stale .totals-grid,

@@ -79,9 +79,32 @@ describe('calcScenarios — death', () => {
     expect(pensionOutcome.lumpSum).toBe(500_000);
   });
 
-  it('survivors waiver: balance to beneficiaries even with a family', () => {
+  it('a waiver is ignored (coverage stays active) when there is an actual current spouse — it is not a legitimate waiver in the regulations', () => {
     const waived = { ...pension, survivorsWaiver: true };
     const r = calcScenarios(base({ products: [waived] }));
+    const outcome = r.death.products[0];
+    // base() has a spouse — the waiver only ever applies to the spouse's own
+    // portion of the coverage, and is only available when there is no spouse
+    expect(outcome.survivorMonthly).toBeGreaterThan(0);
+    expect(outcome.lumpSum).toBe(0);
+  });
+
+  it('waiving with no spouse but with eligible children only removes the spouse portion — children keep their monthly orphan pension, not a lump sum', () => {
+    const waived = { ...pension, survivorsWaiver: true };
+    const r = calcScenarios(
+      base({ family: { hasSpouse: false, childrenBirthDates: ['2015-06-01', '2018-03-01'] }, products: [waived] }),
+    );
+    const outcome = r.death.products[0];
+    expect(outcome.lumpSum).toBe(0);
+    expect(outcome.spouseMonthly).toBe(0);
+    expect(outcome.childrenMonthly).toBeGreaterThan(0);
+  });
+
+  it('waiving with no spouse and no children still pays a lump sum — there is nothing left to insure', () => {
+    const waived = { ...pension, survivorsWaiver: true };
+    const r = calcScenarios(
+      base({ family: { hasSpouse: false, childrenBirthDates: [] }, products: [waived] }),
+    );
     const outcome = r.death.products[0];
     expect(outcome.survivorMonthly).toBe(0);
     expect(outcome.lumpSum).toBe(500_000);
@@ -442,6 +465,38 @@ describe('calcScenarios — warnings & validation', () => {
     };
     const r = calcScenarios(base({ products: [pension, managersWithBens, studyWithBens] }));
     expect(r.warnings.some((w) => w.includes('מוטבים לא מוגדרים'))).toBe(false);
+  });
+
+  it('warns when a waiver is checked despite the person actually having eligible survivors', () => {
+    const waived = { ...pension, survivorsWaiver: true, survivorsWaiverDate: ASOF };
+    // base() family has a spouse + 2 children — real survivors exist
+    const r = calcScenarios(base({ products: [waived] }));
+    expect(r.warnings.some((w) => w.includes('ויתור על כיסוי שאירים מסומן'))).toBe(true);
+  });
+
+  it('reminds to record a signature date when a waiver is set without one', () => {
+    const waived = { ...pension, survivorsWaiver: true };
+    const r = calcScenarios(
+      base({ family: { hasSpouse: false, childrenBirthDates: [] }, products: [waived] }),
+    );
+    expect(r.warnings.some((w) => w.includes('לא נרשם תאריך חתימה'))).toBe(true);
+  });
+
+  it('warns when a waiver signed over 2 years ago has expired', () => {
+    const waived = { ...pension, survivorsWaiver: true, survivorsWaiverDate: '2023-01-01' };
+    const r = calcScenarios(
+      base({ family: { hasSpouse: false, childrenBirthDates: [] }, products: [waived] }),
+    );
+    expect(r.warnings.some((w) => w.includes('פג תוקף'))).toBe(true);
+  });
+
+  it('does not warn about expiry for a waiver signed recently', () => {
+    const waived = { ...pension, survivorsWaiver: true, survivorsWaiverDate: '2026-06-01' };
+    const r = calcScenarios(
+      base({ family: { hasSpouse: false, childrenBirthDates: [] }, products: [waived] }),
+    );
+    expect(r.warnings.some((w) => w.includes('פג תוקף'))).toBe(false);
+    expect(r.warnings.some((w) => w.includes('לא נרשם תאריך חתימה'))).toBe(false);
   });
 
   it('does not warn about beneficiaries for a pension fund covered by a spouse (not a lump sum)', () => {
