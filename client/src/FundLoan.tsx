@@ -164,7 +164,9 @@ export function FundLoan(props: Props) {
                       </>
                     )}
                     <dt>עלות כוללת</dt>
-                    <dd className="excess">{nis(result.fundLoan.totalCost)}</dd>
+                    <dd className={result.totalCostGap <= 0 ? 'good' : 'excess'}>
+                      {nis(result.fundLoan.totalCost)}
+                    </dd>
                   </dl>
                 </div>
                 <div className="card fixation-scenario custom">
@@ -172,10 +174,10 @@ export function FundLoan(props: Props) {
                   <dl>
                     <dt>תשלום חודשי</dt>
                     <dd>{nis(result.alternativeLoan.monthlyPayment)}</dd>
-                    <dt>סך ריבית</dt>
-                    <dd>{nis(result.alternativeLoan.totalInterest)}</dd>
-                    <dt>עלות כוללת</dt>
-                    <dd className="excess">{nis(result.alternativeLoan.totalInterest)}</dd>
+                    <dt>עלות כוללת (= סך הריבית, אין עלות הזדמנות)</dt>
+                    <dd className={result.totalCostGap >= 0 ? 'good' : 'excess'}>
+                      {nis(result.alternativeLoan.totalInterest)}
+                    </dd>
                   </dl>
                 </div>
               </div>

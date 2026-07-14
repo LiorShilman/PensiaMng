@@ -2737,6 +2737,11 @@ button .t-icon {
   color: var(--good);
 }
 
+.fixation-scenario dd.excess,
+.stat-value.excess {
+  color: var(--danger);
+}
+
 .fixation-scenario.full_pension {
   border-top: 3px solid var(--primary);
 }
