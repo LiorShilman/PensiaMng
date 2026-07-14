@@ -78,6 +78,7 @@ import { SimulatedPension } from './SimulatedPension';
 import { JobExit } from './JobExit';
 import { Decumulation } from './Decumulation';
 import { LifePath } from './LifePath';
+import { DateField } from './DateField';
 import { AnnuityTrack } from './AnnuityTrack';
 import { ReportImport } from './ReportImport';
 
@@ -894,8 +895,16 @@ function App() {
                 כוללת_מטריה_ביטוחית: p.umbrella ?? false,
               }
             : {}),
-          ...(p.type === 'LIFE_INSURANCE'
+          ...(p.type === 'LIFE_INSURANCE' || p.type === 'MANAGERS_INSURANCE'
             ? { סכום_ביטוח_חיים: p.deathBenefitAmount ?? 0 }
+            : {}),
+          ...(INSURED_PENSION_TYPES.has(p.type)
+            ? {
+                כיסוי_שאירים_אחוז: p.survivorsPct,
+                כיסוי_נכות_אחוז: p.disabilityPct,
+                ויתור_על_כיסוי_שאירים: p.survivorsWaiver ?? false,
+                תאריך_חתימת_הוויתור: p.survivorsWaiverDate ?? null,
+              }
             : {}),
           מוטבים:
             (p.beneficiaries ?? []).length > 0
@@ -1019,6 +1028,25 @@ function App() {
               פטור_חודשי: s.monthlyExemption,
               קצבה_חייבת: s.taxableMonthlyPension,
             })),
+          }
+        : null,
+      בחירת_מסלול_קצבה: annuityTrack
+        ? {
+            מסלולים: annuityTrack.options.map((o) => ({
+              שם: o.label,
+              קצבה_חודשית: o.monthlyAnnuity,
+              קצבת_שאיר: o.survivorMonthly,
+              אחוז_שאיר: o.survivorPct,
+              הבטחת_תשלומים_חודשים: o.guaranteedMonths,
+              סך_תשלומים_משוער: o.totalExpectedPayout,
+              נקודת_איזון_מול_בסיס:
+                o.breakEvenAge === undefined
+                  ? 'מסלול הבסיס'
+                  : o.breakEvenAge === null
+                    ? 'אינו משתלם באופק הנבדק'
+                    : `מגיל ${Math.round(o.breakEvenAge)}`,
+            })),
+            אזהרות: annuityTrack.warnings,
           }
         : null,
     };
@@ -1340,10 +1368,9 @@ function App() {
           </label>
           <label className="field">
             <span>תאריך לידה</span>
-            <input
-              type="date"
+            <DateField
               value={profile.birthDate}
-              onChange={(e) => setProfile((p) => ({ ...p, birthDate: e.target.value }))}
+              onChange={(v) => setProfile((p) => ({ ...p, birthDate: v }))}
             />
           </label>
           <label className="field">
@@ -1469,14 +1496,13 @@ function App() {
           </span>
           {(profile.children ?? []).map((c, i) => (
             <span key={i} className="child-chip">
-              <input
-                type="date"
+              <DateField
                 value={c.birthDate}
-                onChange={(e) =>
+                onChange={(v) =>
                   setProfile((p) => ({
                     ...p,
                     children: (p.children ?? []).map((cc, ii) =>
-                      ii === i ? { ...cc, birthDate: e.target.value } : cc,
+                      ii === i ? { ...cc, birthDate: v } : cc,
                     ),
                   }))
                 }
@@ -2558,10 +2584,9 @@ function ProductCard(props: {
               label="תאריך פתיחת הקרן"
               tooltip="לחישוב ותק ונזילות: קרן השתלמות ניתנת למשיכה בפטור ממס אחרי 6 שנים מהפתיחה (או 3 שנים בגיל פרישה). איפה למצוא: הדוח השנתי — 'תאריך הצטרפות'."
             />
-            <input
-              type="date"
+            <DateField
               value={p.joinDate ?? ''}
-              onChange={(e) => onChange({ joinDate: e.target.value })}
+              onChange={(v) => onChange({ joinDate: v })}
             />
           </label>
         )}
@@ -2821,10 +2846,9 @@ function ProductCard(props: {
       {INSURED_PENSION_TYPES.has(p.type) && !p.frozen && p.survivorsWaiver && !props.hasCurrentSpouse && (
         <label className="field" style={{ marginTop: 8, maxWidth: 220 }}>
           <span className="field-label">תאריך חתימת הוויתור</span>
-          <input
-            type="date"
+          <DateField
             value={p.survivorsWaiverDate ?? ''}
-            onChange={(e) => onChange({ survivorsWaiverDate: e.target.value })}
+            onChange={(v) => onChange({ survivorsWaiverDate: v })}
           />
         </label>
       )}
@@ -2910,13 +2934,12 @@ function ProductCard(props: {
               </label>
               <label className="field">
                 <span className="field-label">תאריך ניוד</span>
-                <input
-                  type="date"
+                <DateField
                   value={t.transferDate}
-                  onChange={(e) =>
+                  onChange={(v) =>
                     onChange({
                       transfers: (p.transfers ?? []).map((tt, ii) =>
-                        ii === i ? { ...tt, transferDate: e.target.value } : tt,
+                        ii === i ? { ...tt, transferDate: v } : tt,
                       ),
                     })
                   }

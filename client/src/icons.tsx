@@ -194,6 +194,16 @@ export const IconUsers = (
   </svg>
 );
 
+/** בחירת תאריך מלוח שנה */
+export const IconCalendar = (
+  <svg {...base} width={15} height={15}>
+    <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+    <line x1="16" y1="2" x2="16" y2="6" />
+    <line x1="8" y1="2" x2="8" y2="6" />
+    <line x1="3" y1="10" x2="21" y2="10" />
+  </svg>
+);
+
 /** בחירת מסלול קצבה — מאזניים (השוואת מסלולים) */
 export const IconScales = (
   <svg {...base} width={15} height={15}>

@@ -14,6 +14,7 @@ import {
   type SavedPortfolio,
 } from './api';
 import { TYPE_META, TYPE_ORDER } from './App';
+import { DateField } from './DateField';
 
 const nis = (n: number) => `₪${n.toLocaleString('he-IL', { maximumFractionDigits: 0 })}`;
 
@@ -228,10 +229,9 @@ export function FamilyView(props: { onClose: () => void; onUnauthorized: () => v
             </label>
             <label className="field">
               <span className="field-label">תאריך לידה</span>
-              <input
-                type="date"
+              <DateField
                 value={spouse.profile?.birthDate ?? '1985-01-01'}
-                onChange={(e) => updateProfile({ birthDate: e.target.value })}
+                onChange={(v) => updateProfile({ birthDate: v })}
               />
             </label>
             <label className="field">
