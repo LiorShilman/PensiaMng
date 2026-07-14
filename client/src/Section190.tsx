@@ -164,6 +164,11 @@ export function Section190(props: Props) {
                     <dt>ערך עתידי בגיל {lifeExpectancyAge}</dt>
                     <dd>{nis(result.lumpSum.projectedValueAtLifeExpectancy)}</dd>
                   </dl>
+                  <div className="warnings" style={{ marginTop: 10 }}>
+                    <div className="warning-item">
+                      ⚠ "ערך עתידי" מבוסס על הנחת תשואה ריאלית {props.defaultReturnPct}% (מ"הנחות התכנון" למעלה בעמוד) — מניח שהסכום נטו מושקע ולא נגוע עד גיל {lifeExpectancyAge}. שינוי ההנחה שם ישנה את המספר הזה.
+                    </div>
+                  </div>
                 </div>
                 <div className="card fixation-scenario full_pension">
                   <h4>קצבה מוכרת</h4>
