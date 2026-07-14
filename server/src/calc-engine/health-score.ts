@@ -283,16 +283,16 @@ export function calcHealthScore(input: HealthScoreInput): HealthScoreResult {
       score -= 1;
       issues.push(`${frozen.length} קופות לא פעילות (שקול איחוד)`);
     }
+    const recommendations: string[] = [];
+    if (missingBens.length > 0) recommendations.push('עדכן מוטבים בכל המוצרים ההוניים');
+    if (frozen.length > 0) recommendations.push('שקול איחוד קופות לא פעילות');
     components.push({
       key: 'hygiene',
       label: 'היגיינה פנסיונית',
       score: Math.max(0, round1(score)),
       max,
       detail: issues.length > 0 ? issues.join(' · ') : 'מוטבים מוגדרים ואין קופות רדומות',
-      recommendation:
-        issues.length > 0
-          ? 'עדכן מוטבים בכל המוצרים ההוניים ושקול איחוד קופות לא פעילות'
-          : undefined,
+      recommendation: recommendations.length > 0 ? recommendations.join(' · ') : undefined,
     });
   }
 
