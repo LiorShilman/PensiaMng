@@ -1521,12 +1521,24 @@ td.fees {
 }
 
 /* מוטבים — פריסת עמודות שוות, כמו יתר שדות הכרטיס (.product-fields) */
+.bens-row-wrap {
+  width: 100%;
+}
+
 .bens-row {
   display: grid;
   grid-template-columns: 1fr 1fr auto;
   gap: 10px;
   width: 100%;
   align-items: end;
+}
+
+/* שורת מוטב חלקית (שם בלי אחוז, או להפך) — לא תישמר, אזהרה מיידית כדי
+   שהנתון לא "ייעלם בשקט" רק אחרי שמירה וטעינה מחדש */
+.bens-row-warning {
+  margin-top: 4px;
+  font-size: 0.76rem;
+  color: #fcd34d;
 }
 
 .bens-remove-col {

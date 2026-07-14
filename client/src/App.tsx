@@ -2925,55 +2925,66 @@ function ProductCard(props: {
           </span>
         </span>
         {(p.beneficiaries ?? []).map((b, i) => (
-          <div key={i} className="bens-row">
-            <label className="field">
-              <span className="field-label">שם מוטב</span>
-              <input
-                type="text"
-                placeholder="שם"
-                value={b.name}
-                onChange={(e) =>
-                  onChange({
-                    beneficiaries: (p.beneficiaries ?? []).map((bb, ii) =>
-                      ii === i ? { ...bb, name: e.target.value } : bb,
-                    ),
-                  })
-                }
-              />
-            </label>
-            <label className="field">
-              <span className="field-label">אחוז</span>
-              <div className="input-wrap has-unit">
+          <div key={i} className="bens-row-wrap">
+            <div className="bens-row">
+              <label className="field">
+                <span className="field-label">שם מוטב</span>
                 <input
-                  type="number"
-                  min={0}
-                  max={100}
-                  value={b.pct}
+                  type="text"
+                  placeholder="שם"
+                  value={b.name}
                   onChange={(e) =>
                     onChange({
                       beneficiaries: (p.beneficiaries ?? []).map((bb, ii) =>
-                        ii === i ? { ...bb, pct: Number(e.target.value) } : bb,
+                        ii === i ? { ...bb, name: e.target.value } : bb,
                       ),
                     })
                   }
                 />
-                <span className="unit">%</span>
+              </label>
+              <label className="field">
+                <span className="field-label">אחוז</span>
+                <div className="input-wrap has-unit">
+                  <input
+                    type="number"
+                    min={0}
+                    max={100}
+                    value={b.pct}
+                    onChange={(e) =>
+                      onChange({
+                        beneficiaries: (p.beneficiaries ?? []).map((bb, ii) =>
+                          ii === i ? { ...bb, pct: Number(e.target.value) } : bb,
+                        ),
+                      })
+                    }
+                  />
+                  <span className="unit">%</span>
+                </div>
+              </label>
+              <div className="field bens-remove-col">
+                <span className="field-label">&nbsp;</span>
+                <button
+                  className="chip-remove bens-remove"
+                  title="הסר מוטב"
+                  onClick={() =>
+                    onChange({
+                      beneficiaries: (p.beneficiaries ?? []).filter((_, ii) => ii !== i),
+                    })
+                  }
+                >
+                  ✕
+                </button>
               </div>
-            </label>
-            <div className="field bens-remove-col">
-              <span className="field-label">&nbsp;</span>
-              <button
-                className="chip-remove bens-remove"
-                title="הסר מוטב"
-                onClick={() =>
-                  onChange({
-                    beneficiaries: (p.beneficiaries ?? []).filter((_, ii) => ii !== i),
-                  })
-                }
-              >
-                ✕
-              </button>
             </div>
+            {!(b.name.trim() && b.pct > 0) && (
+              <div className="bens-row-warning">
+                ⚠ {!b.name.trim() && b.pct <= 0
+                  ? 'שורה ריקה — לא תישמר'
+                  : !b.name.trim()
+                    ? 'חסר שם — השורה הזו לא תישמר'
+                    : 'חסר אחוז (מעל 0%) — השורה הזו לא תישמר'}
+              </div>
+            )}
           </div>
         ))}
         <BeneficiaryBar beneficiaries={p.beneficiaries ?? []} />
