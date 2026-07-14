@@ -1861,8 +1861,9 @@ function App() {
             const capitalRiver = result.products
               .filter((p) => !TYPE_META[p.type].isAnnuity)
               .map(toRiver);
+            if (annuityRiver.length === 0 && capitalRiver.length === 0) return null;
             return (
-              <>
+              <div className="river-pair">
                 {annuityRiver.length > 0 && (
                   <div className="card river-card">
                     <h3 className="card-title">
@@ -1896,7 +1897,7 @@ function App() {
                     />
                   </div>
                 )}
-              </>
+              </div>
             );
           })()}
 

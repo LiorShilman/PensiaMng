@@ -961,6 +961,19 @@
 
 /* ---------- Money river (streamgraph) ---------- */
 
+.river-pair {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.river-pair .river-card {
+  flex: 1 1 460px;
+  min-width: 0;
+  margin-bottom: 0;
+}
+
 .river-card {
   margin-bottom: 20px;
 }
