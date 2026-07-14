@@ -235,6 +235,15 @@ export const IconWaves = (
   </svg>
 );
 
+/** חלוקת זכויות בגירושין — שני חצים מתפצלים ממקור משותף */
+export const IconSplit = (
+  <svg {...base} width={15} height={15}>
+    <path d="M6 3v7a4 4 0 0 0 4 4h4" />
+    <path d="M6 21v-7" />
+    <path d="m18 8-4 4 4 4" />
+  </svg>
+);
+
 /** בחירת מסלול קצבה — מאזניים (השוואת מסלולים) */
 export const IconScales = (
   <svg {...base} width={15} height={15}>

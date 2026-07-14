@@ -532,6 +532,15 @@ export interface FundLoanFormInput {
   collateralFrozen: boolean;
 }
 
+/** קלט מחשבון חלוקת זכויות פנסיה בגירושין — נשמר עם התיק */
+export interface DivorceSplitFormInput {
+  marriageDate: string;
+  breakDate: string;
+  retirementDate: string;
+  awardedPct: number;
+  products: DivorceSplitProductInput[];
+}
+
 export interface PlanAssumptions {
   annualReturnPct: number;
   annualSalaryGrowthPct: number;
@@ -562,6 +571,8 @@ export interface PlanAssumptions {
   section190Result?: Section190Result;
   fundLoanInput?: FundLoanFormInput;
   fundLoanResult?: FundLoanResult;
+  divorceSplitInput?: DivorceSplitFormInput;
+  divorceSplitResult?: DivorcePensionSplitResult;
 }
 
 export type Gender = 'MALE' | 'FEMALE';
@@ -1237,6 +1248,47 @@ export interface FundLoanResult {
 
 export function calcFundLoan(input: FundLoanInput): Promise<FundLoanResult> {
   return post<FundLoanResult>('/calc/fund-loan', input);
+}
+
+// ---------- חלוקת זכויות פנסיה בגירושין ----------
+
+export interface DivorceSplitProductInput {
+  id: string;
+  name: string;
+  /** תאריך הצטרפות לקרן/תחילת צבירה (ISO yyyy-mm-dd) */
+  joinDate: string;
+  /** יתרה נכון למועד הקרע (₪) — מאישור רשמי, לא מחושבת */
+  balanceAtBreakDate: number;
+}
+
+export interface DivorcePensionSplitInput {
+  marriageDate: string;
+  breakDate: string;
+  retirementDate: string;
+  awardedPct: number;
+  products: DivorceSplitProductInput[];
+}
+
+export interface DivorceSplitProductResult {
+  id: string;
+  name: string;
+  maritalFractionPct: number;
+  spouseShare: number;
+  remainingForMember: number;
+}
+
+export interface DivorcePensionSplitResult {
+  products: DivorceSplitProductResult[];
+  totalBalanceAtBreakDate: number;
+  totalSpouseShare: number;
+  warnings: string[];
+  trace: CalcTrace;
+}
+
+export function calcDivorcePensionSplit(
+  input: DivorcePensionSplitInput,
+): Promise<DivorcePensionSplitResult> {
+  return post<DivorcePensionSplitResult>('/calc/divorce-pension-split', input);
 }
 
 // ---------- קיבוע זכויות (סעיף 9א / טופס 161ד) ----------

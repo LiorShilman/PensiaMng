@@ -42,6 +42,11 @@ import { calcSection190 } from './section190';
 import type { Section190Input, Section190Result } from './section190';
 import { calcFundLoan } from './fund-loan';
 import type { FundLoanInput, FundLoanResult } from './fund-loan';
+import { calcDivorcePensionSplit } from './divorce-pension-split';
+import type {
+  DivorcePensionSplitInput,
+  DivorcePensionSplitResult,
+} from './divorce-pension-split';
 import type {
   AnnuityInput,
   AnnuityResult,
@@ -243,6 +248,18 @@ export class CalcEngineController {
   fundLoan(@Body() body: FundLoanInput): FundLoanResult {
     try {
       return calcFundLoan(body);
+    } catch (e) {
+      throw new BadRequestException((e as Error).message);
+    }
+  }
+
+  /** חלוקת זכויות פנסיה בגירושין — נוסחת יחס הזמנים על היתרה למועד הקרע */
+  @Post('divorce-pension-split')
+  divorcePensionSplit(
+    @Body() body: DivorcePensionSplitInput,
+  ): DivorcePensionSplitResult {
+    try {
+      return calcDivorcePensionSplit(body);
     } catch (e) {
       throw new BadRequestException((e as Error).message);
     }

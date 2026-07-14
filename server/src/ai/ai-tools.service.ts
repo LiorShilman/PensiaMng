@@ -25,6 +25,8 @@ import { calcSection190 } from '../calc-engine/section190';
 import type { Section190Input } from '../calc-engine/section190';
 import { calcFundLoan } from '../calc-engine/fund-loan';
 import type { FundLoanInput } from '../calc-engine/fund-loan';
+import { calcDivorcePensionSplit } from '../calc-engine/divorce-pension-split';
+import type { DivorcePensionSplitInput } from '../calc-engine/divorce-pension-split';
 import type { ProductType } from '../calc-engine/types';
 
 /**
@@ -369,6 +371,48 @@ export class AiToolsService {
           additionalProperties: false,
         },
       },
+      {
+        name: 'calc_divorce_pension_split',
+        description:
+          'חלוקת זכויות פנסיה בגירושין (חוק חלוקת חיסכון פנסיוני בין בני זוג שנפרדו, תשע"ד-2014) — נוסחת "יחס הזמנים": החלק היחסי של תקופת הנישואין (מהמאוחר בין הנישואין/ההצטרפות לקרן ועד מועד הקרע) מתוך כלל תקופת הצבירה (מההצטרפות ועד הפרישה), מוכפל באחוז שהוסכם (עד 50% לרוב), ומיושם על היתרה נכון למועד הקרע — לא היתרה הנוכחית. מוגבל לפנסיה צוברת (יתרה כספית); פנסיה תקציבית אינה נתמכת. כלי המחשה בלבד — לא ייעוץ משפטי.',
+        schema: {
+          type: 'object',
+          properties: {
+            marriageDate: { type: 'string', description: 'תאריך נישואין, ISO yyyy-mm-dd' },
+            breakDate: {
+              type: 'string',
+              description: 'מועד הקרע — סיום השיתוף הכלכלי, ISO yyyy-mm-dd',
+            },
+            retirementDate: {
+              type: 'string',
+              description: 'תאריך פרישה בפועל/מתוכנן, ISO yyyy-mm-dd',
+            },
+            awardedPct: {
+              type: 'number',
+              description: 'אחוז מהחלק היחסי שהוסכם/נפסק לבן/בת הזוג (ברירת מחדל 50)',
+            },
+            products: {
+              type: 'array',
+              description: 'מוצרי פנסיה צוברת שנכנסים לחלוקה',
+              items: {
+                type: 'object',
+                properties: {
+                  id: { type: 'string' },
+                  name: { type: 'string' },
+                  joinDate: { type: 'string', description: 'תאריך הצטרפות לקרן, ISO yyyy-mm-dd' },
+                  balanceAtBreakDate: {
+                    type: 'number',
+                    description: 'יתרה נכון למועד הקרע (₪) — מאישור רשמי, לא מחושבת',
+                  },
+                },
+                required: ['id', 'name', 'joinDate', 'balanceAtBreakDate'],
+              },
+            },
+          },
+          required: ['marriageDate', 'breakDate', 'retirementDate', 'awardedPct', 'products'],
+          additionalProperties: false,
+        },
+      },
     ];
   }
 
@@ -405,6 +449,8 @@ export class AiToolsService {
         return calcSection190(a as unknown as Section190Input);
       case 'calc_fund_loan':
         return calcFundLoan(a as unknown as FundLoanInput);
+      case 'calc_divorce_pension_split':
+        return calcDivorcePensionSplit(a as unknown as DivorcePensionSplitInput);
       default:
         throw new Error(`כלי לא מוכר: ${name}`);
     }

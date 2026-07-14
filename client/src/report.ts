@@ -2,6 +2,7 @@ import type {
   AnnuityTrackResult,
   ClientProfile,
   DecumulationResult,
+  DivorcePensionSplitResult,
   FeeComparisonResult,
   FundLoanResult,
   FundSwitchResult,
@@ -40,6 +41,7 @@ interface ReportData {
   fundSwitch: FundSwitchResult | null;
   section190: Section190Result | null;
   fundLoan: FundLoanResult | null;
+  divorceSplit: DivorcePensionSplitResult | null;
   feeComparison: FeeComparisonResult | null;
   insights: InsightsResult | null;
   aiText: string | null;
@@ -371,6 +373,34 @@ export function buildReportHtml(d: ReportData): string {
     }`
     : '';
 
+  const divorceSplitBlock =
+    d.divorceSplit && d.divorceSplit.products.length > 0
+      ? `
+    <h2>חלוקת זכויות פנסיה בגירושין</h2>
+    <table>
+      <thead><tr><th>מוצר</th><th>יחס זמנים</th><th>חלק בן/בת הזוג</th><th>נשאר לעמית/ה</th></tr></thead>
+      <tbody>${d.divorceSplit.products
+        .map(
+          (p) => `<tr>
+        <td class="strong">${esc(p.name)}</td>
+        <td class="num">${p.maritalFractionPct}%</td>
+        <td class="num">${nis(p.spouseShare)}</td>
+        <td class="num">${nis(p.remainingForMember)}</td>
+      </tr>`,
+        )
+        .join('')}</tbody>
+    </table>
+    <div class="cards" style="grid-template-columns: repeat(2, 1fr); margin-top:10px">
+      <div class="stat"><div class="v">${nis(d.divorceSplit.totalBalanceAtBreakDate)}</div><div class="l">סך היתרות למועד הקרע</div></div>
+      <div class="stat hero"><div class="v">${nis(d.divorceSplit.totalSpouseShare)}</div><div class="l">סה"כ חלק בן/בת הזוג</div></div>
+    </div>
+    ${
+      d.divorceSplit.warnings.length
+        ? `<div class="warnings"><ul>${d.divorceSplit.warnings.map((w) => `<li>${esc(w)}</li>`).join('')}</ul></div>`
+        : ''
+    }`
+      : '';
+
   const feeComparisonBlock =
     d.feeComparison && d.feeComparison.products.length > 0
       ? `
@@ -538,6 +568,7 @@ export function buildReportHtml(d: ReportData): string {
   ${fundSwitchBlock}
   ${section190Block}
   ${fundLoanBlock}
+  ${divorceSplitBlock}
   ${taxBenefitsBlock}
   ${feeComparisonBlock}
   ${aiBlock}

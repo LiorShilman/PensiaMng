@@ -53,6 +53,8 @@ import {
   type Section190FormInput,
   type FundLoanResult,
   type FundLoanFormInput,
+  type DivorcePensionSplitResult,
+  type DivorceSplitFormInput,
 } from './api';
 import { openReport, buildReportHtml } from './report';
 import { exportPortfolioExcel } from './exportExcel';
@@ -91,6 +93,7 @@ import { AnnuityTrack } from './AnnuityTrack';
 import { FundSwitch } from './FundSwitch';
 import { Section190 } from './Section190';
 import { FundLoan } from './FundLoan';
+import { DivorcePensionSplit } from './DivorcePensionSplit';
 import { ReportImport } from './ReportImport';
 
 // ---------- מטא-דאטה לסוגי מוצרים ----------
@@ -476,6 +479,8 @@ function App() {
   const [section190, setSection190] = useState<Section190Result | null>(null);
   /** תוצאת מחשבון הלוואה מהקרן האחרונה — לניתוח ה-AI */
   const [fundLoan, setFundLoan] = useState<FundLoanResult | null>(null);
+  /** תוצאת מחשבון חלוקת זכויות פנסיה בגירושין האחרונה — לניתוח ה-AI */
+  const [divorceSplit, setDivorceSplit] = useState<DivorcePensionSplitResult | null>(null);
   /** קלטי הסימולטורים — נטענים ונשמרים עם התיק */
   const [fixationForm, setFixationForm] = useState<FixationFormInput | null>(null);
   const [taxForm, setTaxForm] = useState<TaxFormInput | null>(null);
@@ -486,6 +491,7 @@ function App() {
   const [fundSwitchForm, setFundSwitchForm] = useState<FundSwitchFormInput | null>(null);
   const [section190Form, setSection190Form] = useState<Section190FormInput | null>(null);
   const [fundLoanForm, setFundLoanForm] = useState<FundLoanFormInput | null>(null);
+  const [divorceSplitForm, setDivorceSplitForm] = useState<DivorceSplitFormInput | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -536,6 +542,8 @@ function App() {
           setSection190(saved.assumptions.section190Result ?? null);
           setFundLoanForm(saved.assumptions.fundLoanInput ?? null);
           setFundLoan(saved.assumptions.fundLoanResult ?? null);
+          setDivorceSplitForm(saved.assumptions.divorceSplitInput ?? null);
+          setDivorceSplit(saved.assumptions.divorceSplitResult ?? null);
         }
         if (saved.profile) setProfile(saved.profile);
         // תמיד משקפים את מה ששמור — גם תיק ריק נשאר ריק
@@ -609,6 +617,8 @@ function App() {
           section190Result: section190 ?? undefined,
           fundLoanInput: fundLoanForm ?? undefined,
           fundLoanResult: fundLoan ?? undefined,
+          divorceSplitInput: divorceSplitForm ?? undefined,
+          divorceSplitResult: divorceSplit ?? undefined,
         },
         profile,
         products,
@@ -646,6 +656,7 @@ function App() {
         fundSwitch,
         section190,
         fundLoan,
+        divorceSplit,
         feeComparison: feeComp,
         insights,
         aiText,
@@ -1126,6 +1137,19 @@ function App() {
             },
             פער_עלות_כוללת: fundLoan.totalCostGap,
             אזהרות: fundLoan.warnings,
+          }
+        : null,
+      חלוקת_זכויות_בגירושין: divorceSplit
+        ? {
+            סך_יתרות_למועד_הקרע: divorceSplit.totalBalanceAtBreakDate,
+            סך_חלק_בן_בת_הזוג: divorceSplit.totalSpouseShare,
+            פירוט: divorceSplit.products.map((p) => ({
+              מוצר: p.name,
+              יחס_זמנים_אחוז: p.maritalFractionPct,
+              חלק_בן_בת_הזוג: p.spouseShare,
+              נשאר_לעמית: p.remainingForMember,
+            })),
+            אזהרות: divorceSplit.warnings,
           }
         : null,
     };
@@ -1760,6 +1784,7 @@ function App() {
                 fundSwitch,
                 section190,
                 fundLoan,
+                divorceSplit,
                 feeComparison: feeComp,
                 insights,
                 aiText,
@@ -2477,6 +2502,16 @@ function App() {
           initial={fundLoanForm ?? undefined}
           onInput={setFundLoanForm}
           initialResult={fundLoan ?? undefined}
+        />
+      )}
+
+      {result && (
+        <DivorcePensionSplit
+          onUnauthorized={logout}
+          onResult={setDivorceSplit}
+          initial={divorceSplitForm ?? undefined}
+          onInput={setDivorceSplitForm}
+          initialResult={divorceSplit ?? undefined}
         />
       )}
 
