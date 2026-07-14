@@ -13,7 +13,12 @@ import { ReportModule } from './report/report.module';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
+    ConfigModule.forRoot({
+      isGlobal: true,
+      // בפרודקשן (PM2, NODE_ENV=production) קורא server/.env.production —
+      // כדי שקובץ .env הרגיל של הפיתוח המקומי לעולם לא יידרס בפריסה
+      envFilePath: process.env.NODE_ENV === 'production' ? '.env.production' : '.env',
+    }),
     PrismaModule,
     AuditModule,
     AuthModule,
