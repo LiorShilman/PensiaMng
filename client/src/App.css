@@ -959,6 +959,38 @@
   direction: ltr;
 }
 
+/* ---------- Money river (streamgraph) ---------- */
+
+.river-card {
+  margin-bottom: 20px;
+}
+
+.river-wrap {
+  position: relative;
+}
+
+.river-wrap .chart-legend {
+  flex-wrap: wrap;
+  row-gap: 6px;
+}
+
+.money-river {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.river-label {
+  fill: var(--muted);
+  font-size: 11px;
+  font-family: inherit;
+}
+
+.river-note {
+  margin: 8px 0 0;
+  font-size: 0.78rem;
+}
+
 /* ---------- Breakdown table ---------- */
 
 .breakdown {

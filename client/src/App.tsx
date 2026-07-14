@@ -71,6 +71,7 @@ import {
   IconSheet,
   IconSparkles,
   IconUsers,
+  IconWaves,
 } from './icons';
 import { SecurityPanel } from './SecurityPanel';
 import { FamilyView } from './FamilyView';
@@ -78,6 +79,7 @@ import { Tour } from './Tour';
 import type { TourStep } from './Tour';
 import { FanChart } from './FanChart';
 import { MoneyFlow } from './MoneyFlow';
+import { MoneyRiver, type RiverProduct } from './MoneyRiver';
 import { RightsFixation } from './RightsFixation';
 import { TaxBenefits } from './TaxBenefits';
 import { SimulatedPension } from './SimulatedPension';
@@ -1842,6 +1844,28 @@ function App() {
               pessimistic={result.totals.pessimistic.series}
               central={result.totals.central.series}
               optimistic={result.totals.optimistic.series}
+            />
+          </div>
+
+          <div className="card river-card">
+            <h3 className="card-title">
+              {IconWaves} נהר הכסף — הצבירה לפי מוצר לאורך הדרך
+              <span
+                className="tip"
+                data-tip="כל מוצר הוא זרם צבעוני שרוחבו בכל נקודת זמן משקף את הצבירה שלו; הזרמים נערמים סביב מרכז משותף במקום גרף עמודות רגיל, כדי לראות בבת אחת גם את הגודל היחסי של כל מוצר וגם איך כולם גדלים יחד לאורך הדרך."
+                tabIndex={0}
+              >
+                ⓘ
+              </span>
+            </h3>
+            <MoneyRiver
+              products={result.products.map(
+                (p): RiverProduct => ({
+                  id: p.id,
+                  name: p.name,
+                  series: p.projection.central.series,
+                }),
+              )}
             />
           </div>
 

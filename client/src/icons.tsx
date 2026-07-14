@@ -226,6 +226,15 @@ export const IconHandCoin = (
   </svg>
 );
 
+/** נהר הכסף — קווי גל (streamgraph) */
+export const IconWaves = (
+  <svg {...base} width={15} height={15}>
+    <path d="M2 6c1.5-2 3.5-2 5 0s3.5 2 5 0 3.5-2 5-2 3.5 0 5 2" />
+    <path d="M2 12c1.5-2 3.5-2 5 0s3.5 2 5 0 3.5-2 5-2 3.5 0 5 2" />
+    <path d="M2 18c1.5-2 3.5-2 5 0s3.5 2 5 0 3.5-2 5-2 3.5 0 5 2" />
+  </svg>
+);
+
 /** בחירת מסלול קצבה — מאזניים (השוואת מסלולים) */
 export const IconScales = (
   <svg {...base} width={15} height={15}>
