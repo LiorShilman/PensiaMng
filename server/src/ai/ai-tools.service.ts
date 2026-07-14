@@ -17,6 +17,8 @@ import { calcDecumulation } from '../calc-engine/decumulation';
 import type { DecumulationInput } from '../calc-engine/decumulation';
 import { RightsFixationService } from '../calc-engine/rights-fixation.service';
 import type { RightsFixationInput } from '../calc-engine/rights-fixation';
+import { calcAnnuityTrackComparison } from '../calc-engine/annuity-track';
+import type { AnnuityTrackInput } from '../calc-engine/annuity-track';
 import type { ProductType } from '../calc-engine/types';
 
 /**
@@ -211,6 +213,54 @@ export class AiToolsService {
           additionalProperties: false,
         },
       },
+      {
+        name: 'calc_annuity_track',
+        description:
+          'השוואת מסלולי קצבה לקראת פרישה: לכל מסלול יש מקדם המרה, % קצבת שאיר וחודשי הבטחת תשלומים משלו (מהטבלה שהקרן שולחת). מחשב קצבה חודשית לכל מסלול ומוצא "נקודת איזון" — מגיל כמה מסלול נדיב יותר לשאירים משתלם בסך הכול לעומת המסלול הראשון ברשימה (הבסיס). אינו כולל מסלול "קצבה מוכרת" (תיקון 190). השתמש ב-calc_projection כדי להעריך את הצבירה הצפויה בפרישה לפני הקריאה.',
+        schema: {
+          type: 'object',
+          properties: {
+            balanceAtRetirement: { type: 'number', description: 'צבירה צפויה בפרישה (₪)' },
+            options: {
+              type: 'array',
+              description: 'לפחות מסלול אחד; הראשון ברשימה משמש כבסיס להשוואת נקודת האיזון',
+              items: {
+                type: 'object',
+                properties: {
+                  id: { type: 'string' },
+                  label: { type: 'string' },
+                  conversionFactor: { type: 'number' },
+                  survivorPct: { type: 'number', description: '% קצבת שאיר, 0–100' },
+                  guaranteedMonths: {
+                    type: 'number',
+                    description: 'חודשי הבטחת תשלומים (0/60/120/180/240)',
+                  },
+                },
+                required: ['id', 'label', 'conversionFactor', 'survivorPct', 'guaranteedMonths'],
+              },
+            },
+            hasSpouse: { type: 'boolean' },
+            retirementAge: { type: 'number' },
+            retireeLifeExpectancyAge: {
+              type: 'number',
+              description: 'גיל תוחלת חיים משוער של הגמלאי (הנחה, למשל 85)',
+            },
+            spouseAgeAtRetirement: { type: 'number', description: 'נדרש כש-hasSpouse=true' },
+            spouseLifeExpectancyAge: {
+              type: 'number',
+              description: 'הנחה, למשל 90 — נדרש כש-hasSpouse=true',
+            },
+          },
+          required: [
+            'balanceAtRetirement',
+            'options',
+            'hasSpouse',
+            'retirementAge',
+            'retireeLifeExpectancyAge',
+          ],
+          additionalProperties: false,
+        },
+      },
     ];
   }
 
@@ -239,6 +289,8 @@ export class AiToolsService {
         return calcDecumulation(a as unknown as DecumulationInput);
       case 'calc_tax_benefits':
         return calcTaxBenefits(a as unknown as TaxBenefitsInput);
+      case 'calc_annuity_track':
+        return calcAnnuityTrackComparison(a as unknown as AnnuityTrackInput);
       default:
         throw new Error(`כלי לא מוכר: ${name}`);
     }
@@ -314,6 +366,9 @@ export class AiToolsService {
         לא_פעילה: p.frozen ?? false,
         שכר_מבוטח: p.insuredMonthlySalary ?? null,
         כיסוי_נכות_אחוז: p.disabilityPct ?? null,
+        כיסוי_שאירים_אחוז: p.survivorsPct ?? null,
+        ויתור_על_כיסוי_שאירים: p.survivorsWaiver ?? false,
+        תאריך_חתימת_הוויתור: p.survivorsWaiverDate ?? null,
         מטריה_ביטוחית: p.umbrella ?? false,
         מסלולים: p.tracks ?? [],
         מוטבים_מוגדרים: (p.beneficiaries ?? []).length > 0,
@@ -407,6 +462,7 @@ export class AiToolsService {
         survivorsPct: p.survivorsPct,
         disabilityPct: p.disabilityPct,
         survivorsWaiver: p.survivorsWaiver,
+        survivorsWaiverDate: p.survivorsWaiverDate,
         deathBenefitAmount: p.deathBenefitAmount,
         beneficiaries: p.beneficiaries,
         umbrella: p.umbrella,
