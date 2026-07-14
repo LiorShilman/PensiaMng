@@ -204,6 +204,28 @@ export const IconCalendar = (
   </svg>
 );
 
+/** כדאי לעבור קרן — חצים במעגל (מעבר/החלפה) */
+export const IconRepeat = (
+  <svg {...base} width={15} height={15}>
+    <path d="m17 2 4 4-4 4" />
+    <path d="M3 11v-1a4 4 0 0 1 4-4h14" />
+    <path d="m7 22-4-4 4-4" />
+    <path d="M21 13v1a4 4 0 0 1-4 4H3" />
+  </svg>
+);
+
+/** הלוואה מהקרן — יד מחזיקה מטבע */
+export const IconHandCoin = (
+  <svg {...base} width={15} height={15}>
+    <circle cx="8" cy="8" r="6" />
+    <path d="M18.09 10.37A6 6 0 1 1 10.34 18" />
+    <path d="M7 6h1v4" />
+    <path d="m16.71 13.88.7.71-2.82 2.82" />
+    <path d="M2 20h2" />
+    <path d="M18 20h4" />
+  </svg>
+);
+
 /** בחירת מסלול קצבה — מאזניים (השוואת מסלולים) */
 export const IconScales = (
   <svg {...base} width={15} height={15}>

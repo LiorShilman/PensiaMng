@@ -47,6 +47,12 @@ import {
   type DecumFormInput,
   type AnnuityTrackResult,
   type AnnuityTrackFormInput,
+  type FundSwitchResult,
+  type FundSwitchFormInput,
+  type Section190Result,
+  type Section190FormInput,
+  type FundLoanResult,
+  type FundLoanFormInput,
 } from './api';
 import { openReport, buildReportHtml } from './report';
 import { exportPortfolioExcel } from './exportExcel';
@@ -80,6 +86,9 @@ import { Decumulation } from './Decumulation';
 import { LifePath } from './LifePath';
 import { DateField } from './DateField';
 import { AnnuityTrack } from './AnnuityTrack';
+import { FundSwitch } from './FundSwitch';
+import { Section190 } from './Section190';
+import { FundLoan } from './FundLoan';
 import { ReportImport } from './ReportImport';
 
 // ---------- מטא-דאטה לסוגי מוצרים ----------
@@ -459,6 +468,12 @@ function App() {
   const [decum, setDecum] = useState<DecumulationResult | null>(null);
   /** תוצאת השוואת מסלולי קצבה האחרונה — לניתוח ה-AI */
   const [annuityTrack, setAnnuityTrack] = useState<AnnuityTrackResult | null>(null);
+  /** תוצאת "כדאי לעבור קרן?" האחרונה — לניתוח ה-AI */
+  const [fundSwitch, setFundSwitch] = useState<FundSwitchResult | null>(null);
+  /** תוצאת מחשבון תיקון 190 האחרונה — לניתוח ה-AI */
+  const [section190, setSection190] = useState<Section190Result | null>(null);
+  /** תוצאת מחשבון הלוואה מהקרן האחרונה — לניתוח ה-AI */
+  const [fundLoan, setFundLoan] = useState<FundLoanResult | null>(null);
   /** קלטי הסימולטורים — נטענים ונשמרים עם התיק */
   const [fixationForm, setFixationForm] = useState<FixationFormInput | null>(null);
   const [taxForm, setTaxForm] = useState<TaxFormInput | null>(null);
@@ -466,6 +481,9 @@ function App() {
   const [jobExitForm, setJobExitForm] = useState<JobExitFormInput | null>(null);
   const [decumForm, setDecumForm] = useState<DecumFormInput | null>(null);
   const [annuityTrackForm, setAnnuityTrackForm] = useState<AnnuityTrackFormInput | null>(null);
+  const [fundSwitchForm, setFundSwitchForm] = useState<FundSwitchFormInput | null>(null);
+  const [section190Form, setSection190Form] = useState<Section190FormInput | null>(null);
+  const [fundLoanForm, setFundLoanForm] = useState<FundLoanFormInput | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -510,6 +528,12 @@ function App() {
           setDecum(saved.assumptions.decumResult ?? null);
           setAnnuityTrackForm(saved.assumptions.annuityTrackInput ?? null);
           setAnnuityTrack(saved.assumptions.annuityTrackResult ?? null);
+          setFundSwitchForm(saved.assumptions.fundSwitchInput ?? null);
+          setFundSwitch(saved.assumptions.fundSwitchResult ?? null);
+          setSection190Form(saved.assumptions.section190Input ?? null);
+          setSection190(saved.assumptions.section190Result ?? null);
+          setFundLoanForm(saved.assumptions.fundLoanInput ?? null);
+          setFundLoan(saved.assumptions.fundLoanResult ?? null);
         }
         if (saved.profile) setProfile(saved.profile);
         // תמיד משקפים את מה ששמור — גם תיק ריק נשאר ריק
@@ -577,6 +601,12 @@ function App() {
           decumResult: decum ?? undefined,
           annuityTrackInput: annuityTrackForm ?? undefined,
           annuityTrackResult: annuityTrack ?? undefined,
+          fundSwitchInput: fundSwitchForm ?? undefined,
+          fundSwitchResult: fundSwitch ?? undefined,
+          section190Input: section190Form ?? undefined,
+          section190Result: section190 ?? undefined,
+          fundLoanInput: fundLoanForm ?? undefined,
+          fundLoanResult: fundLoan ?? undefined,
         },
         profile,
         products,
@@ -611,6 +641,9 @@ function App() {
         jobExit,
         decum,
         annuityTrack,
+        fundSwitch,
+        section190,
+        fundLoan,
         feeComparison: feeComp,
         insights,
         aiText,
@@ -1049,6 +1082,50 @@ function App() {
             אזהרות: annuityTrack.warnings,
           }
         : null,
+      כדאיות_מעבר_קרן: fundSwitch
+        ? {
+            יתרה_נוכחית_בפרישה: fundSwitch.currentBalanceAtRetirement,
+            יתרה_מועמדת_בפרישה: fundSwitch.candidateBalanceAtRetirement,
+            פער_יתרה: fundSwitch.balanceGap,
+            סך_דמי_ניהול_נוכחי: fundSwitch.currentTotalFeesPaid,
+            סך_דמי_ניהול_מועמד: fundSwitch.candidateTotalFeesPaid,
+            קצבה_נוכחית: fundSwitch.currentMonthlyAnnuity,
+            קצבה_מועמדת: fundSwitch.candidateMonthlyAnnuity,
+            פער_קצבה: fundSwitch.annuityGap,
+            אזהרות: fundSwitch.warnings,
+          }
+        : null,
+      תיקון_190: section190
+        ? {
+            משיכה_הונית: {
+              רווח_חייב: section190.lumpSum.taxableGain,
+              מס: section190.lumpSum.tax,
+              נטו_ביד: section190.lumpSum.netAmount,
+              ערך_עתידי_בתוחלת_חיים: section190.lumpSum.projectedValueAtLifeExpectancy,
+            },
+            קצבה_מוכרת: {
+              קצבה_חודשית_פטורה: section190.recognizedPension.monthlyAmount,
+              סך_הכנסה_עד_תוחלת_חיים: section190.recognizedPension.totalIncomeToLifeExpectancy,
+            },
+            אזהרות: section190.warnings,
+          }
+        : null,
+      הלוואה_מהקרן: fundLoan
+        ? {
+            הלוואת_הקרן: {
+              תשלום_חודשי: fundLoan.fundLoan.monthlyPayment,
+              סך_ריבית: fundLoan.fundLoan.totalInterest,
+              עלות_הזדמנות: fundLoan.fundLoan.opportunityCost,
+              עלות_כוללת: fundLoan.fundLoan.totalCost,
+            },
+            הלוואה_חלופית: {
+              תשלום_חודשי: fundLoan.alternativeLoan.monthlyPayment,
+              סך_ריבית: fundLoan.alternativeLoan.totalInterest,
+            },
+            פער_עלות_כוללת: fundLoan.totalCostGap,
+            אזהרות: fundLoan.warnings,
+          }
+        : null,
     };
   }
 
@@ -1233,7 +1310,7 @@ function App() {
     },
     {
       title: 'זהו!',
-      body: 'זה רק חלק מהיכולות — יש גם פרישה מדומה, עזיבת עבודה, משיכה הדרגתית בפרישה, ייצוא לאקסל ועוד. אפשר לפתוח את הסיור הזה שוב בכל רגע מכפתור "סיור" בכותרת.',
+      body: 'זה רק חלק מהיכולות — יש גם בחירת מסלול קצבה, כדאיות מעבר קרן, תיקון 190, הלוואה מהקרן, פרישה מדומה, עזיבת עבודה, משיכה הדרגתית בפרישה, ייצוא לאקסל ועוד. אפשר לפתוח את הסיור הזה שוב בכל רגע מכפתור "סיור" בכותרת.',
       find: q('.footer'),
     },
   ];
@@ -1678,6 +1755,9 @@ function App() {
                 jobExit,
                 decum,
                 annuityTrack,
+                fundSwitch,
+                section190,
+                fundLoan,
                 feeComparison: feeComp,
                 insights,
                 aiText,
@@ -2283,6 +2363,66 @@ function App() {
             />
           );
         })()}
+
+      {result &&
+        retirement &&
+        (() => {
+          const annuityProducts = products.filter((p) => TYPE_META[p.type].isAnnuity && !p.frozen);
+          const largest = annuityProducts.reduce(
+            (best, p) => (p.currentBalance > (best?.currentBalance ?? -1) ? p : best),
+            null as PortfolioProductInput | null,
+          );
+          const totalBalance = annuityProducts.reduce((s, p) => s + p.currentBalance, 0);
+          const totalDeposit = annuityProducts.reduce((s, p) => s + p.monthlyDeposit, 0);
+          return (
+            <FundSwitch
+              defaultBalance={totalBalance}
+              defaultMonthlyDeposit={totalDeposit}
+              defaultReturnPct={assumptions.annualReturnPct}
+              defaultSalaryGrowthPct={assumptions.annualSalaryGrowthPct}
+              months={Math.max(1, retirement.monthsToRetirement)}
+              currentFeeFromDepositPct={largest?.feeFromDepositPct ?? 1}
+              currentFeeFromBalancePct={largest?.feeFromBalancePct ?? 0.5}
+              currentConversionFactor={largest?.conversionFactor ?? 200}
+              onUnauthorized={logout}
+              onResult={setFundSwitch}
+              initial={fundSwitchForm ?? undefined}
+              onInput={setFundSwitchForm}
+              initialResult={fundSwitch ?? undefined}
+            />
+          );
+        })()}
+
+      {result &&
+        (() => {
+          const age = Math.floor(
+            (Date.now() - new Date(profile.birthDate).getTime()) / (365.25 * 24 * 3600 * 1000),
+          );
+          const capitalBalance = result.totals.central.totalLumpSum;
+          return (
+            <Section190
+              defaultBalance={capitalBalance}
+              defaultAge={age}
+              defaultReturnPct={assumptions.annualReturnPct}
+              onUnauthorized={logout}
+              onResult={setSection190}
+              initial={section190Form ?? undefined}
+              onInput={setSection190Form}
+              initialResult={section190 ?? undefined}
+            />
+          );
+        })()}
+
+      {result && (
+        <FundLoan
+          defaultReturnPct={assumptions.annualReturnPct}
+          onUnauthorized={logout}
+          onResult={setFundLoan}
+          initial={fundLoanForm ?? undefined}
+          onInput={setFundLoanForm}
+          initialResult={fundLoan ?? undefined}
+        />
+      )}
 
       {result && (
         <section className="results ai-section">

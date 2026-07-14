@@ -3,6 +3,8 @@ import type {
   ClientProfile,
   DecumulationResult,
   FeeComparisonResult,
+  FundLoanResult,
+  FundSwitchResult,
   HealthScoreResult,
   InsightsResult,
   JobExitResult,
@@ -11,6 +13,7 @@ import type {
   RetirementResult,
   RightsFixationResult,
   ScenariosResult,
+  Section190Result,
   SimulatedPensionResult,
   TaxBenefitsResult,
 } from './api';
@@ -34,6 +37,9 @@ interface ReportData {
   jobExit: JobExitResult | null;
   decum: DecumulationResult | null;
   annuityTrack: AnnuityTrackResult | null;
+  fundSwitch: FundSwitchResult | null;
+  section190: Section190Result | null;
+  fundLoan: FundLoanResult | null;
   feeComparison: FeeComparisonResult | null;
   insights: InsightsResult | null;
   aiText: string | null;
@@ -287,6 +293,84 @@ export function buildReportHtml(d: ReportData): string {
     <p class="disclaimer">ההשוואה מבוססת על תוחלות חיים משוערות שהוזנו (הנחה, לא תחזית) ואינה כוללת את מסלול "קצבה מוכרת" (תיקון 190).</p>`
       : '';
 
+  const fundSwitchBlock = d.fundSwitch
+    ? `
+    <h2>כדאיות מעבר קרן</h2>
+    <div class="two-col">
+      <div class="box">
+        <h4>המסלול הנוכחי</h4>
+        <div class="kv"><span>צבירה בפרישה</span><b>${nis(d.fundSwitch.currentBalanceAtRetirement)}</b></div>
+        <div class="kv"><span>סך דמי ניהול</span><b>${nis(d.fundSwitch.currentTotalFeesPaid)}</b></div>
+        ${d.fundSwitch.currentMonthlyAnnuity !== null ? `<div class="kv"><span>קצבה חודשית</span><b>${nis(d.fundSwitch.currentMonthlyAnnuity)}</b></div>` : ''}
+      </div>
+      <div class="box">
+        <h4>הקרן המועמדת</h4>
+        <div class="kv"><span>צבירה בפרישה</span><b>${nis(d.fundSwitch.candidateBalanceAtRetirement)}</b></div>
+        <div class="kv"><span>סך דמי ניהול</span><b>${nis(d.fundSwitch.candidateTotalFeesPaid)}</b></div>
+        ${d.fundSwitch.candidateMonthlyAnnuity !== null ? `<div class="kv"><span>קצבה חודשית</span><b>${nis(d.fundSwitch.candidateMonthlyAnnuity)}</b></div>` : ''}
+      </div>
+    </div>
+    <div class="cards" style="grid-template-columns: repeat(2, 1fr); margin-top:10px">
+      <div class="stat ${d.fundSwitch.balanceGap >= 0 ? 'hero' : ''}"><div class="v">${d.fundSwitch.balanceGap >= 0 ? '+' : ''}${nis(d.fundSwitch.balanceGap)}</div><div class="l">פער צבירה בפרישה</div></div>
+      ${d.fundSwitch.annuityGap !== null ? `<div class="stat"><div class="v">${d.fundSwitch.annuityGap >= 0 ? '+' : ''}${nis(d.fundSwitch.annuityGap)}</div><div class="l">פער קצבה חודשית</div></div>` : ''}
+    </div>
+    ${
+      d.fundSwitch.warnings.length
+        ? `<div class="warnings"><ul>${d.fundSwitch.warnings.map((w) => `<li>${esc(w)}</li>`).join('')}</ul></div>`
+        : ''
+    }`
+    : '';
+
+  const section190Block = d.section190
+    ? `
+    <h2>תיקון 190 — משיכה הונית מול קצבה מוכרת</h2>
+    <div class="two-col">
+      <div class="box">
+        <h4>משיכה הונית</h4>
+        <div class="kv"><span>רווח חייב במס</span><b>${nis(d.section190.lumpSum.taxableGain)}</b></div>
+        <div class="kv bad"><span>מס (15%)</span><b>−${nis(d.section190.lumpSum.tax)}</b></div>
+        <div class="kv good"><span>נטו ביד</span><b>${nis(d.section190.lumpSum.netAmount)}</b></div>
+      </div>
+      <div class="box">
+        <h4>קצבה מוכרת (פטורה ממס)</h4>
+        <div class="kv good"><span>קצבה חודשית</span><b>${nis(d.section190.recognizedPension.monthlyAmount)}</b></div>
+        <div class="kv"><span>סך הכנסה עד תוחלת חיים</span><b>${nis(d.section190.recognizedPension.totalIncomeToLifeExpectancy)}</b></div>
+      </div>
+    </div>
+    ${
+      d.section190.warnings.length
+        ? `<div class="warnings"><ul>${d.section190.warnings.map((w) => `<li>${esc(w)}</li>`).join('')}</ul></div>`
+        : ''
+    }`
+    : '';
+
+  const fundLoanBlock = d.fundLoan
+    ? `
+    <h2>הלוואה מקרן הפנסיה מול הלוואה חלופית</h2>
+    <div class="two-col">
+      <div class="box">
+        <h4>הלוואת הקרן</h4>
+        <div class="kv"><span>תשלום חודשי</span><b>${nis(d.fundLoan.fundLoan.monthlyPayment)}</b></div>
+        <div class="kv"><span>סך ריבית</span><b>${nis(d.fundLoan.fundLoan.totalInterest)}</b></div>
+        ${d.fundLoan.fundLoan.opportunityCost > 0 ? `<div class="kv bad"><span>עלות הזדמנות</span><b>${nis(d.fundLoan.fundLoan.opportunityCost)}</b></div>` : ''}
+        <div class="kv bad"><span>עלות כוללת</span><b>${nis(d.fundLoan.fundLoan.totalCost)}</b></div>
+      </div>
+      <div class="box">
+        <h4>הלוואה חלופית</h4>
+        <div class="kv"><span>תשלום חודשי</span><b>${nis(d.fundLoan.alternativeLoan.monthlyPayment)}</b></div>
+        <div class="kv"><span>סך ריבית</span><b>${nis(d.fundLoan.alternativeLoan.totalInterest)}</b></div>
+      </div>
+    </div>
+    <div class="cards" style="grid-template-columns: repeat(1, 1fr); margin-top:10px">
+      <div class="stat hero"><div class="v">${d.fundLoan.totalCostGap >= 0 ? '+' : ''}${nis(d.fundLoan.totalCostGap)}</div><div class="l">${d.fundLoan.totalCostGap <= 0 ? 'הלוואת הקרן זולה יותר בסה"כ ב-' : 'הלוואת הקרן יקרה יותר בסה"כ ב-'}</div></div>
+    </div>
+    ${
+      d.fundLoan.warnings.length
+        ? `<div class="warnings"><ul>${d.fundLoan.warnings.map((w) => `<li>${esc(w)}</li>`).join('')}</ul></div>`
+        : ''
+    }`
+    : '';
+
   const feeComparisonBlock =
     d.feeComparison && d.feeComparison.products.length > 0
       ? `
@@ -451,6 +535,9 @@ export function buildReportHtml(d: ReportData): string {
   ${jobExitBlock}
   ${decumBlock}
   ${annuityTrackBlock}
+  ${fundSwitchBlock}
+  ${section190Block}
+  ${fundLoanBlock}
   ${taxBenefitsBlock}
   ${feeComparisonBlock}
   ${aiBlock}

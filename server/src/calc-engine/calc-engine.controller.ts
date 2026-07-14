@@ -36,6 +36,12 @@ import { calcLifePath } from './life-path';
 import type { LifePathInput, LifePathResult } from './life-path';
 import { calcAnnuityTrackComparison } from './annuity-track';
 import type { AnnuityTrackInput, AnnuityTrackResult } from './annuity-track';
+import { calcFundSwitch } from './fund-switch';
+import type { FundSwitchInput, FundSwitchResult } from './fund-switch';
+import { calcSection190 } from './section190';
+import type { Section190Input, Section190Result } from './section190';
+import { calcFundLoan } from './fund-loan';
+import type { FundLoanInput, FundLoanResult } from './fund-loan';
 import type {
   AnnuityInput,
   AnnuityResult,
@@ -207,6 +213,36 @@ export class CalcEngineController {
   annuityTrack(@Body() body: AnnuityTrackInput): AnnuityTrackResult {
     try {
       return calcAnnuityTrackComparison(body);
+    } catch (e) {
+      throw new BadRequestException((e as Error).message);
+    }
+  }
+
+  /** "כדאי לעבור קרן?" — השוואת המשך במוצר הנוכחי מול מעבר למוצר מועמד */
+  @Post('fund-switch')
+  fundSwitch(@Body() body: FundSwitchInput): FundSwitchResult {
+    try {
+      return calcFundSwitch(body);
+    } catch (e) {
+      throw new BadRequestException((e as Error).message);
+    }
+  }
+
+  /** תיקון 190 — משיכה הונית (15% על הרווח) מול קצבה מוכרת (פטורה ממס) */
+  @Post('section190')
+  section190(@Body() body: Section190Input): Section190Result {
+    try {
+      return calcSection190(body);
+    } catch (e) {
+      throw new BadRequestException((e as Error).message);
+    }
+  }
+
+  /** הלוואה מקרן הפנסיה מול הלוואה חלופית */
+  @Post('fund-loan')
+  fundLoan(@Body() body: FundLoanInput): FundLoanResult {
+    try {
+      return calcFundLoan(body);
     } catch (e) {
       throw new BadRequestException((e as Error).message);
     }

@@ -502,6 +502,36 @@ export interface AnnuityTrackFormInput {
   options: AnnuityTrackOption[];
 }
 
+/** קלט "כדאי לעבור קרן?" — נשמר עם התיק */
+export interface FundSwitchFormInput {
+  currentBalance: number;
+  monthlyDeposit: number;
+  months: number;
+  current: FundSwitchProductTerms;
+  candidateName: string;
+  candidate: FundSwitchProductTerms;
+  currentHasGuaranteedFactor: boolean;
+  resetsQualifyingPeriod: boolean;
+}
+
+/** קלט מחשבון תיקון 190 — נשמר עם התיק */
+export interface Section190FormInput {
+  balance: number;
+  realGainPct: number;
+  conversionFactor: number;
+  currentAge: number;
+  lifeExpectancyAge: number;
+}
+
+/** קלט מחשבון הלוואה מהקרן — נשמר עם התיק */
+export interface FundLoanFormInput {
+  loanAmount: number;
+  months: number;
+  fundLoanAnnualRatePct: number;
+  alternativeAnnualRatePct: number;
+  collateralFrozen: boolean;
+}
+
 export interface PlanAssumptions {
   annualReturnPct: number;
   annualSalaryGrowthPct: number;
@@ -526,6 +556,12 @@ export interface PlanAssumptions {
   decumResult?: DecumulationResult;
   annuityTrackInput?: AnnuityTrackFormInput;
   annuityTrackResult?: AnnuityTrackResult;
+  fundSwitchInput?: FundSwitchFormInput;
+  fundSwitchResult?: FundSwitchResult;
+  section190Input?: Section190FormInput;
+  section190Result?: Section190Result;
+  fundLoanInput?: FundLoanFormInput;
+  fundLoanResult?: FundLoanResult;
 }
 
 export type Gender = 'MALE' | 'FEMALE';
@@ -1101,6 +1137,106 @@ export interface AnnuityTrackResult {
 
 export function calcAnnuityTrack(input: AnnuityTrackInput): Promise<AnnuityTrackResult> {
   return post<AnnuityTrackResult>('/calc/annuity-track', input);
+}
+
+// ---------- "כדאי לעבור קרן?" ----------
+
+export interface FundSwitchProductTerms {
+  feeFromDepositPct: number;
+  feeFromBalancePct: number;
+  conversionFactor?: number;
+}
+
+export interface FundSwitchInput {
+  currentBalance: number;
+  monthlyDeposit: number;
+  monthlyCoverageCost: number;
+  annualReturnPct: number;
+  annualSalaryGrowthPct: number;
+  months: number;
+  current: FundSwitchProductTerms;
+  candidateName: string;
+  candidate: FundSwitchProductTerms;
+  currentHasGuaranteedFactor?: boolean;
+  resetsQualifyingPeriod?: boolean;
+}
+
+export interface FundSwitchResult {
+  currentBalanceAtRetirement: number;
+  candidateBalanceAtRetirement: number;
+  balanceGap: number;
+  currentTotalFeesPaid: number;
+  candidateTotalFeesPaid: number;
+  currentMonthlyAnnuity: number | null;
+  candidateMonthlyAnnuity: number | null;
+  annuityGap: number | null;
+  warnings: string[];
+  trace: CalcTrace;
+}
+
+export function calcFundSwitch(input: FundSwitchInput): Promise<FundSwitchResult> {
+  return post<FundSwitchResult>('/calc/fund-switch', input);
+}
+
+// ---------- תיקון 190 ----------
+
+export interface Section190Input {
+  balance: number;
+  realGainPct: number;
+  conversionFactor: number;
+  currentAge: number;
+  lifeExpectancyAge: number;
+  annualReturnPct: number;
+}
+
+export interface Section190Result {
+  lumpSum: {
+    grossAmount: number;
+    taxableGain: number;
+    tax: number;
+    netAmount: number;
+    projectedValueAtLifeExpectancy: number;
+  };
+  recognizedPension: {
+    monthlyAmount: number;
+    totalMonths: number;
+    totalIncomeToLifeExpectancy: number;
+  };
+  warnings: string[];
+  trace: CalcTrace;
+}
+
+export function calcSection190(input: Section190Input): Promise<Section190Result> {
+  return post<Section190Result>('/calc/section190', input);
+}
+
+// ---------- הלוואה מקרן הפנסיה ----------
+
+export interface FundLoanInput {
+  loanAmount: number;
+  months: number;
+  fundLoanAnnualRatePct: number;
+  alternativeAnnualRatePct: number;
+  collateralFrozen: boolean;
+  annualReturnPct: number;
+}
+
+interface LoanBreakdown {
+  monthlyPayment: number;
+  totalRepaid: number;
+  totalInterest: number;
+}
+
+export interface FundLoanResult {
+  fundLoan: LoanBreakdown & { opportunityCost: number; totalCost: number };
+  alternativeLoan: LoanBreakdown;
+  totalCostGap: number;
+  warnings: string[];
+  trace: CalcTrace;
+}
+
+export function calcFundLoan(input: FundLoanInput): Promise<FundLoanResult> {
+  return post<FundLoanResult>('/calc/fund-loan', input);
 }
 
 // ---------- קיבוע זכויות (סעיף 9א / טופס 161ד) ----------

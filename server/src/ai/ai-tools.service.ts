@@ -19,6 +19,12 @@ import { RightsFixationService } from '../calc-engine/rights-fixation.service';
 import type { RightsFixationInput } from '../calc-engine/rights-fixation';
 import { calcAnnuityTrackComparison } from '../calc-engine/annuity-track';
 import type { AnnuityTrackInput } from '../calc-engine/annuity-track';
+import { calcFundSwitch } from '../calc-engine/fund-switch';
+import type { FundSwitchInput } from '../calc-engine/fund-switch';
+import { calcSection190 } from '../calc-engine/section190';
+import type { Section190Input } from '../calc-engine/section190';
+import { calcFundLoan } from '../calc-engine/fund-loan';
+import type { FundLoanInput } from '../calc-engine/fund-loan';
 import type { ProductType } from '../calc-engine/types';
 
 /**
@@ -261,6 +267,108 @@ export class AiToolsService {
           additionalProperties: false,
         },
       },
+      {
+        name: 'calc_fund_switch',
+        description:
+          '"כדאי לעבור קרן?" — משווה המשך במוצר הנוכחי מול מעבר למוצר מועמד: הפרש צבירה בפרישה (רק דמי הניהול שונים, שאר ההנחות זהות) ואם נמסרו מקדמי המרה — גם הפרש קצבה חודשית. כולל אזהרות על מקדם מובטח שהולך לאיבוד ואיפוס תקופת אכשרה. השתמש ב-get_portfolio_summary ו-calc_projection כדי להעריך את הפרמטרים של המוצר הנוכחי לפני הקריאה.',
+        schema: {
+          type: 'object',
+          properties: {
+            currentBalance: { type: 'number', description: 'יתרה נוכחית (₪)' },
+            monthlyDeposit: { type: 'number' },
+            monthlyCoverageCost: { type: 'number', description: 'עלות כיסויים חודשית (₪), אם קיימת' },
+            annualReturnPct: { type: 'number' },
+            annualSalaryGrowthPct: { type: 'number' },
+            months: { type: 'number', description: 'חודשים עד הפרישה' },
+            current: {
+              type: 'object',
+              properties: {
+                feeFromDepositPct: { type: 'number' },
+                feeFromBalancePct: { type: 'number' },
+                conversionFactor: { type: 'number' },
+              },
+              required: ['feeFromDepositPct', 'feeFromBalancePct'],
+            },
+            candidateName: { type: 'string' },
+            candidate: {
+              type: 'object',
+              properties: {
+                feeFromDepositPct: { type: 'number' },
+                feeFromBalancePct: { type: 'number' },
+                conversionFactor: { type: 'number' },
+              },
+              required: ['feeFromDepositPct', 'feeFromBalancePct'],
+            },
+            currentHasGuaranteedFactor: { type: 'boolean' },
+            resetsQualifyingPeriod: { type: 'boolean' },
+          },
+          required: [
+            'currentBalance',
+            'monthlyDeposit',
+            'monthlyCoverageCost',
+            'annualReturnPct',
+            'annualSalaryGrowthPct',
+            'months',
+            'current',
+            'candidateName',
+            'candidate',
+          ],
+          additionalProperties: false,
+        },
+      },
+      {
+        name: 'calc_section190',
+        description:
+          'תיקון 190 (מודל מפושט להשוואה, לא בדיקת זכאות): משיכה הונית (מס 15% על הרווח הריאלי בלבד) מול "קצבה מוכרת" (קצבה חודשית פטורה ממס לחלוטין).',
+        schema: {
+          type: 'object',
+          properties: {
+            balance: { type: 'number', description: 'צבירה במסלול תיקון 190 (₪)' },
+            realGainPct: { type: 'number', description: '% מהצבירה שהוא רווח ריאלי, 0–100' },
+            conversionFactor: { type: 'number', description: 'מקדם המרה לקצבה מוכרת' },
+            currentAge: { type: 'number' },
+            lifeExpectancyAge: { type: 'number' },
+            annualReturnPct: { type: 'number', description: 'תשואה ריאלית להשקעת הנטו אם נמשך הונית' },
+          },
+          required: [
+            'balance',
+            'realGainPct',
+            'conversionFactor',
+            'currentAge',
+            'lifeExpectancyAge',
+            'annualReturnPct',
+          ],
+          additionalProperties: false,
+        },
+      },
+      {
+        name: 'calc_fund_loan',
+        description:
+          'הלוואה מקרן הפנסיה מול הלוואה חלופית: משווה עלות ריבית כוללת, ואם הסכום המשועבד מפסיק לצבור תשואה בזמן ההלוואה — גם את עלות ההזדמנות הזו.',
+        schema: {
+          type: 'object',
+          properties: {
+            loanAmount: { type: 'number' },
+            months: { type: 'number' },
+            fundLoanAnnualRatePct: { type: 'number' },
+            alternativeAnnualRatePct: { type: 'number' },
+            collateralFrozen: {
+              type: 'boolean',
+              description: 'האם הסכום המשועבד מפסיק לצבור תשואה בזמן ההלוואה',
+            },
+            annualReturnPct: { type: 'number', description: 'תשואה ריאלית מונחת, לחישוב עלות הזדמנות' },
+          },
+          required: [
+            'loanAmount',
+            'months',
+            'fundLoanAnnualRatePct',
+            'alternativeAnnualRatePct',
+            'collateralFrozen',
+            'annualReturnPct',
+          ],
+          additionalProperties: false,
+        },
+      },
     ];
   }
 
@@ -291,6 +399,12 @@ export class AiToolsService {
         return calcTaxBenefits(a as unknown as TaxBenefitsInput);
       case 'calc_annuity_track':
         return calcAnnuityTrackComparison(a as unknown as AnnuityTrackInput);
+      case 'calc_fund_switch':
+        return calcFundSwitch(a as unknown as FundSwitchInput);
+      case 'calc_section190':
+        return calcSection190(a as unknown as Section190Input);
+      case 'calc_fund_loan':
+        return calcFundLoan(a as unknown as FundLoanInput);
       default:
         throw new Error(`כלי לא מוכר: ${name}`);
     }
