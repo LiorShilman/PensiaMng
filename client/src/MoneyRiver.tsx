@@ -36,6 +36,10 @@ export interface RiverProduct {
 
 interface Props {
   products: RiverProduct[];
+  /** ברירת מחדל: "היום" */
+  startLabel?: string;
+  /** ברירת מחדל: "בפרישה" — נכסים הוניים לא בהכרח מוחזקים עד אז, ראו App.tsx */
+  endLabel?: string;
 }
 
 const W = 760;
@@ -78,6 +82,9 @@ function bandPath(top: Pt[], bottom: Pt[]): string {
 }
 
 export function MoneyRiver(props: Props) {
+  const startLabel = props.startLabel ?? 'היום';
+  const endLabel = props.endLabel ?? 'בפרישה';
+
   // מוצרים עם צבירה סופית כמעט-אפס לא מוצגים — נמנעים מרצועות בלתי-נראות
   const products = props.products.filter(
     (p) => (p.series[p.series.length - 1]?.balance ?? 0) >= 1,
@@ -206,7 +213,7 @@ export function MoneyRiver(props: Props) {
         ))}
 
         <text x={x(0)} y={startTopY} className="river-label" textAnchor="start">
-          היום · {fmtFull(startTotal)}
+          {startLabel} · {fmtFull(startTotal)}
         </text>
         <text
           x={x(maxMonth)}
@@ -214,7 +221,7 @@ export function MoneyRiver(props: Props) {
           className="river-label"
           textAnchor="end"
         >
-          בפרישה · {fmtFull(endTotal)}
+          {endLabel} · {fmtFull(endTotal)}
         </text>
 
         {/* ציר שנים — הראשונה/אחרונה מעוגנות פנימה כדי שלא ייחתכו בקצוות ה-SVG */}

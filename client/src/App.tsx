@@ -1847,27 +1847,58 @@ function App() {
             />
           </div>
 
-          <div className="card river-card">
-            <h3 className="card-title">
-              {IconWaves} נהר הכסף — הצבירה לפי מוצר לאורך הדרך
-              <span
-                className="tip"
-                data-tip="כל מוצר הוא זרם צבעוני שרוחבו בכל נקודת זמן משקף את הצבירה שלו; הזרמים נערמים סביב מרכז משותף במקום גרף עמודות רגיל, כדי לראות בבת אחת גם את הגודל היחסי של כל מוצר וגם איך כולם גדלים יחד לאורך הדרך."
-                tabIndex={0}
-              >
-                ⓘ
-              </span>
-            </h3>
-            <MoneyRiver
-              products={result.products.map(
-                (p): RiverProduct => ({
-                  id: p.id,
-                  name: p.name,
-                  series: p.projection.central.series,
-                }),
-              )}
-            />
-          </div>
+          {(() => {
+            const toRiver = (p: (typeof result.products)[number]): RiverProduct => ({
+              id: p.id,
+              name: p.name,
+              series: p.projection.central.series,
+            });
+            // נכסים קצבתיים (נעולים עד פרישה) מול נכסים הוניים נזילים — יעד
+            // הנזילות שונה, אז לא הגיוני לערבב אותם באותו נהר "עד הפרישה"
+            const annuityRiver = result.products
+              .filter((p) => TYPE_META[p.type].isAnnuity)
+              .map(toRiver);
+            const capitalRiver = result.products
+              .filter((p) => !TYPE_META[p.type].isAnnuity)
+              .map(toRiver);
+            return (
+              <>
+                {annuityRiver.length > 0 && (
+                  <div className="card river-card">
+                    <h3 className="card-title">
+                      {IconWaves} נהר הכסף — נכסים פנסיוניים (קצבתיים) לאורך הדרך לפרישה
+                      <span
+                        className="tip"
+                        data-tip="כל מוצר קצבתי — נעול עד הפרישה — הוא זרם צבעוני שרוחבו בכל נקודת זמן משקף את הצבירה שלו; הזרמים נערמים סביב מרכז משותף במקום גרף עמודות רגיל, כדי לראות בבת אחת גם את הגודל היחסי של כל מוצר וגם איך כולם גדלים יחד לאורך הדרך."
+                        tabIndex={0}
+                      >
+                        ⓘ
+                      </span>
+                    </h3>
+                    <MoneyRiver products={annuityRiver} />
+                  </div>
+                )}
+                {capitalRiver.length > 0 && (
+                  <div className="card river-card">
+                    <h3 className="card-title">
+                      {IconWaves} נהר הכסף — נכסים הוניים נזילים
+                      <span
+                        className="tip"
+                        data-tip="קרן השתלמות, קופת גמל להשקעה ו-IRA — בניגוד לנכסים הקצבתיים, אלה נזילים ולא בהכרח מיועדים להישאר עד הפרישה (לכל אחד יעד/מועד נזילות משלו). הצבירה כאן מוצגת לאותו טווח זמן להשוואה, לא כהבטחה שהכסף יישאר שם."
+                        tabIndex={0}
+                      >
+                        ⓘ
+                      </span>
+                    </h3>
+                    <MoneyRiver
+                      products={capitalRiver}
+                      endLabel="בטווח שנבדק"
+                    />
+                  </div>
+                )}
+              </>
+            );
+          })()}
 
           {feeComp && feeComp.products.length > 0 && (
             <div className="card fee-comp-card">
