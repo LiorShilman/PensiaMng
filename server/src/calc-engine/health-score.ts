@@ -69,6 +69,7 @@ const CAPITAL_TYPES: ReadonlySet<ProductType> = new Set([
   'IRA',
   'STUDY_FUND',
   'MANAGERS_INSURANCE',
+  'MONEY_MARKET_FUND',
 ]);
 
 export function calcHealthScore(input: HealthScoreInput): HealthScoreResult {

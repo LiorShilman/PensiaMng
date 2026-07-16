@@ -139,6 +139,7 @@ const EXTRACT_TOOL: Anthropic.Tool = {
                 'PROVIDENT_INVESTMENT',
                 'IRA',
                 'STUDY_FUND',
+                'MONEY_MARKET_FUND',
                 'LIFE_INSURANCE',
                 'DISABILITY_INSURANCE',
               ],

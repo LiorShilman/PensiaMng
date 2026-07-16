@@ -32,6 +32,9 @@ const FEE_CAPS: Record<ProductType, { deposit: number; balance: number }> = {
   PROVIDENT_INVESTMENT: { deposit: 4, balance: 1.05 },
   IRA: { deposit: 4, balance: 1.05 },
   STUDY_FUND: { deposit: 0, balance: 2 },
+  // קרן כספית — אינה מוצר פנסיוני, אין תקרה חוקית ייעודית; תקרה נדיבה
+  // (בפועל דמי ניהול טיפוסיים 0.1%–0.3%) רק כדי לתפוס טעויות הקלדה
+  MONEY_MARKET_FUND: { deposit: 0, balance: 2 },
   // ביטוח טהור — אין צבירה ואין דמי ניהול; נכלל רק בתרחישי ביטוח
   DISABILITY_INSURANCE: { deposit: 0, balance: 0 },
   LIFE_INSURANCE: { deposit: 0, balance: 0 },

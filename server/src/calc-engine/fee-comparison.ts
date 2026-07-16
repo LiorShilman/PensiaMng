@@ -25,6 +25,7 @@ export const MARKET_AVG_FEES: Record<ProductType, MarketFeeBenchmark> = {
   PROVIDENT_INVESTMENT: { deposit: 0, balance: 0.6 },
   IRA: { deposit: 0, balance: 0.25 },
   STUDY_FUND: { deposit: 0, balance: 0.55 },
+  MONEY_MARKET_FUND: { deposit: 0, balance: 0.2 },
   // ביטוח טהור — אין דמי ניהול
   DISABILITY_INSURANCE: { deposit: 0, balance: 0 },
   LIFE_INSURANCE: { deposit: 0, balance: 0 },

@@ -73,6 +73,7 @@ export type ProductType =
   | 'PROVIDENT_INVESTMENT'
   | 'IRA'
   | 'STUDY_FUND'
+  | 'MONEY_MARKET_FUND' // קרן כספית — לא פנסיוני, נזיל תמיד, מס רווח הון 25%
   | 'DISABILITY_INSURANCE' // ביטוח אכ"ע פרטי / מטריה — ביטוח טהור
   | 'LIFE_INSURANCE'; // ביטוח חיים פרטי (ריסק) — סכום למקרה מוות בלבד
 

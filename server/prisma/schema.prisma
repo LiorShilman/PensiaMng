@@ -42,6 +42,7 @@ enum ProductType {
   PROVIDENT_INVESTMENT // קופת גמל להשקעה
   IRA // גמל בניהול אישי
   STUDY_FUND // קרן השתלמות
+  MONEY_MARKET_FUND // קרן כספית — לא פנסיוני, נזיל תמיד, מס רווח הון 25%
   OLD_PENSION_FUND // קרן ותיקה
   BUDGETARY_PENSION // פנסיה תקציבית
   DISABILITY_INSURANCE // ביטוח אכ"ע פרטי / מטריה ביטוחית — ביטוח טהור ללא חיסכון

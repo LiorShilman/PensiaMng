@@ -180,6 +180,17 @@ export const DEMO_PRIMARY_PORTFOLIO: SavedPortfolio = {
       monthlyCoverageCost: 85,
       deathBenefitAmount: 500_000,
     },
+    {
+      id: 'demo-p10',
+      name: 'קרן כספית שקלית (דוגמה)',
+      type: 'MONEY_MARKET_FUND',
+      currentBalance: 40_000,
+      monthlyDeposit: 0,
+      feeFromDepositPct: 0,
+      feeFromBalancePct: 0.15,
+      monthlyCoverageCost: 0,
+      beneficiaries: [{ name: 'בן/בת הזוג (לדוגמה)', pct: 100 }],
+    },
   ],
 };
 

@@ -92,6 +92,7 @@ export type ProductType =
   | 'PROVIDENT_INVESTMENT'
   | 'IRA'
   | 'STUDY_FUND'
+  | 'MONEY_MARKET_FUND'
   | 'DISABILITY_INSURANCE'
   | 'LIFE_INSURANCE';
 

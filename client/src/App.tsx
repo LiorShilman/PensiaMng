@@ -228,6 +228,16 @@ export const TYPE_META: Record<ProductType, TypeMeta> = {
     accent: ['#d97706', '#f59e0b'],
     defaults: { feeFromDepositPct: 0, feeFromBalancePct: 0.6, monthlyCoverageCost: 0 },
   },
+  MONEY_MARKET_FUND: {
+    label: 'קרן כספית',
+    short: 'קרן כספית',
+    isAnnuity: false,
+    hasCoverage: false,
+    maxDepositFee: 0,
+    icon: 'growth',
+    accent: ['#059669', '#34d399'],
+    defaults: { feeFromDepositPct: 0, feeFromBalancePct: 0.2, monthlyCoverageCost: 0 },
+  },
   DISABILITY_INSURANCE: {
     label: 'ביטוח אכ"ע / מטריה (פרטי)',
     short: 'אכ"ע פרטי',
@@ -260,6 +270,7 @@ export const TYPE_ORDER: ProductType[] = [
   'PROVIDENT_INVESTMENT',
   'IRA',
   'STUDY_FUND',
+  'MONEY_MARKET_FUND',
   'DISABILITY_INSURANCE',
   'LIFE_INSURANCE',
 ];
@@ -2672,6 +2683,18 @@ function ProductCard(props: {
             <span
               className="tip"
               data-tip="קופת גמל להשקעה נזילה בכל עת, ללא ותק מינימלי — אבל משיכה כהון חייבת במס רווח הון ריאלי (25%). אם ממתינים לגיל 60 ומושכים כקצבה חודשית, הרווח פטור ממס לגמרי. המערכת עדיין לא מחשבת מס אוטומטית — זה שיקול לקחת בחשבון בעצמך."
+              tabIndex={0}
+            >
+              ⓘ
+            </span>
+          </>
+        )}
+        {p.type === 'MONEY_MARKET_FUND' && (
+          <>
+            <span className="type-pill liquid">נזילה תמיד</span>
+            <span
+              className="tip"
+              data-tip="קרן כספית נזילה בכל עת, ללא ותק מינימלי — אבל בניגוד לקופת גמל להשקעה, אין לה מסלול המרה לקצבה פטורה ממס: כל משיכה חייבת במס רווח הון ריאלי (25%), בלי יוצא מן הכלל. אינה מוצר פנסיוני — אין הטבת מס בהפקדה ואין הפקדת מעסיק."
               tabIndex={0}
             >
               ⓘ
