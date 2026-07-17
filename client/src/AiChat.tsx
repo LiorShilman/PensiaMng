@@ -39,6 +39,7 @@ export function AiChat(props: Props) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // גלילה בתוך תיבת ההודעות בלבד — scrollIntoView גולל את כל הדף (באג)
   useEffect(() => {
@@ -46,6 +47,15 @@ export function AiChat(props: Props) {
     const el = listRef.current;
     if (el) el.scrollTop = el.scrollHeight;
   }, [messages, busy]);
+
+  // גובה אוטומטי לתיבת הקלט — גדל עם השורות (עד תקרה), וחוזר לגובה שורה
+  // אחת אחרי שליחה שמנקה את input
+  useEffect(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${Math.min(el.scrollHeight, 160)}px`;
+  }, [input]);
 
   async function send(text: string) {
     const content = text.trim();
@@ -133,15 +143,19 @@ export function AiChat(props: Props) {
       </div>
 
       <div className="chat-input-row">
-        <input
-          type="text"
+        <textarea
+          ref={textareaRef}
           className="chat-input"
-          placeholder="שאל שאלה על התיק שלך…"
+          placeholder="שאל שאלה על התיק שלך… (Shift+Enter לירידת שורה)"
           value={input}
           disabled={busy}
+          rows={1}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => {
-            if (e.key === 'Enter') send(input);
+            if (e.key === 'Enter' && !e.shiftKey) {
+              e.preventDefault();
+              send(input);
+            }
           }}
         />
         <button
