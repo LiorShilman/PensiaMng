@@ -55,6 +55,7 @@ import {
   type FundLoanFormInput,
   type DivorcePensionSplitResult,
   type DivorceSplitFormInput,
+  getBoiInterestRate,
 } from './api';
 import { openReport, buildReportHtml } from './report';
 import { exportPortfolioExcel } from './exportExcel';
@@ -118,6 +119,9 @@ interface TypeMeta {
     feeFromBalancePct: number;
     monthlyCoverageCost: number;
     conversionFactor?: number;
+    /** ערך פתיחה בלבד — לא הנחת מערכת. ריבית קרן כספית ידועה ומתפרסמת,
+     * לא מוערכת כמו תשואת השקעה ארוכת טווח; המשתמש מצופה לעדכן אותה. */
+    annualReturnPct?: number;
   };
 }
 
@@ -236,7 +240,7 @@ export const TYPE_META: Record<ProductType, TypeMeta> = {
     maxDepositFee: 0,
     icon: 'growth',
     accent: ['#059669', '#34d399'],
-    defaults: { feeFromDepositPct: 0, feeFromBalancePct: 0.2, monthlyCoverageCost: 0 },
+    defaults: { feeFromDepositPct: 0, feeFromBalancePct: 0.2, monthlyCoverageCost: 0, annualReturnPct: 1 },
   },
   DISABILITY_INSURANCE: {
     label: 'ביטוח אכ"ע / מטריה (פרטי)',
@@ -317,6 +321,9 @@ function newProduct(type: ProductType): PortfolioProductInput {
     ...(type === 'MANAGERS_INSURANCE' ? { deathBenefitAmount: 0 } : {}),
     ...(type === 'STUDY_FUND'
       ? { joinDate: new Date().toISOString().slice(0, 10) }
+      : {}),
+    ...(type === 'MONEY_MARKET_FUND'
+      ? { annualReturnPct: meta.defaults.annualReturnPct }
       : {}),
     ...(type === 'DISABILITY_INSURANCE'
       ? { currentBalance: 0, monthlyDeposit: 0, disabilityPct: 75, umbrella: false }
@@ -2612,6 +2619,28 @@ function ProductCard(props: {
   const meta = TYPE_META[p.type];
   const effReturn = effectiveReturnPct(p.tracks, trackDefs, globalReturnPct);
   const tracksTotal = (p.tracks ?? []).reduce((s, t) => s + t.pct, 0);
+  const [boiBusy, setBoiBusy] = useState(false);
+  const [boiStatus, setBoiStatus] = useState<{ ok: boolean; text: string } | null>(null);
+
+  async function fetchBoiRate() {
+    setBoiBusy(true);
+    setBoiStatus(null);
+    try {
+      const r = await getBoiInterestRate();
+      const ASSUMED_INFLATION_TARGET_PCT = 2; // יעד האינפלציה הרשמי של בנק ישראל
+      const suggestedReal = Math.round((r.currentInterest - ASSUMED_INFLATION_TARGET_PCT) * 10) / 10;
+      onChange({ annualReturnPct: suggestedReal });
+      const published = new Date(r.lastPublishedDate).toLocaleDateString('he-IL');
+      setBoiStatus({
+        ok: true,
+        text: `✓ בנק ישראל: ${r.currentInterest}% נומינלי (עודכן ${published}) → הוצע ${suggestedReal}% ריאלי (בהנחת יעד אינפלציה ${ASSUMED_INFLATION_TARGET_PCT}%) — ניתן לערוך`,
+      });
+    } catch (e) {
+      setBoiStatus({ ok: false, text: (e as Error).message });
+    } finally {
+      setBoiBusy(false);
+    }
+  }
 
   function changeType(type: ProductType) {
     const m = TYPE_META[type];
@@ -2843,6 +2872,28 @@ function ProductCard(props: {
               onChange={(v) => onChange({ joinDate: v })}
             />
           </label>
+        )}
+        {p.type === 'MONEY_MARKET_FUND' && (
+          <div className="field money-market-rate">
+            <Field
+              label="ריבית ריאלית שנתית נוכחית"
+              unit="%"
+              value={p.annualReturnPct ?? 1}
+              onChange={(v) => onChange({ annualReturnPct: v })}
+              tooltip="בניגוד לתחזית לטווח ארוך של קרן פנסיה, ריבית קרן כספית ידועה ומתפרסמת בפועל — לא מוערכת. עוקבת מקרוב אחרי ריבית בנק ישראל, בד״כ נמוכה משמעותית מהנחת התשואה הכללית של התיק (שמתאימה למוצרים עם רכיב מנייתי). עוקפת כאן את ההנחה הכללית רק למוצר הזה. איפה למצוא: אתר בית ההשקעות/דוח הקרן היומי, או פרסומי בנק ישראל."
+            />
+            <button
+              type="button"
+              className="add-chip small"
+              onClick={fetchBoiRate}
+              disabled={boiBusy}
+            >
+              {boiBusy ? 'מושך…' : 'משוך ריבית עדכנית מבנק ישראל'}
+            </button>
+            {boiStatus && (
+              <p className={boiStatus.ok ? 'hint' : 'error'}>{boiStatus.text}</p>
+            )}
+          </div>
         )}
         {p.type === 'MANAGERS_INSURANCE' && !p.frozen && (
           <MoneyField

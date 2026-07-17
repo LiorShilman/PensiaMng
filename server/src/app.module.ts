@@ -10,6 +10,7 @@ import { PortfolioModule } from './portfolio/portfolio.module';
 import { AiModule } from './ai/ai.module';
 import { DemoModule } from './demo/demo.module';
 import { ReportModule } from './report/report.module';
+import { ExternalRatesModule } from './external-rates/external-rates.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { ReportModule } from './report/report.module';
     CalcEngineModule,
     DemoModule,
     ReportModule,
+    ExternalRatesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

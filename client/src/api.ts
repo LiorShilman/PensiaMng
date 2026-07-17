@@ -1292,6 +1292,19 @@ export function calcDivorcePensionSplit(
   return post<DivorcePensionSplitResult>('/calc/divorce-pension-split', input);
 }
 
+// ---------- ריבית בנק ישראל (מקור חיצוני-חי) ----------
+
+export interface BoiInterestRate {
+  /** ריבית נומינלית — לא ריאלית! */
+  currentInterest: number;
+  nextInterestDate: string;
+  lastPublishedDate: string;
+}
+
+export function getBoiInterestRate(): Promise<BoiInterestRate> {
+  return request<BoiInterestRate>('GET', '/external/boi-interest-rate');
+}
+
 // ---------- קיבוע זכויות (סעיף 9א / טופס 161ד) ----------
 
 export interface PastGrant {
