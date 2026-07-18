@@ -2313,10 +2313,7 @@ function App() {
             <h3 className="card-title">לאן הולך הכסף? — מפת הזרימה במקרה מוות</h3>
             <MoneyFlow
               products={scenarios.death.products}
-              colorOf={(id) => {
-                const t = products.find((x) => x.id === id)?.type;
-                return t ? TYPE_META[t].accent[0] : '#64748b';
-              }}
+              colorOf={(t) => TYPE_META[t].accent[0]}
             />
           </div>
         </section>

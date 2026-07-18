@@ -1309,7 +1309,9 @@ td.fees {
 
 .results.stale .totals-grid,
 .results.stale .breakdown,
-.results.stale .scenarios-grid {
+.results.stale .scenarios-grid,
+.results.stale .flow-card,
+.results.stale .river-pair {
   opacity: 0.45;
   filter: grayscale(0.4);
   transition: opacity 0.2s;

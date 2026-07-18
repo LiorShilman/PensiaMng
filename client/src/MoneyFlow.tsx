@@ -9,8 +9,8 @@ import type { DeathProductOutcome } from './api';
 
 interface Props {
   products: DeathProductOutcome[];
-  /** צבע מבטא לכל מוצר לפי המזהה */
-  colorOf: (id: string) => string;
+  /** צבע מבטא לכל מוצר לפי סוג המוצר (לא לפי מזהה — המזהה עלול להשתנות אחרי שמירה) */
+  colorOf: (type: DeathProductOutcome['type']) => string;
 }
 
 interface FlowLink {
@@ -192,7 +192,7 @@ export function MoneyFlow(props: Props) {
   const lumpLinks: FlowLink[] = [];
 
   for (const p of props.products) {
-    const color = props.colorOf(p.id);
+    const color = props.colorOf(p.type);
     if (p.spouseMonthly > 0) {
       monthlyLinks.push({
         sourceId: p.id,
