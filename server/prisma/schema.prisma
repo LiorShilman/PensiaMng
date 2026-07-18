@@ -140,6 +140,23 @@ model AiUsageLog {
   @@index([userId, createdAt])
 }
 
+// יומן ניסיונות תרחיש אימון — דילמת לקוח בדויה שה-AI מנסח, מול התשובה
+// הנכונה שמנוע החישוב הדטרמיניסטי מחשב (ה-AI לעולם לא קובע מי צדק)
+model TrainingAttempt {
+  id           String    @id @default(cuid())
+  userId       String
+  topic        String // 'FUND_LOAN' — מוכן להרחבה לנושאים נוספים
+  scenario     Json // התרחיש שה-AI יצר (סיפור + שדות קלט לחישוב)
+  userAnswer   Json? // ההצעה שהמשתמש שלח (מתמלא בשליחה)
+  engineAnswer Json? // תוצאת מנוע החישוב האמיתית (מתמלא בשליחה)
+  score        Decimal? @db.Decimal(5, 2)
+  verdict      String?
+  createdAt    DateTime  @default(now())
+  answeredAt   DateTime?
+
+  @@index([userId, createdAt])
+}
+
 model Client {
   id               String           @id @default(cuid())
   userId           String

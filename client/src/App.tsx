@@ -73,11 +73,13 @@ import {
   IconShield,
   IconSheet,
   IconSparkles,
+  IconTarget,
   IconUsers,
   IconWaves,
 } from './icons';
 import { SecurityPanel } from './SecurityPanel';
 import { FamilyView } from './FamilyView';
+import { TrainingScenario } from './TrainingScenario';
 import { Tour } from './Tour';
 import type { TourStep } from './Tour';
 import { FanChart } from './FanChart';
@@ -459,6 +461,8 @@ function App() {
   const [familyOpen, setFamilyOpen] = useState(false);
   /** סיור מודרך בכל יכולות המערכת */
   const [tourActive, setTourActive] = useState(false);
+  /** אימון תרחישים */
+  const [trainingOpen, setTrainingOpen] = useState(false);
   /** מודול AI */
   const [aiOpen, setAiOpen] = useState(false);
   const [aiConfigured, setAiConfigured] = useState(false);
@@ -1438,6 +1442,20 @@ function App() {
             </button>
             <button
               className="ai-toggle"
+              data-tour="btn-training"
+              onClick={() => {
+                setTrainingOpen((v) => {
+                  if (!v) window.scrollTo({ top: 0, behavior: "smooth" });
+                  return !v;
+                });
+              }}
+              title="אימון תרחישים — דילמת לקוח בדויה, אתה מנחש והמנוע שופט"
+            >
+              {IconTarget}
+              אימון
+            </button>
+            <button
+              className="ai-toggle"
               data-tour="btn-tour"
               onClick={() => setTourActive(true)}
               title="סיור מודרך בכל יכולות המערכת"
@@ -1465,6 +1483,10 @@ function App() {
 
       {familyOpen && (
         <FamilyView onClose={() => setFamilyOpen(false)} onUnauthorized={logout} />
+      )}
+
+      {trainingOpen && (
+        <TrainingScenario onClose={() => setTrainingOpen(false)} onUnauthorized={logout} />
       )}
 
       {aiOpen && (

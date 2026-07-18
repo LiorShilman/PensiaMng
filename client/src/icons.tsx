@@ -255,3 +255,12 @@ export const IconScales = (
     <path d="M8 21h8" />
   </svg>
 );
+
+/** מצב אימון — מטרה */
+export const IconTarget = (
+  <svg {...base} width={15} height={15}>
+    <circle cx={12} cy={12} r={9} />
+    <circle cx={12} cy={12} r={5} />
+    <circle cx={12} cy={12} r={1} />
+  </svg>
+);

@@ -220,6 +220,62 @@ const CHAT_SYSTEM_PROMPT = `אתה יועץ צ'אט פנסיוני במערכת 
 
 סיים תשובות עם המלצה מהותית ב: "_המידע להמחשה בלבד ואינו ייעוץ פנסיוני כהגדרתו בחוק._"`;
 
+/** תרחיש אימון בדוי (מצב אימון) — הלוואת קרן מול הלוואה חיצונית */
+export interface FundLoanScenario {
+  clientName: string;
+  age: number;
+  storyText: string;
+  loanAmount: number;
+  months: number;
+  fundLoanAnnualRatePct: number;
+  alternativeAnnualRatePct: number;
+  collateralFrozen: boolean;
+  annualReturnPct: number;
+}
+
+/** סכמת התרחיש — Structured Output דרך כלי כפוי, בדיוק כמו EXTRACT_TOOL */
+const FUND_LOAN_SCENARIO_SCHEMA = {
+  type: 'object',
+  properties: {
+    clientName: { type: 'string', description: 'שם פרטי בלבד, ישראלי, בדוי' },
+    age: { type: 'number', minimum: 22, maximum: 70 },
+    storyText: {
+      type: 'string',
+      description:
+        'תיאור סיפורי קצר בעברית טבעית (2-4 משפטים) — למה הלקוח שוקל הלוואה מהקרן. אסור לרמוז איזו אפשרות זולה יותר.',
+    },
+    loanAmount: { type: 'number', minimum: 5000, maximum: 300000 },
+    months: { type: 'integer', minimum: 6, maximum: 120 },
+    fundLoanAnnualRatePct: { type: 'number', minimum: 3, maximum: 8 },
+    alternativeAnnualRatePct: { type: 'number', minimum: 4, maximum: 14 },
+    collateralFrozen: { type: 'boolean' },
+    annualReturnPct: { type: 'number', minimum: 2, maximum: 7 },
+  },
+  required: [
+    'clientName',
+    'age',
+    'storyText',
+    'loanAmount',
+    'months',
+    'fundLoanAnnualRatePct',
+    'alternativeAnnualRatePct',
+    'collateralFrozen',
+    'annualReturnPct',
+  ],
+};
+
+const FUND_LOAN_SCENARIO_PROMPT = `אתה מחולל תרחישי אימון למערכת PensiaMng הישראלית.
+
+המצא לקוח בדוי ודילמה ריאליסטית: האם כדאי לו לקחת הלוואה מקרן הפנסיה/הגמל שלו, או הלוואה חיצונית (בנק/אשראי)?
+
+כללים:
+1. בחר מספרים ריאליים לשוק הישראלי של היום. אל תעדיף תמיד את אותו כיוון — לפעמים הלוואת הקרן זולה יותר, לפעמים ההלוואה החיצונית זולה יותר, כדי שהתרגיל לא יהיה טריוויאלי.
+2. אם collateralFrozen=true, ודא שזה משפיע מהותית על התוצאה (לא ערך שרירותי שלא משנה כלום).
+3. storyText: 2-4 משפטים בעברית טבעית, שם + סיבה לצורך בהלוואה — בלי לרמוז איזו אפשרות זולה יותר.
+4. אתה לא פותר את הדילמה — רק מתאר אותה. השדות המספריים הם קלט לחישוב שייעשה בנפרד.
+
+החזר את הנתונים דרך הכלי בלבד.`;
+
 @Injectable()
 export class AiService {
   constructor(
@@ -805,6 +861,111 @@ export class AiService {
     } catch (e) {
       throw new BadRequestException(
         `קליטת הדוח נכשלה (${provider}/${model}): ${(e as Error).message}`,
+      );
+    }
+  }
+
+  /**
+   * מייצר תרחיש אימון בדוי (מצב אימון — הלוואת קרן מול הלוואה חיצונית).
+   * ה-AI קובע רק את הסיפור ואת השדות המספריים של הדילמה — התשובה הנכונה
+   * לעולם לא מחושבת כאן; היא מחושבת בנפרד ע"י calcFundLoan הדטרמיניסטי
+   * (TrainingService), באותו עיקרון כמו שאר יכולות ה-AI במערכת.
+   */
+  async generateFundLoanScenario(userId: string): Promise<FundLoanScenario> {
+    await this.enforceBudget(userId);
+    const { provider, model, apiKey } = await this.clientFor(userId);
+
+    try {
+      let raw: Record<string, unknown>;
+      if (provider === 'anthropic') {
+        const client = new Anthropic({ apiKey });
+        const resp = await client.messages.create({
+          model,
+          max_tokens: 1000,
+          tools: [
+            {
+              name: 'fund_loan_scenario',
+              description: 'תרחיש אימון: לקוח בדוי ודילמת הלוואת קרן מול הלוואה חיצונית',
+              input_schema: FUND_LOAN_SCENARIO_SCHEMA as Anthropic.Tool.InputSchema,
+            },
+          ],
+          tool_choice: { type: 'tool', name: 'fund_loan_scenario' },
+          messages: [{ role: 'user', content: FUND_LOAN_SCENARIO_PROMPT }],
+        });
+        await this.logUsage(
+          userId,
+          'training_generate',
+          provider,
+          resp.model,
+          resp.usage.input_tokens,
+          resp.usage.output_tokens,
+        );
+        const toolUse = resp.content.find(
+          (b): b is Anthropic.ToolUseBlock => b.type === 'tool_use',
+        );
+        if (!toolUse) throw new Error('המודל לא החזיר תרחיש מובנה');
+        raw = toolUse.input as Record<string, unknown>;
+      } else {
+        const client = new OpenAI({ apiKey });
+        const resp = await client.chat.completions.create({
+          model,
+          max_completion_tokens: 1000,
+          tools: [
+            {
+              type: 'function',
+              function: {
+                name: 'fund_loan_scenario',
+                description: 'תרחיש אימון: לקוח בדוי ודילמת הלוואת קרן מול הלוואה חיצונית',
+                parameters: FUND_LOAN_SCENARIO_SCHEMA,
+              },
+            },
+          ],
+          tool_choice: { type: 'function', function: { name: 'fund_loan_scenario' } },
+          messages: [{ role: 'user', content: FUND_LOAN_SCENARIO_PROMPT }],
+        });
+        const msg = resp.choices[0]?.message;
+        const call = msg?.tool_calls?.[0];
+        if (!call || call.type !== 'function') throw new Error('המודל לא החזיר תרחיש מובנה');
+        await this.logUsage(
+          userId,
+          'training_generate',
+          provider,
+          resp.model,
+          resp.usage?.prompt_tokens ?? 0,
+          resp.usage?.completion_tokens ?? 0,
+        );
+        raw = JSON.parse(call.function.arguments || '{}');
+      }
+
+      const scenario: FundLoanScenario = {
+        clientName: String(raw.clientName ?? 'לקוח/ה'),
+        age: Number(raw.age),
+        storyText: String(raw.storyText ?? ''),
+        loanAmount: Number(raw.loanAmount),
+        months: Math.round(Number(raw.months)),
+        fundLoanAnnualRatePct: Number(raw.fundLoanAnnualRatePct),
+        alternativeAnnualRatePct: Number(raw.alternativeAnnualRatePct),
+        collateralFrozen: Boolean(raw.collateralFrozen),
+        annualReturnPct: Number(raw.annualReturnPct),
+      };
+      const valid =
+        scenario.age >= 18 &&
+        scenario.age <= 80 &&
+        scenario.loanAmount > 0 &&
+        scenario.months >= 1 &&
+        scenario.months <= 360 &&
+        scenario.fundLoanAnnualRatePct >= 0 &&
+        scenario.fundLoanAnnualRatePct <= 30 &&
+        scenario.alternativeAnnualRatePct >= 0 &&
+        scenario.alternativeAnnualRatePct <= 30 &&
+        scenario.annualReturnPct >= -5 &&
+        scenario.annualReturnPct <= 20 &&
+        scenario.storyText.trim().length > 0;
+      if (!valid) throw new Error('התרחיש שהתקבל אינו תקין — נסה שוב');
+      return scenario;
+    } catch (e) {
+      throw new BadRequestException(
+        `יצירת תרחיש האימון נכשלה (${provider}/${model}): ${(e as Error).message}`,
       );
     }
   }

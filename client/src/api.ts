@@ -1251,6 +1251,68 @@ export function calcFundLoan(input: FundLoanInput): Promise<FundLoanResult> {
   return post<FundLoanResult>('/calc/fund-loan', input);
 }
 
+// ---------- מצב אימון (תרחיש הלוואת קרן) ----------
+
+export interface FundLoanScenario {
+  clientName: string;
+  age: number;
+  storyText: string;
+  loanAmount: number;
+  months: number;
+  fundLoanAnnualRatePct: number;
+  alternativeAnnualRatePct: number;
+  collateralFrozen: boolean;
+  annualReturnPct: number;
+}
+
+export interface TrainingScenarioView {
+  attemptId: string;
+  scenario: FundLoanScenario;
+}
+
+export type GapRange = 'UNDER_5K' | 'K5_15K' | 'K15_30K' | 'OVER_30K';
+
+export interface TrainingUserAnswer {
+  choice: 'FUND' | 'ALTERNATIVE';
+  /** הערכת סדר גודל של פער העלות — טווח, לא מספר מדויק */
+  gapRange: GapRange;
+}
+
+export interface TrainingSubmitResult {
+  engineAnswer: FundLoanResult;
+  score: number;
+  verdict: string;
+}
+
+export interface TrainingHistoryEntry {
+  id: string;
+  topic: string;
+  score: number | null;
+  verdict: string | null;
+  createdAt: string;
+}
+
+export interface TrainingHistory {
+  count: number;
+  averageScore: number | null;
+  recent: TrainingHistoryEntry[];
+}
+
+export function getTrainingScenario(): Promise<TrainingScenarioView> {
+  return request<TrainingScenarioView>('POST', '/training/scenario');
+}
+
+export function submitTrainingAnswer(
+  attemptId: string,
+  userAnswer: TrainingUserAnswer,
+): Promise<TrainingSubmitResult> {
+  return request<TrainingSubmitResult>('POST', '/training/submit', { attemptId, userAnswer });
+}
+
+export function getTrainingHistory(): Promise<TrainingHistory> {
+  return request<TrainingHistory>('GET', '/training/history');
+}
+
 // ---------- חלוקת זכויות פנסיה בגירושין ----------
 
 export interface DivorceSplitProductInput {

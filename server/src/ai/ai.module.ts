@@ -8,5 +8,6 @@ import { RightsFixationService } from '../calc-engine/rights-fixation.service';
 @Module({
   controllers: [AiController],
   providers: [AiService, AiToolsService, PortfolioService, RightsFixationService],
+  exports: [AiService],
 })
 export class AiModule {}

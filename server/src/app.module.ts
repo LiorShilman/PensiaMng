@@ -11,6 +11,7 @@ import { AiModule } from './ai/ai.module';
 import { DemoModule } from './demo/demo.module';
 import { ReportModule } from './report/report.module';
 import { ExternalRatesModule } from './external-rates/external-rates.module';
+import { TrainingModule } from './training/training.module';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { ExternalRatesModule } from './external-rates/external-rates.module';
     DemoModule,
     ReportModule,
     ExternalRatesModule,
+    TrainingModule,
   ],
   controllers: [AppController],
   providers: [AppService],
