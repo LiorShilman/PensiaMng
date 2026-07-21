@@ -1988,8 +1988,8 @@ function App() {
                 </div>
                 <div className="scenario-stat">
                   <div className={`stat-value ${feeComp.totalGapAtRetirement > 0 ? 'excess' : 'good'}`}>
-                    {feeComp.totalGapAtRetirement > 0 ? '−' : '+'}
-                    {nis(Math.abs(feeComp.totalGapAtRetirement))}
+                    {feeComp.totalGapAtRetirement > 0 ? '+' : ''}
+                    {nis(feeComp.totalGapAtRetirement)}
                   </div>
                   <div className="stat-label">"מחיר הפער" בצבירה עד הפרישה</div>
                 </div>

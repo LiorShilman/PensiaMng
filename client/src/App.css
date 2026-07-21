@@ -2568,6 +2568,10 @@ button .t-icon {
   color: var(--good);
 }
 
+.fee-row.similar td.num {
+  color: var(--warn);
+}
+
 .matrix-card td.gap-bad {
   color: var(--danger);
   font-weight: 600;
